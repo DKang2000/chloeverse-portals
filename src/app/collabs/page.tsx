@@ -1,5 +1,5 @@
-import { BackplateCollabsExperience } from "@/components/collabs/BackplateCollabsExperience";
+import CollabsExhibitionLobby from "@/components/collabs/CollabsExhibitionLobby";
 
 export default function CollabsPage() {
-  return <BackplateCollabsExperience />;
+  return <CollabsExhibitionLobby />;
 }

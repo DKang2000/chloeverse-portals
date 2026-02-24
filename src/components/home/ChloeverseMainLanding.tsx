@@ -154,71 +154,42 @@ function paintBackdropStyle(seed: number): CSSProperties {
 
 function paintCursorFillStyle(seed: number): CSSProperties {
   const rnd = mulberry32((seed ^ 0xa5a5a5a5) >>> 0);
-  const chunkLayers: string[] = [];
+  const mediumLayers: string[] = [];
   const microLayers: string[] = [];
-  const baseLayers: string[] = [];
   const paletteSize = RAINBOW_COLORS.length;
   const colorOffset = Math.floor(rnd() * paletteSize);
+  const baseColor = RAINBOW_COLORS[(colorOffset + 1) % paletteSize] ?? RAINBOW_COLORS[0];
 
-  const wrapDistance = (a: number, b: number) => {
-    const diff = Math.abs(a - b);
-    return Math.min(diff, paletteSize - diff);
-  };
-
-  const pickFarIndex = (used: number[], minGap: number) => {
-    for (let attempt = 0; attempt < 40; attempt += 1) {
-      const candidate = Math.floor(rnd() * paletteSize);
-      if (used.every((index) => wrapDistance(index, candidate) >= minGap)) {
-        return candidate;
-      }
-    }
-    for (let attempt = 0; attempt < 40; attempt += 1) {
-      const candidate = Math.floor(rnd() * paletteSize);
-      if (used.every((index) => wrapDistance(index, candidate) >= Math.max(2, minGap - 1))) {
-        return candidate;
-      }
-    }
-    return (used[used.length - 1] + 3) % paletteSize;
-  };
-
-  for (let i = 0; i < 6; i += 1) {
-    const x = 14 + rnd() * 72;
-    const y = 14 + rnd() * 72;
-    const i1 = Math.floor(rnd() * paletteSize);
-    const i2 = pickFarIndex([i1], 3);
-    const i3 = pickFarIndex([i1, i2], 3);
-    const c1 = RAINBOW_COLORS[i1] ?? RAINBOW_COLORS[0];
-    const c2 = RAINBOW_COLORS[i2] ?? RAINBOW_COLORS[0];
-    const c3 = RAINBOW_COLORS[i3] ?? RAINBOW_COLORS[0];
-    baseLayers.push(
-      `radial-gradient(circle at ${x.toFixed(2)}% ${y.toFixed(2)}%, ${hexToRgba(c1, 1)} 0%, ${hexToRgba(c1, 1)} 28%, ${hexToRgba(c2, 1)} 62%, ${hexToRgba(c3, 1)} 100%)`,
+  for (let i = 0; i < 82; i += 1) {
+    const x = 20 + rnd() * 60;
+    const y = 20 + rnd() * 60;
+    const color = RAINBOW_COLORS[(i + colorOffset) % paletteSize] ?? RAINBOW_COLORS[0];
+    const radius = 18 + rnd() * 28;
+    const feather = radius + 26 + rnd() * 18;
+    const alpha = 0.85 + rnd() * 0.1;
+    mediumLayers.push(
+      `radial-gradient(circle at ${x.toFixed(2)}% ${y.toFixed(2)}%, ${hexToRgba(color, alpha)} 0px, ${hexToRgba(color, alpha)} ${radius.toFixed(2)}px, rgba(0,0,0,0) ${feather.toFixed(2)}px)`,
     );
   }
 
-  for (let i = 0; i < 52; i += 1) {
-    const x = rnd() * 100;
-    const y = rnd() * 100;
-    const color = RAINBOW_COLORS[(i + colorOffset) % RAINBOW_COLORS.length] ?? RAINBOW_COLORS[0];
-    const radius = 14 + rnd() * 20;
-    chunkLayers.push(
-      `radial-gradient(circle at ${x.toFixed(2)}% ${y.toFixed(2)}%, ${hexToRgba(color, 0.95)} 0px, ${hexToRgba(color, 0.95)} ${radius.toFixed(2)}px, rgba(0,0,0,0) ${(radius + 3).toFixed(2)}px)`,
-    );
-  }
-
-  for (let i = 0; i < 144; i += 1) {
-    const x = rnd() * 100;
-    const y = rnd() * 100;
-    const color = RAINBOW_COLORS[(i + colorOffset + 3) % RAINBOW_COLORS.length] ?? RAINBOW_COLORS[0];
-    const radius = 6 + rnd() * 10;
+  for (let i = 0; i < 176; i += 1) {
+    const x = 10 + rnd() * 80;
+    const y = 10 + rnd() * 80;
+    const color = RAINBOW_COLORS[(i + colorOffset + 3) % paletteSize] ?? RAINBOW_COLORS[0];
+    const radius = 6 + rnd() * 12;
+    const feather = radius + 14 + rnd() * 12;
+    const alpha = 0.75 + rnd() * 0.17;
     microLayers.push(
-      `radial-gradient(circle at ${x.toFixed(2)}% ${y.toFixed(2)}%, ${hexToRgba(color, 0.9)} 0px, ${hexToRgba(color, 0.9)} ${radius.toFixed(2)}px, rgba(0,0,0,0) ${(radius + 10).toFixed(2)}px)`,
+      `radial-gradient(circle at ${x.toFixed(2)}% ${y.toFixed(2)}%, ${hexToRgba(color, alpha)} 0px, ${hexToRgba(color, alpha)} ${radius.toFixed(2)}px, rgba(0,0,0,0) ${feather.toFixed(2)}px)`,
     );
   }
+
+  const solidBase = `linear-gradient(0deg, ${baseColor}, ${baseColor})`;
 
   return {
-    backgroundImage: [...microLayers, ...chunkLayers, ...baseLayers].join(", "),
+    backgroundImage: [...microLayers, ...mediumLayers, solidBase].join(", "),
     backgroundRepeat: "repeat",
-    backgroundSize: "360px 360px",
+    backgroundSize: "520px 520px",
     filter: "saturate(1.15) contrast(1.1)",
   };
 }
@@ -325,6 +296,7 @@ export default function ChloeverseMainLanding({
   const menuTransition = prefersReducedMotion
     ? "none"
     : "opacity 650ms cubic-bezier(0.16, 1, 0.3, 1), transform 650ms cubic-bezier(0.16, 1, 0.3, 1)";
+  const NAV_FINAL_RAISE_PX = 32;
 
   const syncPointerModeFromType = (pointerType: string | undefined) => {
     if (pointerType === "mouse" || pointerType === "pen") {
@@ -714,7 +686,7 @@ export default function ChloeverseMainLanding({
               }}
             >
               <div className={`${titleFontClassName} overflow-visible leading-[0.84] tracking-[0.02em]`}>
-                <div className="text-[clamp(1.6rem,4vw,2.85rem)]">{renderPaintedText(TITLE_TOP, 101)}</div>
+                <div className="text-[clamp(2rem,4.85vw,3.45rem)]">{renderPaintedText(TITLE_TOP, 101)}</div>
                 <div className="-mt-1 inline-flex flex-nowrap whitespace-nowrap overflow-visible text-[clamp(3.5rem,13vw,12rem)]">
                   {renderPaintedText(TITLE_MAIN, 701)}
                 </div>
@@ -729,7 +701,7 @@ export default function ChloeverseMainLanding({
                 style={textMaskStyle}
               >
                 <div className={`${titleFontClassName} overflow-visible leading-[0.84] tracking-[0.02em]`}>
-                  <div className="text-[clamp(1.6rem,4vw,2.85rem)]">{renderPlainText(TITLE_TOP, 1001)}</div>
+                  <div className="text-[clamp(2rem,4.85vw,3.45rem)]">{renderPlainText(TITLE_TOP, 1001)}</div>
                   <div className="-mt-1 inline-flex flex-nowrap whitespace-nowrap overflow-visible text-[clamp(3.5rem,13vw,12rem)]">
                     {renderPlainText(TITLE_MAIN, 1601)}
                   </div>
@@ -739,7 +711,7 @@ export default function ChloeverseMainLanding({
 
             <div
               ref={taglineHitRef}
-              className={`${monoFontClassName} relative mt-7 inline-block select-none text-[clamp(1rem,2vw,1.35rem)] tracking-[0.15em] text-white`}
+              className={`${monoFontClassName} relative mt-11 inline-block select-none text-[clamp(1rem,2vw,1.35rem)] tracking-[0.15em] text-white`}
             >
               <div className="relative">
                 <span className="whitespace-pre-wrap text-white/95 [text-shadow:0_0_18px_rgba(255,255,255,0.12)]">
@@ -769,7 +741,7 @@ export default function ChloeverseMainLanding({
 
             <p
               ref={scrollHintRef}
-              className={`${monoFontClassName} mt-14 text-[11px] uppercase tracking-[0.42em] text-white/52`}
+              className={`${monoFontClassName} mt-[4.5rem] text-[11px] uppercase tracking-[0.42em] text-white/72`}
               style={{
                 opacity: titleEntered ? 1 : 0,
                 transform: titleEntered ? "translateY(0px)" : "translateY(24px)",
@@ -777,25 +749,29 @@ export default function ChloeverseMainLanding({
                 transitionDelay: prefersReducedMotion ? "0ms" : "120ms",
               }}
             >
-              scroll for portals
+              <span className={prefersReducedMotion ? undefined : "chv-scroll-blink"}>scroll for portals</span>
             </p>
           </div>
         </section>
 
         <section className="relative h-[140vh] px-6 pt-[56vh] pb-24">
-          <div className="sticky top-6 flex w-full justify-center">
+          <div className="sticky top-[-6px] flex w-full justify-center">
             <nav
               ref={menuHitRef}
               aria-label="Primary"
               className={`flex flex-wrap items-center justify-center gap-3 sm:gap-4 ${
                 menuVisible ? "translate-y-0 opacity-100" : "translate-y-5 opacity-0"
               }`}
-              style={{ transition: menuTransition }}
+              style={{
+                transition: menuTransition,
+                ...(menuVisible ? { marginTop: `-${NAV_FINAL_RAISE_PX}px` } : {}),
+              }}
             >
               {MENU_LINKS.map((link, index) => (
                 <Link
                   key={link.href}
                   href={link.href}
+                  prefetch={link.href === "/contact" ? false : undefined}
                   className={`${monoFontClassName} group relative inline-flex items-center overflow-hidden rounded-full border border-white/12 bg-black/35 px-5 py-2 text-[0.74rem] tracking-[0.22em] text-white/78 backdrop-blur-md transition-colors duration-200 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60`}
                   style={{
                     transitionDelay: menuVisible && !prefersReducedMotion ? `${index * 55}ms` : "0ms",

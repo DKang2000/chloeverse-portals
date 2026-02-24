@@ -13,6 +13,14 @@ function formatClockTime() {
   }).format(new Date());
 }
 
+function formatClockDate() {
+  return new Intl.DateTimeFormat(undefined, {
+    month: "numeric",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date());
+}
+
 function Windows7Logo({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 520 420" aria-hidden="true">
@@ -71,6 +79,85 @@ function Windows7Logo({ className }: { className?: string }) {
     </svg>
   );
 }
+
+function TbIconExplorer({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 64 64" className={className} aria-hidden="true">
+      <path d="M10 20c0-3 2-5 5-5h12l4 4h18c3 0 5 2 5 5v22c0 3-2 5-5 5H15c-3 0-5-2-5-5V20z" fill="#F6C34A" />
+      <path d="M10 26h44v6H10z" fill="#E8A93B" opacity="0.9" />
+      <path d="M18 38h20" stroke="#8A5A12" strokeWidth="4" strokeLinecap="round" opacity="0.35" />
+    </svg>
+  );
+}
+
+function TbIconMail({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 64 64" className={className} aria-hidden="true">
+      <rect x="10" y="16" width="44" height="32" rx="6" fill="#ffffff" opacity="0.95" />
+      <path d="M14 22l18 14L50 22" fill="none" stroke="#E04A3A" strokeWidth="4" strokeLinejoin="round" />
+      <path d="M14 44l14-12" stroke="#c9c9c9" strokeWidth="3" opacity="0.8" />
+      <path d="M50 44L36 32" stroke="#c9c9c9" strokeWidth="3" opacity="0.8" />
+    </svg>
+  );
+}
+
+function TbIconDiscord({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 64 64" className={className} aria-hidden="true">
+      <g transform="translate(5.76 5.76) scale(0.82)">
+        <circle cx="32" cy="32" r="30" fill="#5865F2" />
+        <path
+          d="M22 24c8-3 12-3 20 0c3 1 5 4 6 8c1 5-1 13-4 16c-2 2-4 1-6-1l-3-3H29l-3 3c-2 2-4 3-6 1c-3-3-5-11-4-16c1-4 3-7 6-8z"
+          fill="#ffffff"
+        />
+        <circle cx="27.5" cy="35" r="2.3" fill="#5865F2" />
+        <circle cx="36.5" cy="35" r="2.3" fill="#5865F2" />
+      </g>
+    </svg>
+  );
+}
+
+function TbIconSpotify({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 64 64" className={className} aria-hidden="true">
+      <g transform="translate(4.8 4.8) scale(0.85)">
+        <circle cx="32" cy="32" r="30" fill="#1DB954" />
+        <path d="M18 28c10-3 22-2 30 3" stroke="#0b0b0b" strokeWidth="4.5" strokeLinecap="round" fill="none" opacity="0.92" />
+        <path d="M20 36c8-2 18-1 24 3" stroke="#0b0b0b" strokeWidth="4.0" strokeLinecap="round" fill="none" opacity="0.86" />
+        <path d="M22 44c6-1 12 0 17 3" stroke="#0b0b0b" strokeWidth="3.5" strokeLinecap="round" fill="none" opacity="0.80" />
+      </g>
+    </svg>
+  );
+}
+
+function TbIconNotion({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 64 64" className={className} aria-hidden="true">
+      <rect x="10" y="10" width="44" height="44" rx="10" fill="#ffffff" />
+      <rect x="14" y="14" width="36" height="36" rx="8" fill="none" stroke="#111" strokeWidth="4" />
+      <path d="M26 44V22h4l10 14V22h4v22h-4L30 30v14h-4z" fill="#111" />
+    </svg>
+  );
+}
+
+function TbIconSlack({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 64 64" className={className} aria-hidden="true">
+      <rect x="12" y="12" width="40" height="40" rx="12" fill="#ffffff" opacity="0.95" />
+      <path d="M26 18a4 4 0 1 1 0 8h-4a4 4 0 1 1 0-8h4z" fill="#36C5F0" />
+      <path d="M18 26a4 4 0 1 1 8 0v4a4 4 0 1 1-8 0v-4z" fill="#36C5F0" />
+      <path d="M38 18a4 4 0 1 1 0 8h-4a4 4 0 1 1 0-8h4z" fill="#2EB67D" />
+      <path d="M38 26a4 4 0 1 1 8 0v4a4 4 0 1 1-8 0v-4z" fill="#2EB67D" />
+      <path d="M26 38a4 4 0 1 1 0 8h-4a4 4 0 1 1 0-8h4z" fill="#E01E5A" />
+      <path d="M18 34a4 4 0 1 1 8 0v4a4 4 0 1 1-8 0v-4z" fill="#E01E5A" />
+      <path d="M42 38a4 4 0 1 1 0 8h-4a4 4 0 1 1 0-8h4z" fill="#ECB22E" />
+      <path d="M38 34a4 4 0 1 1 8 0v4a4 4 0 1 1-8 0v-4z" fill="#ECB22E" />
+    </svg>
+  );
+}
+
+const TASKBAR_ICON_CLASS = "h-9 w-9";
+const TASKBAR_ICON_CLASS_SM = "h-8 w-8";
 
 type DesktopApp = {
   id: string;
@@ -220,21 +307,19 @@ const DESKTOP_APPS: DesktopApp[] = [
 const DESKTOP_LAYOUT: DesktopAppLayout[] = [
   { id: "instagram", x: 0, y: 0 },
   { id: "tiktok", x: 120, y: 0 },
-  { id: "capcut", x: 0, y: 120 },
-  { id: "youtubestudio", x: 120, y: 120 },
-  { id: "canva", x: 0, y: 240 },
-  { id: "notion", x: 120, y: 240 },
-  { id: "gmail", x: 0, y: 360 },
-  { id: "figma", x: 120, y: 360 },
+  { id: "youtubestudio", x: 0, y: 112 },
+  { id: "capcut", x: 120, y: 112 },
+  { id: "canva", x: 0, y: 224 },
+  { id: "notion", x: 120, y: 224 },
+  { id: "gmail", x: 0, y: 336 },
+  { id: "figma", x: 120, y: 336 },
 ];
 
 function DoubleClickHint() {
   return (
-    <div className="pointer-events-none absolute left-[-132px] top-[10px]">
+    <div className="pointer-events-none absolute left-[-140px] top-[10px]">
       <div className="relative rounded border border-black bg-[#f7e7a6] px-2 py-1 font-mono text-[10px] tracking-widest text-black shadow-[2px_2px_0_rgba(0,0,0,0.55)]">
-        <span>
-          DOUBLE CLICK
-        </span>
+        DOUBLE CLICK
         <svg
           width="28"
           height="22"
@@ -305,23 +390,25 @@ function DesktopIconTile({
 
 export function XpDesktop({ onOpen }: XpDesktopProps) {
   const [showApps, setShowApps] = useState(false);
-  const [showIg, setShowIg] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [opening, setOpening] = useState(false);
   const [clock, setClock] = useState("--:--");
+  const [dateLabel, setDateLabel] = useState("--/--/----");
   const openTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
-    // Reveal the desktop icons together after the initial beat.
+    // Reveal the desktop icons after the initial beat.
     const coreTimer = window.setTimeout(() => setShowApps(true), 2000);
-    const igTimer = window.setTimeout(() => setShowIg(true), 2000);
 
-    const firstClockTick = window.setTimeout(() => setClock(formatClockTime()), 0);
-    const clockTimer = window.setInterval(() => setClock(formatClockTime()), 60000);
+    const updateClockDisplay = () => {
+      setClock(formatClockTime());
+      setDateLabel(formatClockDate());
+    };
+    const firstClockTick = window.setTimeout(updateClockDisplay, 0);
+    const clockTimer = window.setInterval(updateClockDisplay, 60000);
 
     return () => {
       window.clearTimeout(coreTimer);
-      window.clearTimeout(igTimer);
       window.clearTimeout(firstClockTick);
       window.clearInterval(clockTimer);
       if (openTimerRef.current) {
@@ -344,32 +431,24 @@ export function XpDesktop({ onOpen }: XpDesktopProps) {
       onClick={() => setSelectedId(null)}
     >
       <img
-        src="/projects/kingdom-screensaver-smooth.png"
+        src="/projects/candy-kingdom.png"
         alt=""
         className="pointer-events-none absolute inset-0 h-full w-full object-cover"
         style={{ imageRendering: "auto", filter: "contrast(1.04) saturate(1.03)" }}
       />
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.01] mix-blend-overlay"
-        style={{
-          backgroundImage:
-            "repeating-linear-gradient(90deg, rgba(255,255,255,0.18) 0 1px, transparent 1px 6px), repeating-linear-gradient(0deg, rgba(255,255,255,0.18) 0 1px, transparent 1px 6px)",
-        }}
-      />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,rgba(255,255,255,0.00)_35%,rgba(0,0,0,0.42)_100%)]" />
-      <div className="pointer-events-none absolute inset-0 bg-black/10" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,rgba(255,255,255,0)_34%,rgba(0,0,0,0.34)_100%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-black/5" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0)_40%,rgba(0,0,0,0.04))]" />
 
       <div
-        className="absolute right-[56px] top-[40px] bottom-14 z-30 w-[300px] pb-16"
+        className="absolute top-[70px] left-[clamp(380px,34vw,620px)] bottom-14 z-30 w-[300px] pb-16"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="relative h-full w-full">
           {DESKTOP_LAYOUT.map((entry) => {
             const app = DESKTOP_APPS.find((desktopApp) => desktopApp.id === entry.id);
             if (!app) return null;
-
-            if (entry.id === "instagram" && !showIg) return null;
-            if (entry.id !== "instagram" && !showApps) return null;
+            if (!showApps) return null;
 
             return (
               <div
@@ -382,7 +461,7 @@ export function XpDesktop({ onOpen }: XpDesktopProps) {
                   selected={selectedId === app.id}
                   onClick={() => setSelectedId(app.id)}
                   onDoubleClick={app.id === "instagram" ? handleDoubleClick : undefined}
-                  showHint={app.id === "instagram" && showIg}
+                  showHint={app.id === "instagram" && showApps}
                 />
               </div>
             );
@@ -401,15 +480,43 @@ export function XpDesktop({ onOpen }: XpDesktopProps) {
                 <path d="M12 11.3h7.5v10.2L12 20.3z" fill="#ffd95b" />
               </svg>
             </div>
-            <div className="h-8 w-14 rounded-lg border border-white/20 bg-white/12 shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]" />
-            <div className="h-8 w-10 rounded-lg border border-white/16 bg-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.3)]" />
+            <div className="flex h-[30px] min-w-[150px] sm:min-w-[190px] items-center gap-2 rounded-lg border border-white/22 bg-white/14 px-3 text-xs text-white/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.38)]">
+              <svg viewBox="0 0 20 20" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <circle cx="8.2" cy="8.2" r="4.4" />
+                <path d="M11.5 11.5L16 16" strokeLinecap="round" />
+              </svg>
+              <span>Type here to search</span>
+            </div>
+            <div className="flex items-center gap-3 pointer-events-none select-none">
+              <div className="flex items-center justify-center">
+                <TbIconExplorer className={TASKBAR_ICON_CLASS} />
+              </div>
+              <div className="flex items-center justify-center">
+                <TbIconMail className={TASKBAR_ICON_CLASS} />
+              </div>
+              <div className="flex items-center justify-center">
+                <TbIconDiscord className={TASKBAR_ICON_CLASS} />
+              </div>
+              <div className="flex items-center justify-center">
+                <TbIconSpotify className={TASKBAR_ICON_CLASS_SM} />
+              </div>
+              <div className="flex items-center justify-center">
+                <TbIconNotion className={TASKBAR_ICON_CLASS_SM} />
+              </div>
+              <div className="flex items-center justify-center">
+                <TbIconSlack className={TASKBAR_ICON_CLASS} />
+              </div>
+            </div>
           </div>
 
           <div className="flex h-9 items-center gap-2 rounded-md border border-white/20 bg-white/14 px-3 text-white/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]">
             <span className="h-2.5 w-2.5 rounded-full bg-[#9ce8ff]" />
             <span className="h-2.5 w-2.5 rounded-full bg-[#d7efff]" />
             <span className="h-2.5 w-2.5 rounded-full bg-[#8dd2ff]" />
-            <span className="min-w-[64px] text-right text-sm font-medium">{clock}</span>
+            <div className="min-w-[74px] text-right leading-tight">
+              <div className="text-sm font-medium">{clock}</div>
+              <div className="text-[10px] text-white/80">{dateLabel}</div>
+            </div>
           </div>
         </div>
       </div>

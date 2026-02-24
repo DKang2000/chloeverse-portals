@@ -1,12 +1,37 @@
 "use client";
 
-import type { CSSProperties } from "react";
+import type { CSSProperties, MouseEvent, PointerEvent as ReactPointerEvent, SyntheticEvent } from "react";
 import { motion } from "framer-motion";
 
 import type { PanelId } from "./focusPresets";
 import styles from "./mediacard.module.css";
 
 export type MediaPanelKey = PanelId;
+
+type MetricDatum = {
+  label: string;
+  value: string;
+  descriptor?: string;
+};
+
+function MetricCard({ label, value, descriptor }: MetricDatum) {
+  return (
+    <div className={styles.metricCard}>
+      <div className={styles.metricCardLabel}>{label}</div>
+      <div className={styles.metricCardValue}>{value}</div>
+      {descriptor ? <div className={styles.metricCardDesc}>{descriptor}</div> : null}
+    </div>
+  );
+}
+
+function handleBrandLogoError(event: SyntheticEvent<HTMLImageElement>) {
+  const img = event.currentTarget;
+  const fallbackSrc = img.dataset.fallbackSrc;
+  if (!fallbackSrc) return;
+  if (img.dataset.fallbackApplied === "true") return;
+  img.dataset.fallbackApplied = "true";
+  img.src = fallbackSrc;
+}
 
 function AudiencePanel() {
   const countries = ["United States", "Canada", "Australia", "South Korea"];
@@ -29,11 +54,11 @@ function AudiencePanel() {
 }
 
 function MetricsPanel() {
-  const metrics = [
-    { label: "Instagram", value: "147K", descriptor: "Followers" },
-    { label: "TikTok", value: "160K", descriptor: "Followers" },
-    { label: "Views", value: "12M", descriptor: "Monthly Views" },
-    { label: "Engagement", value: "12%", descriptor: "Engagement Rate" },
+  const metrics: MetricDatum[] = [
+    { label: "Instagram", value: "147K" },
+    { label: "TikTok", value: "160K" },
+    { label: "Views", value: "12M monthly" },
+    { label: "Engagement", value: "12%" },
   ];
   return (
     <>
@@ -43,11 +68,7 @@ function MetricsPanel() {
       </header>
       <div className={styles.metricsGrid}>
         {metrics.map((metric) => (
-          <div key={`${metric.label}-${metric.value}`} className={styles.metricTile}>
-            <span className={styles.metricEyebrow}>{metric.label}</span>
-            <strong className={styles.metricValue}>{metric.value}</strong>
-            <span className={styles.metricCaption}>{metric.descriptor}</span>
-          </div>
+          <MetricCard key={`${metric.label}-${metric.value}`} {...metric} />
         ))}
       </div>
     </>
@@ -86,10 +107,15 @@ function ServicesPanel() {
 
 function CollabsPanel() {
   const partners = [
-    { name: "Adobe", src: "/mediacard/logos/adobe.svg", accent: "255 0 0" },
-    { name: "Adidas", src: "/mediacard/logos/adidas.svg", accent: "125 249 255" },
-    { name: "Estee Lauder", src: "/mediacard/logos/esteelauder.svg", accent: "185 154 247" },
-    { name: "OpenAI", src: "/mediacard/logos/openai.svg", accent: "125 249 255" },
+    { name: "Adobe", pngSrc: "/mediacard/logos/adobe.png", svgSrc: "/mediacard/logos/adobe.svg", accent: "255 0 0" },
+    { name: "Adidas", pngSrc: "/mediacard/logos/adidas.png", svgSrc: "/mediacard/logos/adidas.svg", accent: "125 249 255" },
+    {
+      name: "Estee Lauder",
+      pngSrc: "/mediacard/logos/esteelauder.png",
+      svgSrc: "/mediacard/logos/esteelauder.svg",
+      accent: "185 154 247",
+    },
+    { name: "OpenAI", pngSrc: "/mediacard/logos/openai.png", svgSrc: "/mediacard/logos/openai.svg", accent: "125 249 255" },
   ];
   return (
     <>
@@ -99,12 +125,15 @@ function CollabsPanel() {
       </header>
       <div className={styles.logoGrid}>
         {partners.map((partner) => (
-          <div
-            key={partner.name}
-            className={styles.logoTile}
-            style={{ "--logo-accent": partner.accent } as CSSProperties}
-          >
-            <img src={partner.src} alt={`${partner.name} logo`} className={styles.logoMark} loading="lazy" />
+          <div key={partner.name} className={styles.logoTile} style={{ "--logo-accent": partner.accent } as CSSProperties}>
+            <img
+              className={styles.brandLogoImg}
+              src={partner.pngSrc}
+              data-fallback-src={partner.svgSrc}
+              onError={handleBrandLogoError}
+              alt={partner.name}
+              loading="lazy"
+            />
             <span className={styles.logoWordmark}>{partner.name}</span>
           </div>
         ))}
@@ -145,15 +174,43 @@ export function MediaKitPanel({
   comingSoonRegion?: string | null;
   onClose: () => void;
 }) {
+  const handleCloseClick = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    onClose();
+  };
+
+  const stopPanelPointerEvent = (event: MouseEvent<HTMLElement>) => {
+    event.stopPropagation();
+  };
+
+  const stopPanelPointerDown = (event: ReactPointerEvent<HTMLElement>) => {
+    event.stopPropagation();
+  };
+
+  const handleClosePointerDown = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    onClose();
+  };
+
   return (
     <motion.aside
       className={styles.panel}
+      onPointerDown={stopPanelPointerDown}
+      onClick={stopPanelPointerEvent}
       initial={{ opacity: 0, y: 22, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 14, scale: 0.985 }}
       transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
     >
-      <button type="button" className={styles.closeButton} onClick={onClose} aria-label="Close panel">
+      <button
+        type="button"
+        className={styles.closeButton}
+        onPointerDown={handleClosePointerDown}
+        onClick={handleCloseClick}
+        aria-label="Close panel"
+      >
         Close
       </button>
       <PanelBody panel={panel} comingSoonRegion={comingSoonRegion} />

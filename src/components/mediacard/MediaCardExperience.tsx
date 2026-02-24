@@ -16,6 +16,7 @@ import {
 import { TARGETS, type PanelId } from "./focusPresets";
 import { MediaCardMenu, type MediaMenuKey, type MenuJump } from "./MediaCardMenu";
 import { MediaKitPanel } from "./MediaKitPanel";
+import { playLeatherThock } from "./uiSfx";
 import styles from "./mediacard.module.css";
 
 export function MediaCardExperience() {
@@ -78,6 +79,7 @@ export function MediaCardExperience() {
 
   const closePanel = () => {
     if (!activePanel) return;
+    playLeatherThock({ volume: 0.95 });
     setActivePanel(null);
     setActiveMenuKey(null);
     setMenuHoverKey(null);

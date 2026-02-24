@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 
 import type { PanelId } from "./focusPresets";
+import { playLeatherThock } from "./uiSfx";
 import styles from "./mediacard.module.css";
 
 export type MediaMenuKey = "audience" | "metrics" | "services" | "collabs";
@@ -49,7 +50,10 @@ export function MediaCardMenu({
           className={styles.menuItem}
           data-active={activeKey === jump.key ? "true" : "false"}
           data-hovered={hoveredKey === jump.key ? "true" : "false"}
-          onClick={() => onJump(jump)}
+          onClick={() => {
+            playLeatherThock();
+            onJump(jump);
+          }}
           onMouseEnter={() => onHoverKey?.(jump.key)}
           onFocus={() => onHoverKey?.(jump.key)}
           onBlur={() => onHoverKey?.(null)}

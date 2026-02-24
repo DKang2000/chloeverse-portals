@@ -40,14 +40,29 @@ function verifySyncedIndex(indexPath) {
   }
 
   const html = fs.readFileSync(indexPath, "utf8");
-  const forbidden = ["My name is Ed", "Edward Hinrichsen", "Page Buddy", "edh.dev"];
+  const forbidden = [
+    "My name is Ed",
+    "Edward Hinrichsen",
+    "Page Buddy",
+    "edh.dev",
+    '<script id="chloe-menu-and-projects-fixes"',
+  ];
   for (const needle of forbidden) {
     if (html.includes(needle)) {
       throw new Error(`Synced index contains forbidden content: ${needle}`);
     }
   }
 
-  const required = ["Hi!", "Stealth Startup", "Adobe", "Instagram", "Outsmart"];
+  const required = [
+    "Hi!",
+    "Stealth Startup",
+    "Adobe",
+    "Instagram",
+    "Outsmart",
+    "<!-- chloe-postpatch-v1 -->",
+    "Candy Castle",
+    "Chloeverse",
+  ];
   for (const needle of required) {
     if (!html.includes(needle)) {
       throw new Error(`Synced index missing required content: ${needle}`);
@@ -130,6 +145,9 @@ function main() {
     }
     console.log(`[work:retro:sync] Copied static asset: ${entry}`);
   }
+
+  run(repoRoot, "node", [path.join("scripts", "postpatch_work_retro.cjs")]);
+  console.log("[work:retro:postpatch] applied");
 
   const syncedIndex = path.join(targetDir, "index.html");
   verifySyncedIndex(syncedIndex);

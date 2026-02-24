@@ -4,6 +4,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import * as THREE from "three";
 
 import { TARGETS, type PanelId, type PanelTargetKey } from "./focusPresets";
+import { playLeatherThock } from "./uiSfx";
 
 export type HoverRegion = {
   label: string;
@@ -72,6 +73,46 @@ const TUNE = {
   MASK_RETRY_DELAY_MS: 280,
 } as const;
 
+const HOME_TARGET_LAT_DEG = (TARGETS.audience.lat + TARGETS.metrics.lat) / 2;
+const HOME_TARGET_LON_DEG = (TARGETS.audience.lon + TARGETS.metrics.lon) / 2;
+const HOME_AZIMUTH = THREE.MathUtils.degToRad(HOME_TARGET_LON_DEG);
+const HOME_POLAR = Math.acos(Math.sin(THREE.MathUtils.degToRad(HOME_TARGET_LAT_DEG)));
+const HOME_DISTANCE = 3.35;
+const MEDIACARD_HOME_STORAGE_KEY = "mediacard_home_v2";
+
+type StoredHomeView = {
+  azimuth: number;
+  polar: number;
+  distance: number;
+};
+
+function defaultHomeView(): StoredHomeView {
+  return { azimuth: HOME_AZIMUTH, polar: HOME_POLAR, distance: HOME_DISTANCE };
+}
+
+function loadHome(): StoredHomeView | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(MEDIACARD_HOME_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<StoredHomeView> | null;
+    const azimuth = Number(parsed?.azimuth);
+    const polar = Number(parsed?.polar);
+    const distance = Number(parsed?.distance);
+    if (!Number.isFinite(azimuth) || !Number.isFinite(polar) || !Number.isFinite(distance)) return null;
+    return { azimuth, polar, distance };
+  } catch {
+    return null;
+  }
+}
+
+function saveHome(v: StoredHomeView): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(MEDIACARD_HOME_STORAGE_KEY, JSON.stringify(v));
+  } catch {}
+}
+
 export const MEDIACARD_TUNING = {
   DOT_BASE_SIZE_PX: TUNE.POINT_PX,
   DOT_GLOW_MULT: TUNE.GLOW_MULT,
@@ -88,7 +129,7 @@ export const MEDIACARD_TUNING = {
   CAGE_COLOR: "#FFFFFF",
   CAGE_OPACITY_INNER: TUNE.CAGE_OPACITY_INNER,
   CAGE_OPACITY_OUTER: TUNE.CAGE_OPACITY_OUTER,
-  CAMERA_DEFAULT_DISTANCE: 3.35,
+  CAMERA_DEFAULT_DISTANCE: HOME_DISTANCE,
   CAMERA_FOCUSED_DISTANCE: 1.74,
   CAMERA_CLICK_DISTANCE: 1.95,
   FOCUS_DURATION_MS: 900,
@@ -136,7 +177,7 @@ const FRONT = new THREE.Vector3(0, 0, 1);
 const GLOBE_RADIUS = 1;
 const DPR_CAP = 2;
 const EARTH_MASK_URL = "/mediacard/earth_mask.png";
-const MEDIACARD_BUILD_TAG = "mediacard_ghost_underlay_v2";
+const MEDIACARD_BUILD_TAG = "mediacard_homeview_lock_v1";
 const UNDERLAY_ENABLE = true;
 const UNDERLAY_COLOR = 0x26285c;
 const UNDERLAY_ALPHA = 0.10;
@@ -386,6 +427,12 @@ function unitToLatLonDeg(unit: { x: number; y: number; z: number }, lonOffsetDeg
 
 function quatToFront(unit: THREE.Vector3) {
   return new THREE.Quaternion().setFromUnitVectors(unit.clone().normalize(), FRONT);
+}
+
+function makeMediacardHomeQuat(lonOffsetDeg = 0, homeView: Pick<StoredHomeView, "azimuth" | "polar"> = defaultHomeView()) {
+  const lonOffsetAzimuth = homeView.azimuth + THREE.MathUtils.degToRad(lonOffsetDeg);
+  const unit = azimuthPolarToUnit(lonOffsetAzimuth, homeView.polar);
+  return quatToFront(unit).normalize();
 }
 
 function azimuthPolarToUnit(azimuthRad: number, polarRad: number) {
@@ -1088,6 +1135,8 @@ export const GlobeRenderer = forwardRef<GlobeRendererHandle, GlobeRendererProps>
   const dotsGroupRef = useRef<THREE.Group | null>(null);
   const marketOverlayGroupRef = useRef<THREE.Group | null>(null);
   const marketBeaconGroupRef = useRef<THREE.Group | null>(null);
+  const didApplyHomeRef = useRef(false);
+  const homeBaseQuatRef = useRef(new THREE.Quaternion());
 
   useEffect(() => void (onFocusSettledRef.current = onFocusSettled), [onFocusSettled]);
   useEffect(() => void (onRestSettledRef.current = onRestSettled), [onRestSettled]);
@@ -1198,12 +1247,9 @@ export const GlobeRenderer = forwardRef<GlobeRendererHandle, GlobeRendererProps>
     };
     syncDebugGlobal();
 
-    const targets = (Object.keys(TARGETS) as PanelTargetKey[]).map((key) => {
-      const cfg = TARGETS[key];
-      const unit = latLonToUnit(cfg.lat, cfg.lon, MEDIACARD_TUNING.LON_OFFSET_DEG);
-      return { key, cfg, unit, quat: quatToFront(unit), dist: zoomToDistance(cfg.zoom) };
-    });
-    let restQuat = targets.find((x) => x.key === "audience")?.quat.clone() ?? quatToFront(latLonToUnit(39.5, -98.35));
+    const storedHome = loadHome();
+    const activeHomeView = storedHome ?? defaultHomeView();
+    let restQuat = makeMediacardHomeQuat(MEDIACARD_TUNING.LON_OFFSET_DEG, activeHomeView);
     if (Number.isFinite(MEDIACARD_TUNING.INIT_AZIMUTH) && Number.isFinite(MEDIACARD_TUNING.INIT_POLAR)) {
       const initUnit = azimuthPolarToUnit(MEDIACARD_TUNING.INIT_AZIMUTH as number, MEDIACARD_TUNING.INIT_POLAR as number);
       restQuat = quatToFront(initUnit);
@@ -1211,8 +1257,9 @@ export const GlobeRenderer = forwardRef<GlobeRendererHandle, GlobeRendererProps>
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 30);
-    let cameraDistance = MEDIACARD_TUNING.CAMERA_DEFAULT_DISTANCE;
-    let cameraDistanceTarget = MEDIACARD_TUNING.CAMERA_DEFAULT_DISTANCE;
+    const runtimeHomeDistance = activeHomeView.distance;
+    let cameraDistance = runtimeHomeDistance;
+    let cameraDistanceTarget = runtimeHomeDistance;
     camera.position.set(0, 0, cameraDistance);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
@@ -1242,6 +1289,33 @@ export const GlobeRenderer = forwardRef<GlobeRendererHandle, GlobeRendererProps>
     const globeGroup = new THREE.Group();
     globeGroup.quaternion.copy(restQuat);
     scene.add(globeGroup);
+    const applyHomeViewOnce = () => {
+      if (didApplyHomeRef.current) return;
+      const homeQuat = makeMediacardHomeQuat(MEDIACARD_TUNING.LON_OFFSET_DEG, activeHomeView);
+      restQuat.copy(homeQuat);
+      globeGroup.quaternion.copy(restQuat);
+      cameraDistance = runtimeHomeDistance;
+      cameraDistanceTarget = runtimeHomeDistance;
+      camera.position.set(0, 0, cameraDistance);
+      homeBaseQuatRef.current.copy(restQuat);
+      didApplyHomeRef.current = true;
+      if (process.env.NODE_ENV !== "production") {
+        console.info("[mediacard] home view applied", {
+          azimuth: activeHomeView.azimuth,
+          polar: activeHomeView.polar,
+          distance: activeHomeView.distance,
+          stored: Boolean(storedHome),
+        });
+      }
+      window.requestAnimationFrame(() => {
+        if (!aliveRef.current) return;
+        globeGroup.quaternion.copy(homeBaseQuatRef.current);
+        cameraDistance = runtimeHomeDistance;
+        cameraDistanceTarget = runtimeHomeDistance;
+        camera.position.set(0, 0, cameraDistance);
+        camera.lookAt(0, 0, 0);
+      });
+    };
 
     const disposeCageGroup = (group: THREE.Group | null) => {
       if (!group) return;
@@ -2143,6 +2217,7 @@ export const GlobeRenderer = forwardRef<GlobeRendererHandle, GlobeRendererProps>
     if (ghostUnderlayPoints) dotsGroup.add(ghostUnderlayPoints);
     dotsGroup.add(points, marketOverlayGroup);
     globeGroup.add(dotsGroup);
+    applyHomeViewOnce();
     marketOverlayGroupRef.current = marketOverlayGroup;
     dotsGroupRef.current = dotsGroup;
 
@@ -2407,11 +2482,11 @@ export const GlobeRenderer = forwardRef<GlobeRendererHandle, GlobeRendererProps>
       focus.startQ.copy(globeGroup.quaternion);
       focus.targetQ.copy(restQuat);
       focus.startD = cameraDistance;
-      focus.targetD = MEDIACARD_TUNING.CAMERA_DEFAULT_DISTANCE;
+      focus.targetD = runtimeHomeDistance;
       focus.t0 = performance.now();
       focus.dur = MEDIACARD_TUNING.RESTORE_DURATION_MS;
       focus.pending = null;
-      cameraDistanceTarget = MEDIACARD_TUNING.CAMERA_DEFAULT_DISTANCE;
+      cameraDistanceTarget = runtimeHomeDistance;
       inertiaSpeed = 0;
       pointerDown = false;
       pointerDragged = false;
@@ -2491,6 +2566,7 @@ export const GlobeRenderer = forwardRef<GlobeRendererHandle, GlobeRendererProps>
         if (!unit) return;
         const marketHit = resolveHoveredMarket(unit);
         if (!marketHit) return;
+        playLeatherThock();
         const t = TARGETS[marketHit.panelKey];
         onSelectRegionRef.current({ regionKey: marketHit.panelKey, lat: t.lat, lon: t.lon, zoom: t.zoom });
       }
@@ -2498,6 +2574,22 @@ export const GlobeRenderer = forwardRef<GlobeRendererHandle, GlobeRendererProps>
     const onPointerLeave = () => !pointerDown && clearHover();
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.repeat) return;
+      if (process.env.NODE_ENV !== "production" && event.ctrlKey && event.shiftKey && (event.key === "H" || event.key === "h")) {
+        const equivalentOrbitPos = camera.position.clone().applyQuaternion(globeGroup.quaternion.clone().invert());
+        const orbitLen = Math.max(equivalentOrbitPos.length(), 0.000001);
+        const azimuth = Math.atan2(equivalentOrbitPos.x, equivalentOrbitPos.z);
+        const polar = Math.acos(clamp(equivalentOrbitPos.y / orbitLen, -1, 1));
+        const dist = camera.position.length();
+        saveHome({ azimuth, polar, distance: dist });
+        console.info(`[mediacard] HOME_TARGET_LAT_DEG = ${HOME_TARGET_LAT_DEG.toFixed(6)}`);
+        console.info(`[mediacard] HOME_TARGET_LON_DEG = ${HOME_TARGET_LON_DEG.toFixed(6)}`);
+        console.info(`[mediacard] HOME_AZIMUTH = ${azimuth.toFixed(6)}`);
+        console.info(`[mediacard] HOME_POLAR = ${polar.toFixed(6)}`);
+        console.info(`[mediacard] HOME_DISTANCE = ${dist.toFixed(6)}`);
+        console.info("[mediacard] camera.position", [camera.position.x, camera.position.y, camera.position.z]);
+        console.info(`[mediacard] saved home key=${MEDIACARD_HOME_STORAGE_KEY}`);
+        return;
+      }
       if (event.key === "p" || event.key === "P") {
         const equivalentOrbitPos = camera.position.clone().applyQuaternion(globeGroup.quaternion.clone().invert());
         const orbitLen = Math.max(equivalentOrbitPos.length(), 0.000001);
@@ -2608,7 +2700,7 @@ export const GlobeRenderer = forwardRef<GlobeRendererHandle, GlobeRendererProps>
             onFocusSettledRef.current(focus.pending ?? "comingSoon");
           } else {
             focus.mode = "idle";
-            cameraDistanceTarget = MEDIACARD_TUNING.CAMERA_DEFAULT_DISTANCE;
+            cameraDistanceTarget = runtimeHomeDistance;
             onRestSettledRef.current?.();
           }
         }
@@ -2622,7 +2714,7 @@ export const GlobeRenderer = forwardRef<GlobeRendererHandle, GlobeRendererProps>
           globeGroup.quaternion.premultiply(idleQuat).normalize();
           inertiaSpeed *= MEDIACARD_TUNING.INERTIA_DAMPING;
         } else inertiaSpeed *= MEDIACARD_TUNING.INERTIA_DAMPING;
-        cameraDistanceTarget = MEDIACARD_TUNING.CAMERA_DEFAULT_DISTANCE;
+        cameraDistanceTarget = runtimeHomeDistance;
         cameraDistance = THREE.MathUtils.lerp(cameraDistance, cameraDistanceTarget, 0.1);
       } else {
         inertiaSpeed = 0;
