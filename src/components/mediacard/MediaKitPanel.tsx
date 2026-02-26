@@ -55,7 +55,7 @@ function AudiencePanel() {
 
 function MetricsPanel() {
   const metrics: MetricDatum[] = [
-    { label: "Instagram", value: "147K" },
+    { label: "Instagram", value: "150K" },
     { label: "TikTok", value: "160K" },
     { label: "Views", value: "12M monthly" },
     { label: "Engagement", value: "12%" },

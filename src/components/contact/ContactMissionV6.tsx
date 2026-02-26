@@ -831,7 +831,7 @@ export default function ContactMissionV6() {
       g.save();
       g.setTransform(1, 0, 0, 1, 0, 0);
       g.globalCompositeOperation = "multiply";
-      g.globalAlpha = 0.72;
+      g.globalAlpha = 0.76;
       g.fillStyle = "rgb(2, 4, 12)";
       g.fillRect(0, 0, W, H);
       g.restore();
@@ -848,7 +848,7 @@ export default function ContactMissionV6() {
         Math.round(Math.max(W, H) * 0.72),
       );
       vignette.addColorStop(0, "rgba(0,0,0,0)");
-      vignette.addColorStop(1, "rgba(0,0,0,0.46)");
+      vignette.addColorStop(1, "rgba(0,0,0,0.50)");
       g.fillStyle = vignette;
       g.fillRect(0, 0, W, H);
       g.restore();
@@ -861,7 +861,7 @@ export default function ContactMissionV6() {
       const a = Math.min(1.0, smoothstep(clamp(alpha, 0, 1)));
       if (a <= 0) return;
       const nowMs = rafNowMsRef.current ?? Math.round(tSec * 1000);
-      const lineCount = 8;
+      const lineCount = 7;
       const highlightAlphaMul = opts?.highlightAlphaMul ?? 1;
       const drawStrokeSet = (alphaScale = 1): void => {
         for (let i = 0; i < lineCount; i += 1) {
@@ -876,7 +876,7 @@ export default function ContactMissionV6() {
             const len = 8 + ((i * 7 + Math.floor(Math.abs(Math.sin(tSec * 1.8 + phase)) * 15)) % 15);
             lctx.fillRect(Math.round(xBase), Math.round(y), len, 1);
           } else if (typeRoll < 0.70) {
-            const len = 24 + ((i * 13 + Math.floor(Math.abs(Math.cos(tSec * 1.15 + phase)) * 37)) % 37);
+            const len = 20 + ((i * 13 + Math.floor(Math.abs(Math.cos(tSec * 1.15 + phase)) * 29)) % 29);
             lctx.fillRect(Math.round(xBase), Math.round(y), len, 1);
           } else if (typeRoll < 0.90) {
             const clusterCount = 2 + (i % 2);
@@ -887,8 +887,8 @@ export default function ContactMissionV6() {
               lctx.fillRect(cx, cy, s, s);
             }
           } else {
-            const len = 90 + ((i * 31 + Math.floor(Math.abs(Math.sin(tSec * 0.75 + phase)) * 70)) % 71);
-            const tailLen = Math.max(20, Math.round(len * 0.42));
+            const len = 84 + ((i * 31 + Math.floor(Math.abs(Math.sin(tSec * 0.75 + phase)) * 46)) % 47);
+            const tailLen = Math.max(18, Math.round(len * 0.34));
             lctx.fillRect(Math.round(xBase), Math.round(y), len, 1);
             lctx.globalAlpha = clamp(alphaMul * 0.4, 0, 1);
             lctx.fillRect(Math.round(xBase - tailLen), Math.round(y), tailLen, 1);
@@ -915,7 +915,7 @@ export default function ContactMissionV6() {
     };
     const drawCorridorNebulaSpecklePass = (tSec: number, opts?: { offsetX?: number; offsetY?: number }): void => {
       const nowMs = rafNowMsRef.current ?? Math.round(tSec * 1000);
-      const clusters = Math.min(28, starsRef.current.length);
+      const clusters = Math.min(22, starsRef.current.length);
       const offsetX = Math.round(opts?.offsetX ?? 0);
       const offsetY = Math.round(opts?.offsetY ?? 0);
       if (clusters <= 0) return;
@@ -927,8 +927,8 @@ export default function ContactMissionV6() {
         const s = starsRef.current[i];
         const cx = Math.round(((s.x / LW) * W) + Math.sin(tSec * (0.18 + s.c * 0.12) + s.k) * 6 + offsetX);
         const cy = Math.round(((s.y / LH) * H) + Math.cos(tSec * (0.14 + s.c * 0.09) + s.k * 0.7) * 5 + offsetY);
-        const dotCount = 3 + (((i * 7) % 6));
-        const baseAlpha = 0.06 + (((i * 11) % 5) / 100);
+        const dotCount = 3 + (((i * 7) % 5));
+        const baseAlpha = 0.05 + (((i * 11) % 4) / 100);
         const tw = 0.82 + 0.18 * Math.sin(nowMs * 0.004 + s.k);
         for (let d = 0; d < dotCount; d += 1) {
           const ang = (d / Math.max(1, dotCount)) * Math.PI * 2 + s.k * 0.7 + i * 0.09;
@@ -937,7 +937,7 @@ export default function ContactMissionV6() {
           const py = Math.round(cy + Math.sin(ang) * rad);
           const palette = (i + d) % 3;
           ctx.fillStyle = palette === 0 ? "#f5fbff" : (palette === 1 ? "#d9efff" : "#e9ddff");
-          ctx.globalAlpha = clamp(baseAlpha * tw, 0, 0.10);
+          ctx.globalAlpha = clamp(baseAlpha * tw, 0, 0.09);
           ctx.fillRect(px, py, ((i + d) % 5 === 0) ? 2 : 1, 1);
         }
       }
@@ -951,9 +951,9 @@ export default function ContactMissionV6() {
         0.12 + smoothstep(clamp(intensity, 0, 1)) * 0.68,
         {
           composite: "screen",
-          highlightAlphaMul: 0.62,
-          blurAlpha: 0.28,
-          blurPx: 0.9,
+          highlightAlphaMul: 0.68,
+          blurAlpha: 0.22,
+          blurPx: 0.8,
         },
       );
     };
@@ -987,13 +987,13 @@ export default function ContactMissionV6() {
       ctx.clip();
       ctx.imageSmoothingEnabled = true;
       ctx.globalCompositeOperation = "screen";
-      ctx.globalAlpha = clamp(0.62 * alphaMul * l3Alpha, 0, 1);
+      ctx.globalAlpha = clamp(0.68 * alphaMul * l3Alpha, 0, 1);
       drawPaintedCover(layers.L3, x, cy - dy, dw, dh);
       drawPaintedCover(layers.L3, x, cy + H - dy, dw, dh);
       ctx.save();
       ctx.globalCompositeOperation = "screen";
-      ctx.globalAlpha = clamp(0.28 * alphaMul, 0, 1);
-      ctx.filter = "blur(0.9px)";
+      ctx.globalAlpha = clamp(0.22 * alphaMul, 0, 1);
+      ctx.filter = "blur(0.8px)";
       drawPaintedCover(layers.L3, x, cy - dy, dw, dh);
       drawPaintedCover(layers.L3, x, cy + H - dy, dw, dh);
       ctx.filter = "none";
@@ -2142,7 +2142,7 @@ export default function ContactMissionV6() {
         ctx.restore();
         ctx.save();
         ctx.globalCompositeOperation = "screen";
-        ctx.globalAlpha = 0.04 * alpha;
+        ctx.globalAlpha = 0.03 * alpha;
         ctx.fillStyle = "rgb(40, 30, 90)";
         ctx.fillRect(0, 0, W, H);
         ctx.restore();
@@ -2167,7 +2167,7 @@ export default function ContactMissionV6() {
         const pulse = (s.size === 2 || s.c > 0.78) ? (0.74 + Math.sin(tSec * (3.4 + s.c * 2.2) + s.k * 1.9) * 0.16) : 1;
         const nowMs = (rafNowMsRef.current ?? Math.round(tSec * 1000));
         const sparkleTwinkle = 0.65 + 0.35 * Math.sin(nowMs * 0.004 + s.k);
-        const baseAlpha = clamp(0.98 * pulse * 3.5 * sparkleTwinkle, 0, 1);
+        const baseAlpha = clamp(0.98 * pulse * 3.9 * sparkleTwinkle, 0, 1);
         lctx.globalAlpha = baseAlpha;
         lctx.fillStyle = tw > 0.86 ? "#ffffff" : s.c > 0.8 ? "#fff2bf" : s.c > 0.45 ? "#c8d8ff" : "#b6efff";
         const px = Math.round(x);
