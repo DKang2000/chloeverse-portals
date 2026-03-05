@@ -1,62 +1,219 @@
-\# AGENTS.md — Chloeverse Portals
+# AGENTS.md
 
+## Project
+Build a premium cinematic 3D portal landing page in this repo using Codex-only implementation work.
 
+## Primary references
+There are 3 distinct references and each must influence a different part of the build:
 
-\## Tech stack
+1. UTSUBO portal experience
+   - This is the BEHAVIOR and FEEL reference.
+   - The interaction should feel ceremonial, premium, weighty, and intentional.
+   - The page should feel like a threshold or ritual, not a game level.
+   - The user should feel drawn toward the portal through subtle cursor response, restrained motion, hover energy buildup, and a deliberate click-to-open sequence.
+   - No chaotic movement, no playful sandbox energy, no game UI.
 
-\- Next.js + TypeScript
+2. Bruno Simon / Infinite World
+   - This is the ENVIRONMENTAL TECHNIQUE reference only.
+   - Borrow only the feeling of:
+     - realistic grass sway
+     - atmospheric depth
+     - fog
+     - subtle camera inertia
+     - rich sky lighting
+     - dusk-to-night progression
+   - Do NOT reproduce:
+     - free roam
+     - player capsule
+     - pointer lock
+     - WASD movement
+     - debug panels
+     - HUD
+     - infinite traversal
+   - Re-implement the techniques in this codebase instead of cloning the product experience.
 
-\- Use the routing system already used in this repo:
+3. The uploaded Suzume-style reference image
+   - This is the ART DIRECTION / COMPOSITION reference.
+   - Match:
+     - lonely centered doorway in a meadow
+     - large sky presence
+     - distant mountain silhouettes
+     - cool dusk-to-night palette
+     - warm or white portal contrast
+     - romantic cinematic atmosphere
+     - sense of quiet scale
+   - Do NOT use the reference image as a flat backdrop.
+   - Build the scene in actual 3D.
 
-&nbsp; - If app/ exists -> App Router
+## Door asset direction
+Use the uploaded textured door GLB as the base hero asset.
+Also keep the source GLB in the repo for reference.
 
-&nbsp; - If pages/ exists -> Pages Router
+The door must remain WHITE.
+Not blue.
 
-\- Prefer existing styling approach (Tailwind / CSS modules / styled-components). Do not introduce a new styling system.
+The white door should be:
+- weathered chapel white
+- premium and cinematic
+- aged painted wood
+- subtle wear on edges
+- visible material richness
+- not sterile flat white
+- not cheap glossy white
 
+Asset work required:
+- split mesh into:
+  - frame
+  - door leaf
+  - handle/latch
+- set proper hinge pivot
+- optimize geometry
+- keep silhouette quality
+- preserve hero-asset fidelity
 
+## Scene direction
+Create a single authored cinematic portal scene.
+This is not an explorable world.
 
-\## Non-negotiables
+Composition:
+- camera locked to a premium hero composition
+- door centered slightly low in frame
+- large sky area
+- meadow foreground
+- blue/lilac flower accents
+- distant mountain silhouettes
+- low valley fog
+- strong depth layering
 
-\- Keep diffs small and high-confidence.
+Lighting:
+- scene begins at dusk
+- transitions quickly toward night
+- cool exterior palette
+- bright white portal light behind the door
+- the door silhouette must remain readable against the portal light
 
-\- Do NOT break the existing site routes.
+## Interaction direction
+The behavior should feel closest to UTSUBO, translated into this door scene.
 
-\- Do not modify src/app/layout.tsx, src/app/page.tsx, or global font configuration unless explicitly asked.
+Required interaction behavior:
+- very subtle cursor parallax
+- no orbit controls
+- no free-look
+- no free movement
+- hover on the door slightly intensifies portal energy
+- click opens the door slowly and heavily
+- white light spills outward first
+- then a slow engulf effect overtakes the camera
+- leave a route transition hook for future navigation into collabs/reels
 
-\- Collabs styling/typography must be scoped to src/app/collabs/\*\* only.
+The interaction should feel:
+- sacred
+- premium
+- restrained
+- cinematic
+- inevitable
 
-\- For Collabs:
+Not:
+- game-like
+- twitchy
+- flashy
+- noisy
+- over-animated
 
-&nbsp; 1) Main nav "Collabs" should go to /collabs
+## Audio
+Music file will be added later.
+Wire the implementation so audio can be attached without architectural changes.
+Do not block the build waiting for final audio.
 
-&nbsp; 2) /collabs is a new "museum landing" page with title "Collabs" and a CTA to enter the reels page.
+## Technical direction
+Prefer working inside the existing repo stack.
+If a React-based 3D setup is needed, use:
+- three
+- @react-three/fiber
+- @react-three/drei
+- postprocessing
+- gsap only if useful
 
-&nbsp; 3) Reels page lives at /collabs/reels (or /collabs/work if that matches repo conventions).
+No unnecessary abstraction.
+No debug UI in final output.
 
-&nbsp; 4) The reel embed content must look the same when opened as it does today:
+## Asset tooling
+If asset cleanup is needed, create code-driven tooling under:
+- tools/blender/
+- scripts/
 
-&nbsp;    - reuse the existing embed markup / component for each reel.
+Include Blender Python scripts when useful for:
+- inspecting mesh structure
+- separating door parts
+- fixing pivots
+- optimizing/exporting cleaned assets
 
-&nbsp;    - do not restyle the Instagram embed output.
+Do not handwave asset operations.
+Check scripts into the repo.
 
-&nbsp; 5) The old "Collabs section" content (everything except the 5 reels) must NOT render on these new pages.
+## File structure target
+src/
+  components/portal/
+    PortalScene.tsx
+    Door.tsx
+    PortalLight.tsx
+    Meadow.tsx
+    Mountains.tsx
+    SkyDuskNight.tsx
+    FogLayer.tsx
+    CursorController.tsx
+  hooks/
+    usePortalScene.ts
+    useAudioGate.ts
+  lib/
+    animationTimeline.ts
+    loadDoorModel.ts
+  shaders/
+    grassVertex.glsl
+    grassFragment.glsl
+    portalVertex.glsl
+    portalFragment.glsl
 
+tools/
+  blender/
+    inspect_door.py
+    split_optimize_door.py
 
+public/
+  assets/
+    door/
+      door-textured.glb
+      door-source.glb
+    reference/
+      portal-vibe.jpg
 
-\## Dev workflow
+## Timing targets
+- scene reads immediately on load
+- dusk transitions toward night over about 4 to 6 seconds
+- hover response is soft and fast
+- door opening feels weighty, about 1.2 to 1.8 seconds
+- white engulf lasts about 2 to 3 seconds
 
-\- Before making changes, summarize:
+## Non-negotiables
+- door stays white
+- final feel must be closer to UTSUBO than to a game demo
+- Infinite World is a technique reference, not a product clone
+- scene must be real-time 3D, not a flat image composition
+- no capsule
+- no infinite traversal
+- no free-roam controls
+- keep implementation isolated to the intended preview/landing route
+- leave a transition placeholder after the white wash
 
-&nbsp; - current Collabs implementation (where it lives, route/component)
-
-&nbsp; - which router is used (app vs pages)
-
-\- After changes:
-
-&nbsp; - run the repo’s standard checks (lint/build/test scripts that already exist)
-
-&nbsp; - list files changed
-
-&nbsp; - provide manual QA steps
-
+## Done means
+A premium full-screen portal landing page that:
+- loads into a cinematic meadow at dusk
+- fades into night
+- presents a hero white door with strong material quality
+- has subtle premium cursor interaction
+- responds to hover
+- opens on click
+- emits portal light and bloom
+- engulfs the camera in white
+- leaves a clean hook for future transition
+- passes lint/typecheck/build

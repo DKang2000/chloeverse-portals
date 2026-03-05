@@ -11,3 +11,11 @@ dist/
 _design_dump/
 backup_*/
 *.tsbuildinfo
+art/blender/*.blend1
+art/blender/*.blend2
+
+
+# heavy local source assets
+assets-src/portal/*.glb
+assets-src/portal/*.gltf
+assets-src/portal/**/*.bin

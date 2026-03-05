@@ -3382,7 +3382,7 @@ Streamlined Solunas GTM, drove 179% increase in revenue in US market.
 ###  Los Angeles, California, United States  Remote
 ###  Internship
 Tripled Headspaces social media presence in one year, youngest employee to earn an extended contract.
-`,wv=`## *CEO  Single Origin Studio*
+`,wv=`## *CEO  Single Origin Studios*
 ## Jun 2023 - Jan 2026
 ###  Los Angeles, California, United States  Remote
 ###  Self-employed

@@ -6,16 +6,9 @@
     "dev": "next dev --turbo",
     "dev:webpack": "next dev",
     "build": "next build",
-    "assets:collabs": "tools\\build-collabs-assets.cmd",
-    "collabs:verify": "powershell -ExecutionPolicy Bypass -File scripts/collabs_verify.ps1",
-    "collabs:verify:full": "node scripts/collabs_verify_full.mjs",
-    "collabs:qa:click": "node scripts/collabs_click_regression.cjs",
-    "work:retro:apply-chloe": "node scripts/retro_apply_chloe_noop.cjs",
-    "work:retro:postpatch": "node scripts/postpatch_work_retro.cjs",
-    "work:retro:sync": "node scripts/sync_work_retro.cjs",
     "start": "next start",
-    "lint": "eslint",
-    "lint:collabs": "eslint src/app/collabs src/components/collabs"
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.6",
@@ -34,6 +27,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "puppeteer-core": "^24.37.5",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

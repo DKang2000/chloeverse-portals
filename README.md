@@ -5,16 +5,24 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 First, run the development server:
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+## Collabs Landing
+
+- Landing route: `/collabs`
+- Reels route: `/collabs/reels`
+- The `/collabs` page uses a Three.js spring interaction scene with 3D `COLLABS` letters and a centered `Chloe Kang` + `Enter` overlay.
+
+### Useful Scripts
+
+```bash
+npm run lint:collabs
+npm run build
+```
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 

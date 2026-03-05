@@ -153,7 +153,7 @@ export const MEDIACARD_TUNING = {
   CARD_OFFSET_X_PX: 0,
   CARD_OFFSET_Y_PX: -4,
   CARD_MAX_WIDTH_PX: 780,
-} as const;
+};
 
 export type GlobeRendererHandle = {
   focusToLatLon: (target: FocusRequest) => void;
@@ -1902,7 +1902,7 @@ export const GlobeRenderer = forwardRef<GlobeRendererHandle, GlobeRendererProps>
       uFlipV: { value: 0 },
       uOffset: { value: 0 },
       uInvert: { value: 0 },
-      uThreshold: { value: TUNE.MASK_THRESHOLD },
+      uThreshold: { value: TUNE.MASK_THRESHOLD as number },
       uChannel: { value: 0 },
     };
     const debugMaskMaterial = new THREE.ShaderMaterial({

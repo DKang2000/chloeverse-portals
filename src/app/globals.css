@@ -562,3 +562,27 @@ body {
 .chv-scroll-blink {
   animation: chvScrollBlink 1.35s ease-in-out infinite;
 }
+
+@keyframes chv-portal-link-drop-bounce {
+  0% {
+    opacity: 0;
+    transform: translateY(-180px) scale(0.9);
+  }
+  52% {
+    opacity: 1;
+    transform: translateY(16px) scale(1.028);
+  }
+  68% {
+    transform: translateY(-9px) scale(0.994);
+  }
+  81% {
+    transform: translateY(6px) scale(1.003);
+  }
+  91% {
+    transform: translateY(-3px) scale(0.999);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

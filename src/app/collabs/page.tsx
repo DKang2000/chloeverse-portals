@@ -1,10 +1,7 @@
-export const dynamic = "force-dynamic";
+"use client";
 
-import CollabsShell from "@/components/collabs/CollabsShell";
+import CollabsRoute from "@/routes/Collabs";
+
 export default function CollabsPage() {
-  return (
-    <CollabsShell routeMode="home">
-      <div data-collabs-page="landing" className="sr-only" />
-    </CollabsShell>
-  );
+  return <CollabsRoute />;
 }

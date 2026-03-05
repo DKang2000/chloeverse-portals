@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { stopBgm as stopCollabsBgm } from "@/lib/collabsBgm";
 import {
   useEffect,
   useMemo,
@@ -24,6 +25,9 @@ type CssVars = CSSProperties & Record<`--${string}`, string>;
 const TITLE_TOP = "The";
 const TITLE_MAIN = "Chloeverse";
 const TAGLINE = "where storytelling meets tomorrow";
+const LANDING_BGM_SRC = "/audio/landing-sparkle.mp3";
+const LANDING_BGM_VOLUME = 0.07;
+const PORTAL_LINKS_TOP_OFFSET_PX = 144;
 const MENU_LINKS = [
   { href: "/projects", label: "PROJECTS" },
   { href: "/collabs", label: "COLLABS" },
@@ -43,6 +47,9 @@ const CURSOR_HALO_SMALL_SIZE = CURSOR_HALO_LARGE_SIZE - 24;
 const POINTER_LERP = 0.16;
 const MASK_LERP = 0.2;
 const RAINBOW_COLORS = ["#ff4ea8", "#ff8a3d", "#ffd646", "#8aff5c", "#4ce4ff", "#6f8dff", "#da6dff"] as const;
+const GREEN_HEX = "#8aff5c";
+const GREEN_SWAP_RATE = 0.2;
+const GREEN_REPLACEMENTS = ["#ff5478", "#ffb24b", "#52b2ff", "#c77dff"] as const;
 
 function mulberry32(a: number) {
   return function rand() {
@@ -57,6 +64,10 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
+function fract(value: number): number {
+  return value - Math.floor(value);
+}
+
 function hexToRgba(hex: string, alpha: number): string {
   const normalized = hex.replace("#", "");
   const value = normalized.length === 3
@@ -69,9 +80,24 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-function rainbowColor(r: number): string {
-  const index = Math.floor(r * RAINBOW_COLORS.length) % RAINBOW_COLORS.length;
-  return RAINBOW_COLORS[index] ?? RAINBOW_COLORS[0];
+function rebalanceGreen(color: string, phase: number, swapRate = GREEN_SWAP_RATE): string {
+  if (color !== GREEN_HEX) {
+    return color;
+  }
+  if (phase >= swapRate) {
+    return color;
+  }
+  const t = clamp(phase / swapRate, 0, 0.999999);
+  const replacementIndex = Math.floor(t * GREEN_REPLACEMENTS.length);
+  return GREEN_REPLACEMENTS[replacementIndex] ?? GREEN_REPLACEMENTS[0];
+}
+
+function rainbowColor(r: number, greenSwapRate = GREEN_SWAP_RATE): string {
+  const scaled = r * RAINBOW_COLORS.length;
+  const index = Math.floor(scaled) % RAINBOW_COLORS.length;
+  const color = RAINBOW_COLORS[index] ?? RAINBOW_COLORS[0];
+  const phase = fract(scaled);
+  return rebalanceGreen(color, phase, greenSwapRate);
 }
 
 function paintStyle(seed: number): CSSProperties {
@@ -91,7 +117,8 @@ function paintStyle(seed: number): CSSProperties {
   const p3y = 22 + rnd() * 60;
   const p4x = 16 + rnd() * 68;
   const p4y = 8 + rnd() * 78;
-  const angle = Math.floor(rnd() * 360);
+  const p5x = 18 + rnd() * 64;
+  const p5y = 12 + rnd() * 70;
 
   return {
     backgroundImage: [
@@ -99,7 +126,7 @@ function paintStyle(seed: number): CSSProperties {
       `radial-gradient(circle at ${p2x}% ${p2y}%, ${c2} 0%, ${c2} 26%, transparent 62%)`,
       `radial-gradient(circle at ${p3x}% ${p3y}%, ${c3} 0%, ${c3} 22%, transparent 60%)`,
       `radial-gradient(circle at ${p4x}% ${p4y}%, ${c4} 0%, ${c4} 20%, transparent 56%)`,
-      `linear-gradient(${angle}deg, ${hexToRgba(c5, 0.94)} 0%, ${hexToRgba(c1, 0.92)} 50%, ${hexToRgba(c3, 0.94)} 100%)`,
+      `radial-gradient(circle at ${p5x}% ${p5y}%, ${hexToRgba(c5, 0.94)} 0%, ${hexToRgba(c5, 0.9)} 30%, ${hexToRgba(c1, 0.66)} 54%, rgba(0,0,0,0) 84%)`,
     ].join(", "),
     backgroundSize: "100% 100%",
     backgroundRepeat: "no-repeat",
@@ -123,7 +150,7 @@ function paintBackdropStyle(seed: number): CSSProperties {
     const x = 6 + rnd() * 88;
     const y = 6 + rnd() * 88;
     const spread = 42 + rnd() * 34;
-    const color = rainbowColor(rnd());
+    const color = rainbowColor(rnd(), 0.42);
     const alpha = 0.22 + rnd() * 0.13;
     layers.push(
       `radial-gradient(circle ${spread.toFixed(2)}% at ${x.toFixed(2)}% ${y.toFixed(2)}%, ${hexToRgba(color, alpha)} 0%, ${hexToRgba(color, Math.max(0.08, alpha - 0.12))} 56%, rgba(0,0,0,0) 100%)`,
@@ -136,8 +163,8 @@ function paintBackdropStyle(seed: number): CSSProperties {
     const radius = 10 + rnd() * 20;
     const feather = 8 + rnd() * 10;
     const alpha = 0.75 + rnd() * 0.2;
-    const colorA = rainbowColor(rnd());
-    const colorB = rainbowColor(rnd());
+    const colorA = rainbowColor(rnd(), 0.46);
+    const colorB = rainbowColor(rnd(), 0.46);
 
     layers.push(
       `radial-gradient(circle at ${x.toFixed(2)}% ${y.toFixed(2)}%, ${hexToRgba(colorA, alpha)} 0px, ${hexToRgba(colorA, alpha)} ${radius.toFixed(2)}px, ${hexToRgba(colorB, Math.max(0.62, alpha - 0.22))} ${(radius + feather * 0.55).toFixed(2)}px, rgba(0,0,0,0) ${(radius + feather).toFixed(2)}px)`,
@@ -156,14 +183,14 @@ function paintCursorFillStyle(seed: number): CSSProperties {
   const rnd = mulberry32((seed ^ 0xa5a5a5a5) >>> 0);
   const mediumLayers: string[] = [];
   const microLayers: string[] = [];
-  const paletteSize = RAINBOW_COLORS.length;
-  const colorOffset = Math.floor(rnd() * paletteSize);
-  const baseColor = RAINBOW_COLORS[(colorOffset + 1) % paletteSize] ?? RAINBOW_COLORS[0];
+  const baseColorA = rainbowColor(rnd(), 0.56);
+  const baseColorB = rainbowColor(rnd(), 0.56);
+  const baseColorC = rainbowColor(rnd(), 0.56);
 
   for (let i = 0; i < 82; i += 1) {
     const x = 20 + rnd() * 60;
     const y = 20 + rnd() * 60;
-    const color = RAINBOW_COLORS[(i + colorOffset) % paletteSize] ?? RAINBOW_COLORS[0];
+    const color = rainbowColor(rnd(), 0.56);
     const radius = 18 + rnd() * 28;
     const feather = radius + 26 + rnd() * 18;
     const alpha = 0.85 + rnd() * 0.1;
@@ -175,7 +202,7 @@ function paintCursorFillStyle(seed: number): CSSProperties {
   for (let i = 0; i < 176; i += 1) {
     const x = 10 + rnd() * 80;
     const y = 10 + rnd() * 80;
-    const color = RAINBOW_COLORS[(i + colorOffset + 3) % paletteSize] ?? RAINBOW_COLORS[0];
+    const color = rainbowColor(rnd(), 0.56);
     const radius = 6 + rnd() * 12;
     const feather = radius + 14 + rnd() * 12;
     const alpha = 0.75 + rnd() * 0.17;
@@ -184,12 +211,21 @@ function paintCursorFillStyle(seed: number): CSSProperties {
     );
   }
 
-  const solidBase = `linear-gradient(0deg, ${baseColor}, ${baseColor})`;
+  const b1x = 20 + rnd() * 60;
+  const b1y = 20 + rnd() * 60;
+  const b2x = 18 + rnd() * 64;
+  const b2y = 16 + rnd() * 68;
+  const b3x = 22 + rnd() * 56;
+  const b3y = 18 + rnd() * 62;
+  const baseLayerA = `radial-gradient(circle at ${b1x.toFixed(2)}% ${b1y.toFixed(2)}%, ${hexToRgba(baseColorA, 0.86)} 0px, ${hexToRgba(baseColorA, 0.82)} 72px, rgba(0,0,0,0) 182px)`;
+  const baseLayerB = `radial-gradient(circle at ${b2x.toFixed(2)}% ${b2y.toFixed(2)}%, ${hexToRgba(baseColorB, 0.84)} 0px, ${hexToRgba(baseColorB, 0.8)} 78px, rgba(0,0,0,0) 188px)`;
+  const baseLayerC = `radial-gradient(circle at ${b3x.toFixed(2)}% ${b3y.toFixed(2)}%, ${hexToRgba(baseColorC, 0.82)} 0px, ${hexToRgba(baseColorC, 0.78)} 74px, rgba(0,0,0,0) 184px)`;
 
   return {
-    backgroundImage: [...microLayers, ...mediumLayers, solidBase].join(", "),
-    backgroundRepeat: "repeat",
-    backgroundSize: "520px 520px",
+    backgroundImage: [...microLayers, ...mediumLayers, baseLayerA, baseLayerB, baseLayerC].join(", "),
+    backgroundRepeat: "no-repeat",
+    backgroundSize: "260px 260px",
+    backgroundPosition: "50% 50%",
     filter: "saturate(1.15) contrast(1.1)",
   };
 }
@@ -242,6 +278,8 @@ export default function ChloeverseMainLanding({
   const taglineOverlayRef = useRef<HTMLDivElement>(null);
   const menuHitRef = useRef<HTMLElement>(null);
   const scrollHintRef = useRef<HTMLParagraphElement>(null);
+  const landingBgmRef = useRef<HTMLAudioElement | null>(null);
+  const landingBgmStartedRef = useRef(false);
 
   const pointerTargetRef = useRef({ x: 0, y: 0 });
   const pointerCurrentRef = useRef({ x: 0, y: 0 });
@@ -262,6 +300,7 @@ export default function ChloeverseMainLanding({
   const [hasPointer, setHasPointer] = useState(false);
   const [cursorMode, setCursorMode] = useState<CursorMode>("idle");
   const [menuVisible, setMenuVisible] = useState(false);
+  const [menuRevealNonce, setMenuRevealNonce] = useState(0);
 
   const backdropPaint = useMemo(() => paintBackdropStyle(1337), []);
   const cursorBgPaint = useMemo(() => paintCursorFillStyle(1337), []);
@@ -416,12 +455,115 @@ export default function ChloeverseMainLanding({
   }, [prefersReducedMotion]);
 
   useEffect(() => {
-    const onScroll = () => {
-      setMenuVisible(window.scrollY > 24);
+    stopCollabsBgm({ clearGestureListeners: true });
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const audio = new Audio(LANDING_BGM_SRC);
+    audio.loop = true;
+    audio.preload = "auto";
+    audio.muted = true;
+    audio.volume = LANDING_BGM_VOLUME;
+    landingBgmRef.current = audio;
+
+    let listenersAttached = true;
+    const detachGestureListeners = () => {
+      if (!listenersAttached) return;
+      listenersAttached = false;
+      window.removeEventListener("pointerdown", onGesture, true);
+      window.removeEventListener("touchstart", onGesture, true);
+      window.removeEventListener("wheel", onGesture, true);
+      window.removeEventListener("scroll", onGesture, true);
+      window.removeEventListener("pointermove", onGesture, true);
+      window.removeEventListener("mousemove", onGesture, true);
+      window.removeEventListener("touchmove", onGesture, true);
+      window.removeEventListener("keydown", onGesture, true);
+      document.removeEventListener("wheel", onGesture, true);
+      document.removeEventListener("scroll", onGesture, true);
+      document.removeEventListener("pointermove", onGesture, true);
+      document.removeEventListener("mousemove", onGesture, true);
+      document.removeEventListener("touchmove", onGesture, true);
     };
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+
+    const markAudible = () => {
+      landingBgmStartedRef.current = true;
+      audio.muted = false;
+      audio.volume = LANDING_BGM_VOLUME;
+      detachGestureListeners();
+    };
+
+    const startAudible = () => {
+      if (!audio.paused) {
+        markAudible();
+        return;
+      }
+
+      audio.muted = false;
+      audio.volume = LANDING_BGM_VOLUME;
+      void audio.play()
+        .then(() => {
+          markAudible();
+        })
+        .catch(() => {
+          // Fallback: start muted first (more broadly allowed), then unmute.
+          audio.muted = true;
+          void audio.play()
+            .then(() => {
+              markAudible();
+            })
+            .catch(() => {
+              // Keep listeners active; next gesture retries.
+            });
+        });
+    };
+
+    const onGesture = () => {
+      startAudible();
+    };
+
+    // Pre-warm muted audio so scroll/wheel gestures can reliably unmute.
+    void audio.play().then(() => {
+      landingBgmStartedRef.current = true;
+    }).catch(() => {
+      // Some browsers block all autoplay; explicit gesture path above handles it.
+    });
+
+    window.addEventListener("pointerdown", onGesture, { passive: true, capture: true });
+    window.addEventListener("touchstart", onGesture, { passive: true, capture: true });
+    window.addEventListener("wheel", onGesture, { passive: true, capture: true });
+    window.addEventListener("scroll", onGesture, { passive: true, capture: true });
+    window.addEventListener("pointermove", onGesture, { passive: true, capture: true });
+    window.addEventListener("mousemove", onGesture, { passive: true, capture: true });
+    window.addEventListener("touchmove", onGesture, { passive: true, capture: true });
+    window.addEventListener("keydown", onGesture, { capture: true });
+    document.addEventListener("wheel", onGesture, { passive: true, capture: true });
+    document.addEventListener("scroll", onGesture, { passive: true, capture: true });
+    document.addEventListener("pointermove", onGesture, { passive: true, capture: true });
+    document.addEventListener("mousemove", onGesture, { passive: true, capture: true });
+    document.addEventListener("touchmove", onGesture, { passive: true, capture: true });
+
+    return () => {
+      window.removeEventListener("pointerdown", onGesture, true);
+      window.removeEventListener("touchstart", onGesture, true);
+      window.removeEventListener("wheel", onGesture, true);
+      window.removeEventListener("scroll", onGesture, true);
+      window.removeEventListener("pointermove", onGesture, true);
+      window.removeEventListener("mousemove", onGesture, true);
+      window.removeEventListener("touchmove", onGesture, true);
+      window.removeEventListener("keydown", onGesture, true);
+      document.removeEventListener("wheel", onGesture, true);
+      document.removeEventListener("scroll", onGesture, true);
+      document.removeEventListener("pointermove", onGesture, true);
+      document.removeEventListener("mousemove", onGesture, true);
+      document.removeEventListener("touchmove", onGesture, true);
+      audio.pause();
+      audio.currentTime = 0;
+      audio.muted = true;
+      landingBgmRef.current = null;
+      landingBgmStartedRef.current = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -479,10 +621,11 @@ export default function ChloeverseMainLanding({
       if (cursorFillRef.current) {
         const showCursorBg = isFinePointer && hoverRegion === "bg";
         if (showCursorBg) {
-          const tile = 420;
-          const ox = ((-pointerCurrent.x * 0.7) % tile + tile) % tile;
-          const oy = ((-pointerCurrent.y * 0.7) % tile + tile) % tile;
-          cursorFillRef.current.style.backgroundPosition = `${ox}px ${oy}px`;
+          const ox = 50 + Math.sin(pointerCurrent.x * 0.012 + pointerCurrent.y * 0.004) * 18;
+          const oy = 50 + Math.cos(pointerCurrent.y * 0.011 - pointerCurrent.x * 0.003) * 18;
+          cursorFillRef.current.style.backgroundPosition = `${ox.toFixed(2)}% ${oy.toFixed(2)}%`;
+        } else {
+          cursorFillRef.current.style.backgroundPosition = "50% 50%";
         }
       }
 
@@ -567,6 +710,13 @@ export default function ChloeverseMainLanding({
     bgRainbowRef.current?.style.setProperty("--bgr", "0px");
   };
 
+  const onRootPointerDown = () => {
+    if (!menuVisible) {
+      setMenuVisible(true);
+      setMenuRevealNonce((value) => value + 1);
+    }
+  };
+
   const renderPaintedText = (text: string, seedStart: number) =>
     Array.from(text).map((char, index) => (
       <span
@@ -623,6 +773,7 @@ export default function ChloeverseMainLanding({
       onPointerEnter={onRootPointerEnter}
       onPointerMove={onRootPointerMove}
       onPointerLeave={onRootPointerLeave}
+      onPointerDown={onRootPointerDown}
       className={`relative min-h-[240vh] overflow-x-clip bg-black text-white ${isFinePointer ? "chv-home-cursorless" : ""}`}
     >
       <div aria-hidden className="absolute inset-0 z-0 bg-black" />
@@ -749,32 +900,38 @@ export default function ChloeverseMainLanding({
                 transitionDelay: prefersReducedMotion ? "0ms" : "120ms",
               }}
             >
-              <span className={prefersReducedMotion ? undefined : "chv-scroll-blink"}>scroll for portals</span>
+              <span className={prefersReducedMotion ? undefined : "chv-scroll-blink"}>click for portals</span>
             </p>
           </div>
         </section>
 
-        <section className="relative h-[140vh] px-6 pt-[56vh] pb-24">
-          <div className="sticky top-[-6px] flex w-full justify-center">
+        <div
+          className="pointer-events-none fixed inset-x-0 z-40 flex w-full justify-center"
+          style={{ top: `${PORTAL_LINKS_TOP_OFFSET_PX}px` }}
+        >
+          <div className="pointer-events-auto">
             <nav
               ref={menuHitRef}
               aria-label="Primary"
-              className={`flex flex-wrap items-center justify-center gap-3 sm:gap-4 ${
-                menuVisible ? "translate-y-0 opacity-100" : "translate-y-5 opacity-0"
-              }`}
-              style={{
-                transition: menuTransition,
-                ...(menuVisible ? { marginTop: `-${NAV_FINAL_RAISE_PX}px` } : {}),
-              }}
+              className={`flex flex-wrap items-center justify-center gap-3 sm:gap-4 ${menuVisible ? "opacity-100" : "opacity-0"}`}
+              style={{ transition: "none" }}
             >
               {MENU_LINKS.map((link, index) => (
                 <Link
-                  key={link.href}
+                  key={`${link.href}-${menuRevealNonce}`}
                   href={link.href}
                   prefetch={link.href === "/contact" ? false : undefined}
                   className={`${monoFontClassName} group relative inline-flex items-center overflow-hidden rounded-full border border-white/12 bg-black/35 px-5 py-2 text-[0.74rem] tracking-[0.22em] text-white/78 backdrop-blur-md transition-colors duration-200 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60`}
                   style={{
-                    transitionDelay: menuVisible && !prefersReducedMotion ? `${index * 55}ms` : "0ms",
+                    ...(menuVisible
+                      ? {
+                          animationName: "chv-portal-link-drop-bounce",
+                          animationDuration: "1320ms",
+                          animationTimingFunction: "cubic-bezier(0.16, 0.78, 0.2, 1)",
+                          animationFillMode: "both",
+                          animationDelay: `${index * 90}ms`,
+                        }
+                      : {}),
                   }}
                 >
                   <span className="relative z-10">{link.label}</span>
@@ -794,7 +951,9 @@ export default function ChloeverseMainLanding({
               ))}
             </nav>
           </div>
-        </section>
+        </div>
+
+        <section className="relative h-[140vh] px-6 pt-[56vh] pb-24" />
       </div>
     </main>
   );
