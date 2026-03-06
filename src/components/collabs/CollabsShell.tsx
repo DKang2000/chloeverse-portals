@@ -146,6 +146,16 @@ export default function CollabsShell({
   }, [audio, modalOpen]);
 
   useEffect(() => {
+    if (!modalOpen || !modalEmbedReady) return;
+    const timer = window.setTimeout(() => {
+      setModalUserInteracted(true);
+    }, 1200);
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [modalEmbedReady, modalOpen]);
+
+  useEffect(() => {
     if (scrollEnergy < 0.65) return;
     const now = performance.now();
     if (now - whooshTimerRef.current < 380) return;

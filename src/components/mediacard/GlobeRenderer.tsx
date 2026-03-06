@@ -1267,6 +1267,9 @@ export const GlobeRenderer = forwardRef<GlobeRendererHandle, GlobeRendererProps>
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.setClearColor(0x000000, 0);
     renderer.domElement.style.touchAction = "none";
+    renderer.domElement.style.width = "100%";
+    renderer.domElement.style.height = "100%";
+    renderer.domElement.style.display = "block";
     host.appendChild(renderer.domElement);
 
     const starsData = createStarfield(TUNE.STAR_COUNT, TUNE.STAR_RADIUS_MIN, TUNE.STAR_RADIUS_MAX);
@@ -2418,7 +2421,7 @@ export const GlobeRenderer = forwardRef<GlobeRendererHandle, GlobeRendererProps>
     const resize = () => {
       const w = host.clientWidth || 1;
       const h = host.clientHeight || 1;
-      renderer.setSize(w, h, false);
+      renderer.setSize(w, h, true);
       camera.aspect = w / Math.max(1, h);
       camera.updateProjectionMatrix();
       const currentDpr = renderer.getPixelRatio();
