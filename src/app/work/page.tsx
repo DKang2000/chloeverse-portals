@@ -1,4 +1,4 @@
-import { MobileLockedPortalExperience } from "@/components/mobile/shared/MobileLockedPortalExperience";
+import { MobileWorkExperience } from "@/components/mobile/work/MobileWorkExperience";
 import { ExperienceModeSwitch } from "@/lib/experience-mode/ExperienceModeSwitch";
 
 function WorkDesktopPage() {
@@ -24,14 +24,7 @@ export default function WorkPage() {
   return (
     <ExperienceModeSwitch
       desktop={<WorkDesktopPage />}
-      mobile={
-        <MobileLockedPortalExperience
-          currentPath="/work"
-          eyebrow="Desktop Archive"
-          title="Work"
-          description="This route no longer opens the work dossier on mobile."
-        />
-      }
+      mobile={<MobileWorkExperience />}
     />
   );
 }

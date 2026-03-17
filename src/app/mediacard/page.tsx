@@ -1,4 +1,4 @@
-import { MobileLockedPortalExperience } from "@/components/mobile/shared/MobileLockedPortalExperience";
+import { MobileMediaCardExperience } from "@/components/mobile/mediacard/MobileMediaCardExperience";
 import { ExperienceModeSwitch } from "@/lib/experience-mode/ExperienceModeSwitch";
 import * as Mod from "@/components/mediacard/MediaCardExperience";
 
@@ -30,14 +30,7 @@ export default function MediaCardPage() {
   return (
     <ExperienceModeSwitch
       desktop={<MediaCardDesktopPage />}
-      mobile={
-        <MobileLockedPortalExperience
-          currentPath="/mediacard"
-          eyebrow="Desktop Briefing"
-          title="Mediacard"
-          description="This portal stays closed on handheld for now."
-        />
-      }
+      mobile={<MobileMediaCardExperience />}
     />
   );
 }

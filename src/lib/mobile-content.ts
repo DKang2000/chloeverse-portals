@@ -3,9 +3,9 @@ import type { ReelItem } from "@/components/collabs/reelsData";
 export const HOME_PORTALS = [
   { href: "/projects", label: "PROJECTS", subtitle: "experiments in motion", mobileEnabled: true },
   { href: "/collabs", label: "COLLABS", subtitle: "worlds built together", mobileEnabled: true },
-  { href: "/work", label: "WORK", subtitle: "desktop archive only", mobileEnabled: false },
+  { href: "/work", label: "WORK", subtitle: "career as an archive", mobileEnabled: true },
   { href: "/contact", label: "CONTACT", subtitle: "send a signal", mobileEnabled: true },
-  { href: "/mediacard", label: "MEDIACARD", subtitle: "desktop briefing only", mobileEnabled: false },
+  { href: "/mediacard", label: "MEDIACARD", subtitle: "audience, reach, services", mobileEnabled: true },
 ] as const;
 
 export const PROJECT_DEVICE_APPS = [
