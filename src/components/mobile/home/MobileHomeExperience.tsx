@@ -11,7 +11,6 @@ type MobileHomeExperienceProps = {
 };
 
 const ITEM_HEIGHT = 124;
-const MOBILE_HOME_PORTALS = HOME_PORTALS.filter((item) => item.mobileEnabled);
 
 export function MobileHomeExperience({
   titleFontClassName,
@@ -82,13 +81,14 @@ export function MobileHomeExperience({
           aria-label="Portal navigation"
         >
           <div className="mx-auto flex max-w-sm flex-col gap-5">
-            {MOBILE_HOME_PORTALS.map((item, index) => {
+            {HOME_PORTALS.map((item, index) => {
               const active = index === activeIndex;
               const cardClassName = [
                 "group relative snap-center overflow-hidden rounded-[2rem] border px-5 py-6 transition duration-300",
                 active
                   ? "scale-[1.02] border-white/24 bg-white/14 shadow-[0_18px_55px_rgba(112,152,255,0.26)]"
                   : "border-white/10 bg-white/[0.06]",
+                item.mobileEnabled ? "" : "opacity-72",
               ].join(" ");
 
               const cardContent = (
@@ -106,26 +106,41 @@ export function MobileHomeExperience({
                       <p className="mt-1 text-sm text-white/62">{item.subtitle}</p>
                     </div>
                     <div className="grid h-11 w-11 place-items-center rounded-full border border-white/12 bg-black/25 text-white/76">
-                      <span className="text-lg leading-none">↗</span>
+                      <span className="text-lg leading-none">{item.mobileEnabled ? "↗" : "Lock"}</span>
                     </div>
                   </div>
                 </>
               );
 
+              if (item.mobileEnabled) {
+                return (
+                  <Link
+                    key={item.href}
+                    ref={(node) => {
+                      itemRefs.current[index] = node;
+                    }}
+                    href={item.href}
+                    data-index={index}
+                    aria-current={active ? "true" : undefined}
+                    onPointerDown={() => setActiveIndex(index)}
+                    className={cardClassName}
+                  >
+                    {cardContent}
+                  </Link>
+                );
+              }
+
               return (
-                <Link
+                <div
                   key={item.href}
                   ref={(node) => {
                     itemRefs.current[index] = node;
                   }}
-                  href={item.href}
                   data-index={index}
-                  aria-current={active ? "true" : undefined}
-                  onPointerDown={() => setActiveIndex(index)}
                   className={cardClassName}
                 >
                   {cardContent}
-                </Link>
+                </div>
               );
             })}
           </div>
