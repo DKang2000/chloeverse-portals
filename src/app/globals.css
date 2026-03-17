@@ -622,10 +622,14 @@ body {
   --glyph-rotate-y: 0deg;
   --glyph-scale: 1;
   --glyph-total: calc(var(--glyph-depth) + var(--glyph-lift) + var(--glyph-ripple));
+  --glyph-extrude-x: calc(1.8px + (var(--glyph-total) * 0.32));
+  --glyph-extrude-y: calc(1.1px + (var(--glyph-total) * 0.24));
   position: relative;
   display: inline-grid;
   place-items: center;
   transform-style: preserve-3d;
+  transform-origin: 50% 58%;
+  isolation: isolate;
   transform:
     translate3d(var(--glyph-offset-x), var(--glyph-offset-y), calc(var(--glyph-total) * 0.72))
     rotateX(var(--glyph-rotate-x))
@@ -654,37 +658,91 @@ body {
 
 .chv-glyph-layer--back,
 .chv-glyph-layer--slice {
-  color: rgba(7, 9, 18, 0.96);
+  color: rgba(10, 12, 24, 0.98);
   -webkit-text-fill-color: currentColor;
   text-shadow:
-    0 14px 26px rgba(0, 0, 0, calc(0.22 + (var(--glyph-shadow-alpha) * 0.2))),
-    0 0 10px rgba(127, 168, 255, calc(0.08 + (var(--glyph-shadow-alpha) * 0.08)));
+    0 16px 24px rgba(0, 0, 0, calc(0.22 + (var(--glyph-shadow-alpha) * 0.22))),
+    1px 0 0 rgba(108, 213, 255, calc(0.05 + (var(--glyph-shadow-alpha) * 0.08))),
+    -1px 0 0 rgba(255, 103, 179, calc(0.05 + (var(--glyph-shadow-alpha) * 0.08)));
+  transform-origin: 50% 58%;
 }
 
 .chv-glyph-layer--back {
-  opacity: 0.92;
-  transform: translate3d(-1px, calc(1.25px + (var(--glyph-total) * 0.04)), calc(var(--glyph-total) * -1));
+  opacity: 0.98;
+  transform:
+    translate3d(
+      calc(var(--glyph-extrude-x) * -1.12),
+      calc(var(--glyph-extrude-y) * 1.18),
+      calc(var(--glyph-total) * -1.08)
+    )
+    scale(1.02);
 }
 
 .chv-glyph-layer--slice-1 {
-  opacity: 0.96;
-  transform: translate3d(-0.7px, calc(0.8px + (var(--glyph-total) * 0.03)), calc(var(--glyph-total) * -0.78));
+  opacity: 0.98;
+  transform:
+    translate3d(
+      calc(var(--glyph-extrude-x) * -0.96),
+      calc(var(--glyph-extrude-y) * 1.02),
+      calc(var(--glyph-total) * -0.9)
+    )
+    scale(1.018);
 }
 
 .chv-glyph-layer--slice-2 {
-  opacity: 0.92;
-  transform: translate3d(-0.32px, calc(0.44px + (var(--glyph-total) * 0.018)), calc(var(--glyph-total) * -0.54));
+  opacity: 0.96;
+  transform:
+    translate3d(
+      calc(var(--glyph-extrude-x) * -0.76),
+      calc(var(--glyph-extrude-y) * 0.82),
+      calc(var(--glyph-total) * -0.72)
+    )
+    scale(1.014);
 }
 
 .chv-glyph-layer--slice-3 {
+  opacity: 0.92;
+  transform:
+    translate3d(
+      calc(var(--glyph-extrude-x) * -0.56),
+      calc(var(--glyph-extrude-y) * 0.62),
+      calc(var(--glyph-total) * -0.52)
+    )
+    scale(1.01);
+}
+
+.chv-glyph-layer--slice-4 {
   opacity: 0.88;
-  transform: translate3d(0px, calc(0.16px + (var(--glyph-total) * 0.01)), calc(var(--glyph-total) * -0.3));
+  transform:
+    translate3d(
+      calc(var(--glyph-extrude-x) * -0.34),
+      calc(var(--glyph-extrude-y) * 0.4),
+      calc(var(--glyph-total) * -0.32)
+    )
+    scale(1.006);
+}
+
+.chv-glyph-layer--slice-5 {
+  opacity: 0.82;
+  transform:
+    translate3d(
+      calc(var(--glyph-extrude-x) * -0.16),
+      calc(var(--glyph-extrude-y) * 0.2),
+      calc(var(--glyph-total) * -0.14)
+    )
+    scale(1.003);
 }
 
 .chv-glyph-layer--face {
   position: relative;
-  transform: translate3d(0, calc(var(--glyph-total) * -0.12), calc(var(--glyph-total) * 0.06));
-  filter: drop-shadow(0 calc(14px + (var(--glyph-total) * 0.22)) calc(18px + (var(--glyph-total) * 0.26)) rgba(0, 0, 0, calc(0.14 + (var(--glyph-shadow-alpha) * 0.18))));
+  transform:
+    translate3d(
+      calc(var(--glyph-extrude-x) * 0.08),
+      calc(var(--glyph-extrude-y) * -0.18),
+      calc(var(--glyph-total) * 0.08)
+    )
+    scale(1.002);
+  filter: drop-shadow(0 calc(14px + (var(--glyph-total) * 0.24)) calc(18px + (var(--glyph-total) * 0.28)) rgba(0, 0, 0, calc(0.14 + (var(--glyph-shadow-alpha) * 0.18))));
 }
 
 .chv-glyph-face--plain {

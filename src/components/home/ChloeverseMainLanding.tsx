@@ -569,6 +569,8 @@ function renderDepthGlyphs(
         <span aria-hidden className="chv-glyph-layer chv-glyph-layer--slice chv-glyph-layer--slice-1">{glyph}</span>
         <span aria-hidden className="chv-glyph-layer chv-glyph-layer--slice chv-glyph-layer--slice-2">{glyph}</span>
         <span aria-hidden className="chv-glyph-layer chv-glyph-layer--slice chv-glyph-layer--slice-3">{glyph}</span>
+        <span aria-hidden className="chv-glyph-layer chv-glyph-layer--slice chv-glyph-layer--slice-4">{glyph}</span>
+        <span aria-hidden className="chv-glyph-layer chv-glyph-layer--slice chv-glyph-layer--slice-5">{glyph}</span>
         <span
           className={`chv-glyph-layer chv-glyph-layer--face ${
             tone === "painted" ? "chv-glyph-face--painted" : "chv-glyph-face--plain"
