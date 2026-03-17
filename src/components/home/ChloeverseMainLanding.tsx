@@ -424,6 +424,11 @@ function setGlyphDepthVars(
   lift: number,
   ripple: number,
   shadow: number,
+  offsetX: number,
+  offsetY: number,
+  rotateX: number,
+  rotateY: number,
+  scale: number,
 ): void {
   if (!node) {
     return;
@@ -432,6 +437,11 @@ function setGlyphDepthVars(
   node.style.setProperty("--glyph-lift", `${lift.toFixed(3)}px`);
   node.style.setProperty("--glyph-ripple", `${ripple.toFixed(3)}px`);
   node.style.setProperty("--glyph-shadow-alpha", shadow.toFixed(3));
+  node.style.setProperty("--glyph-offset-x", `${offsetX.toFixed(3)}px`);
+  node.style.setProperty("--glyph-offset-y", `${offsetY.toFixed(3)}px`);
+  node.style.setProperty("--glyph-rotate-x", `${rotateX.toFixed(3)}deg`);
+  node.style.setProperty("--glyph-rotate-y", `${rotateY.toFixed(3)}deg`);
+  node.style.setProperty("--glyph-scale", scale.toFixed(4));
 }
 
 function updateDepthBlock(
@@ -490,7 +500,9 @@ function updateDepthBlock(
 
   for (let index = 0; index < metrics.length; index += 1) {
     const metric = metrics[index];
-    const distance = Math.hypot(metric.x - localX, metric.y - localY);
+    const deltaX = metric.x - localX;
+    const deltaY = metric.y - localY;
+    const distance = Math.hypot(deltaX, deltaY);
     const hoverBase = active && !prefersReducedMotion
       ? clamp(1 - distance / (config.hoverRadius + metric.radius * 0.32), 0, 1)
       : 0;
@@ -507,9 +519,27 @@ function updateDepthBlock(
       rippleLift = band * band * config.rippleLift * ripple.energy * rippleDecay * directionBias;
     }
 
-    const shadow = clamp((hoverLift + rippleLift) / (config.hoverLift + config.rippleLift), 0.08, 1);
-    setGlyphDepthVars(baseRefs[index], baseDepth, hoverLift, rippleLift, shadow);
-    setGlyphDepthVars(overlayRefs[index], baseDepth, hoverLift, rippleLift, shadow);
+    const totalLift = hoverLift + rippleLift;
+    const distanceScale = Math.max(metric.radius, distance);
+    const directionalX = clamp(deltaX / distanceScale, -1, 1);
+    const directionalY = clamp(deltaY / distanceScale, -1, 1);
+    const rippleNudge = ripple.active && !prefersReducedMotion
+      ? clamp((metric.x - ripple.x) / Math.max(metric.radius * 1.2, 1), -1, 1) * rippleLift * 0.16
+      : 0;
+    const offsetX = active && !prefersReducedMotion
+      ? (-directionalX * hoverLift * 0.22) + rippleNudge
+      : rippleNudge * 0.6;
+    const offsetY = -(hoverLift * 0.9 + rippleLift * 1.08);
+    const rotateY = active && !prefersReducedMotion
+      ? clamp(-directionalX * (8 + hoverBase * 6) + rippleNudge * 0.9, -16, 16)
+      : clamp(rippleNudge * 0.4, -8, 8);
+    const rotateX = active && !prefersReducedMotion
+      ? clamp(directionalY * (6 + hoverBase * 5) - totalLift * 0.12, -14, 14)
+      : clamp(-totalLift * 0.1, -8, 8);
+    const scale = 1 + clamp(totalLift * 0.012, 0, prefersReducedMotion ? 0.03 : 0.18);
+    const shadow = clamp(totalLift / (config.hoverLift + config.rippleLift), 0.08, 1);
+    setGlyphDepthVars(baseRefs[index], baseDepth, hoverLift, rippleLift, shadow, offsetX, offsetY, rotateX, rotateY, scale);
+    setGlyphDepthVars(overlayRefs[index], baseDepth, hoverLift, rippleLift, shadow, offsetX, offsetY, rotateX, rotateY, scale);
   }
 }
 

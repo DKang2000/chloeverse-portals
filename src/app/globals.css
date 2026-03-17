@@ -616,12 +616,21 @@ body {
   --glyph-lift: 0px;
   --glyph-ripple: 0px;
   --glyph-shadow-alpha: 0.12;
+  --glyph-offset-x: 0px;
+  --glyph-offset-y: 0px;
+  --glyph-rotate-x: 0deg;
+  --glyph-rotate-y: 0deg;
+  --glyph-scale: 1;
   --glyph-total: calc(var(--glyph-depth) + var(--glyph-lift) + var(--glyph-ripple));
   position: relative;
   display: inline-grid;
   place-items: center;
   transform-style: preserve-3d;
-  transform: translate3d(0, 0, calc(var(--glyph-total) * 0.72));
+  transform:
+    translate3d(var(--glyph-offset-x), var(--glyph-offset-y), calc(var(--glyph-total) * 0.72))
+    rotateX(var(--glyph-rotate-x))
+    rotateY(var(--glyph-rotate-y))
+    scale(var(--glyph-scale));
   will-change: transform;
 }
 
@@ -654,28 +663,28 @@ body {
 
 .chv-glyph-layer--back {
   opacity: 0.92;
-  transform: translate3d(-1px, 1.25px, calc(var(--glyph-total) * -1));
+  transform: translate3d(-1px, calc(1.25px + (var(--glyph-total) * 0.04)), calc(var(--glyph-total) * -1));
 }
 
 .chv-glyph-layer--slice-1 {
   opacity: 0.96;
-  transform: translate3d(-0.7px, 0.8px, calc(var(--glyph-total) * -0.78));
+  transform: translate3d(-0.7px, calc(0.8px + (var(--glyph-total) * 0.03)), calc(var(--glyph-total) * -0.78));
 }
 
 .chv-glyph-layer--slice-2 {
   opacity: 0.92;
-  transform: translate3d(-0.32px, 0.44px, calc(var(--glyph-total) * -0.54));
+  transform: translate3d(-0.32px, calc(0.44px + (var(--glyph-total) * 0.018)), calc(var(--glyph-total) * -0.54));
 }
 
 .chv-glyph-layer--slice-3 {
   opacity: 0.88;
-  transform: translate3d(0px, 0.16px, calc(var(--glyph-total) * -0.3));
+  transform: translate3d(0px, calc(0.16px + (var(--glyph-total) * 0.01)), calc(var(--glyph-total) * -0.3));
 }
 
 .chv-glyph-layer--face {
   position: relative;
-  transform: translate3d(0, 0, 0);
-  filter: drop-shadow(0 14px 18px rgba(0, 0, 0, calc(0.14 + (var(--glyph-shadow-alpha) * 0.18))));
+  transform: translate3d(0, calc(var(--glyph-total) * -0.12), calc(var(--glyph-total) * 0.06));
+  filter: drop-shadow(0 calc(14px + (var(--glyph-total) * 0.22)) calc(18px + (var(--glyph-total) * 0.26)) rgba(0, 0, 0, calc(0.14 + (var(--glyph-shadow-alpha) * 0.18))));
 }
 
 .chv-glyph-face--plain {
