@@ -746,9 +746,27 @@ Worked with Adidas, Adobe, Estee Lauder, OpenAI, Hera, etc.
     if (projectsHeading) projectsHeading.id = "projects";
   }
 
+  function navigateTopLevel(href) {
+    try {
+      if (window.top) {
+        window.top.location.href = href;
+        return;
+      }
+    } catch {}
+    window.location.href = href;
+  }
+
   function rebuildMenu() {
     const menuBody = document.querySelector(".menu-body");
     if (!menuBody) return;
+
+    const existingItems = Array.from(menuBody.querySelectorAll(":scope > a"));
+    const existingLabels = existingItems.map((el) => normalizeSpaces(el.textContent));
+    const hasExpectedMenu =
+      menuBody.dataset.chloeMenuPatched === "1" &&
+      existingItems.length === 4 &&
+      existingLabels.join("|") === "Home|Projects|Candy Castle|Chloeverse";
+    if (hasExpectedMenu) return;
 
     const firstLink = menuBody.querySelector("a");
     const linkClass = firstLink ? firstLink.className : "";
@@ -764,16 +782,6 @@ Worked with Adidas, Adobe, Estee Lauder, OpenAI, Hera, etc.
 
     const closeMenu = () => {
       try { if (typeof window.closeMenu === "function") window.closeMenu(); } catch {}
-    };
-
-    const navigateTopLevel = (href) => {
-      try {
-        if (window.top) {
-          window.top.location.href = href;
-          return;
-        }
-      } catch {}
-      window.location.href = href;
     };
 
     const home = makeLink("Home", "#home");
@@ -799,9 +807,14 @@ Worked with Adidas, Adobe, Estee Lauder, OpenAI, Hera, etc.
 
     const chloeverse = makeLink("Chloeverse", "/");
     chloeverse.target = "_top";
-    chloeverse.addEventListener("click", () => closeMenu());
+    chloeverse.addEventListener("click", (e) => {
+      e.preventDefault();
+      closeMenu();
+      navigateTopLevel("/");
+    });
 
     menuBody.append(home, projects, candy, chloeverse);
+    menuBody.dataset.chloeMenuPatched = "1";
   }
 
   function enforceMenuRoutes() {
