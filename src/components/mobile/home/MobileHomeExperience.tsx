@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 
 import { MobileRouteLink } from "@/components/mobile/shared/MobileRouteLink";
@@ -61,14 +61,26 @@ export function MobileHomeExperience(_: MobileHomeExperienceProps) {
       showHeader={false}
       ambient={
         <>
+          <div className="chv-mobile-iridescence absolute inset-0" />
+          <div className="chv-mobile-sheen-sweep" />
+          <div className="chv-mobile-ripple-ring" />
+          <div className="chv-mobile-ripple-ring" data-delay="2" />
+          <div className="chv-mobile-ripple-ring" data-delay="3" />
           <motion.div
-            animate={reducedMotion ? undefined : { opacity: [0.22, 0.36, 0.22], scale: [1, 1.04, 1] }}
-            transition={{ duration: 6.5, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
-            className="absolute left-1/2 top-[10%] h-56 w-56 -translate-x-1/2 rounded-full blur-3xl"
-            style={{ background: `radial-gradient(circle, ${activePortal.accent}66 0%, transparent 68%)` }}
+            animate={
+              reducedMotion
+                ? undefined
+                : {
+                    opacity: [0.18, 0.34, 0.2],
+                    scale: [1, 1.08, 1.03],
+                    x: [0, 8, -4],
+                    y: [0, 16, -10],
+                  }
+            }
+            transition={{ duration: 10.5, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
+            className="absolute left-1/2 top-[8%] h-64 w-64 -translate-x-1/2 rounded-full blur-3xl"
+            style={{ background: `radial-gradient(circle, ${activePortal.accent}88 0%, transparent 68%)` }}
           />
-          <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-[linear-gradient(180deg,transparent,rgba(255,255,255,0.36)_12%,rgba(255,255,255,0.08)_55%,transparent)]" />
-          <div className="absolute inset-x-8 top-[10.2rem] h-px bg-gradient-to-r from-transparent via-white/16 to-transparent" />
         </>
       }
     >
@@ -77,38 +89,44 @@ export function MobileHomeExperience(_: MobileHomeExperienceProps) {
           <motion.div
             animate={reducedMotion ? undefined : { opacity: [0.2, 0.34, 0.2], x: [-8, 0, -8] }}
             transition={{ duration: 8, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
-            className="chv-mobile-display absolute inset-x-0 top-0 text-[3.05rem] leading-[0.84] tracking-[-0.08em] text-white/10 blur-[1.6px]"
+            className="chv-mobile-signal-title absolute inset-x-0 top-0 text-[3.3rem] font-extrabold leading-[0.82] tracking-[-0.1em] text-white/10 blur-[1.6px] sm:text-[3.7rem]"
           >
             The Chloeverse
           </motion.div>
           <motion.div
             animate={reducedMotion ? undefined : { opacity: [0.18, 0.36, 0.18], x: [10, 4, 10], y: [2, -2, 2] }}
             transition={{ duration: 7.2, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
-            className="chv-mobile-display absolute inset-x-0 top-1 text-[3.05rem] leading-[0.84] tracking-[-0.08em]"
+            className="chv-mobile-signal-title absolute inset-x-0 top-1 text-[3.3rem] font-bold leading-[0.82] tracking-[-0.1em] sm:text-[3.7rem]"
             style={{ color: `${activePortal.accent}55` }}
           >
             The Chloeverse
           </motion.div>
-          <h1 className="chv-mobile-display relative text-[3.05rem] leading-[0.84] tracking-[-0.08em] text-[#f7f1e9] [text-shadow:0_0_32px_rgba(255,255,255,0.1)]">
+          <h1 className="chv-mobile-signal-title relative bg-[linear-gradient(180deg,#fffdf9_0%,#ebe8e2_44%,#8c96aa_100%)] bg-clip-text text-[3.3rem] font-extrabold leading-[0.82] tracking-[-0.1em] text-transparent [text-shadow:0_0_30px_rgba(255,255,255,0.06)] sm:text-[3.7rem]">
             The Chloeverse
           </h1>
         </div>
 
-        <div className="mx-auto mt-6 max-w-[20rem] space-y-1">
-          <p className="chv-mobile-body text-[1.01rem] leading-7 text-white/74">
+        <div className="mx-auto mt-6 max-w-[20rem] space-y-2">
+          <motion.p
+            initial={reducedMotion ? false : { opacity: 0, y: 8 }}
+            animate={reducedMotion ? undefined : { opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, delay: 0.85, ease: [0.22, 1, 0.36, 1] }}
+            className="chv-mobile-body text-[1.02rem] leading-7 text-white/72"
+          >
             where storytelling meets tomorrow
-          </p>
-          <p className="chv-mobile-body text-[0.98rem] leading-7 text-white/56">
-            a living archive of projects, collaborations, work, and signals
-          </p>
-          <p className="chv-mobile-mono pt-1 text-[0.6rem] uppercase tracking-[0.34em] text-white/42">
+          </motion.p>
+          <motion.p
+            initial={reducedMotion ? false : { opacity: 0, y: 10 }}
+            animate={reducedMotion ? undefined : { opacity: 1, y: 0 }}
+            transition={{ duration: 0.48, delay: 1.2, ease: [0.22, 1, 0.36, 1] }}
+            className="chv-mobile-mono pt-1 text-[0.6rem] uppercase tracking-[0.34em] text-white/42"
+          >
             scroll to enter
-          </p>
+          </motion.p>
         </div>
       </section>
 
       <section className="relative mt-8">
-        <div className="pointer-events-none absolute inset-y-0 left-1/2 z-0 w-px -translate-x-1/2 bg-[linear-gradient(180deg,transparent,rgba(255,255,255,0.26)_10%,rgba(255,255,255,0.08)_55%,transparent)]" />
         <div
           ref={containerRef}
           className="chv-hide-scrollbar relative z-10 h-[52svh] snap-y snap-mandatory overflow-y-auto"
@@ -119,25 +137,45 @@ export function MobileHomeExperience(_: MobileHomeExperienceProps) {
             {HOME_PORTALS.map((item, index) => {
               const active = activeIndex === index;
               const sharedClassName =
-                "group relative snap-center px-4 py-5 transition-transform duration-300";
-              const innerClassName = [
-                "relative flex min-h-[110px] items-center justify-between gap-5 rounded-[2rem] border border-white/7 bg-[linear-gradient(180deg,rgba(255,255,255,0.045),rgba(255,255,255,0.02))] px-5",
-                active ? "scale-[1.01] border-white/14" : "opacity-58",
-              ].join(" ");
+                "chv-mobile-signal-card-wrap group relative snap-center px-4 py-5 transition-transform duration-300";
 
               const content = (
-                <div className={innerClassName}>
-                  <div className="absolute inset-y-4 left-[2.35rem] w-px bg-[linear-gradient(180deg,transparent,rgba(255,255,255,0.26),transparent)]" />
-                  <div className="relative pl-6">
+                <motion.div
+                  data-active={active}
+                  animate={
+                    reducedMotion
+                      ? undefined
+                      : {
+                          rotateX: active ? 10 : 1,
+                          rotateY: active ? 0 : index < activeIndex ? -5 : 5,
+                          y: active ? -8 : 2,
+                          scale: active ? 1.03 : 0.97,
+                          opacity: active ? 1 : 0.76,
+                        }
+                  }
+                  whileTap={reducedMotion ? undefined : { scale: 0.992, y: -4, rotateX: 7 }}
+                  transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+                  className="chv-mobile-signal-card relative flex min-h-[112px] items-center justify-between gap-5 rounded-[2rem] border border-white/8 px-5"
+                  style={
+                    {
+                      "--signal-accent": item.accent,
+                    } as CSSProperties
+                  }
+                >
+                  <div
+                    className="absolute inset-x-6 top-0 h-px"
+                    style={{ background: `linear-gradient(90deg, transparent, ${item.accent}66, transparent)` }}
+                  />
+                  <div className="absolute inset-y-4 left-[2.35rem] w-px bg-[linear-gradient(180deg,transparent,rgba(255,255,255,0.26),transparent)] [transform:translateZ(18px)]" />
+                  <div className="chv-mobile-signal-layer relative pl-6">
                     <p className="chv-mobile-mono text-[0.56rem] uppercase tracking-[0.3em] text-white/34">
                       {item.sigil}
                     </p>
                     <h2 className="chv-mobile-display mt-2 text-[1.66rem] leading-[0.9] tracking-[-0.06em] text-[#f5efe8]">
                       {item.label}
                     </h2>
-                    <p className="mt-2 text-[0.88rem] leading-6 text-white/48">{item.subtitle}</p>
                   </div>
-                  <div className="relative flex flex-col items-end">
+                  <div className="chv-mobile-signal-layer--deep relative flex flex-col items-end">
                     <span className="chv-mobile-mono text-[0.56rem] uppercase tracking-[0.28em] text-white/34">
                       {String(index + 1).padStart(2, "0")}
                     </span>
@@ -149,7 +187,7 @@ export function MobileHomeExperience(_: MobileHomeExperienceProps) {
                       }}
                     />
                   </div>
-                </div>
+                </motion.div>
               );
 
               return (

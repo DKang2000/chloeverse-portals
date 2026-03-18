@@ -6,6 +6,7 @@
   --mobile-font-display: var(--font-mobile-display);
   --mobile-font-body: var(--font-mobile-body);
   --mobile-font-mono: var(--font-mobile-mono);
+  --mobile-font-signal-title: var(--font-mobile-signal-title);
 }
 
 @theme inline {
@@ -53,6 +54,228 @@ body {
 
 .chv-mobile-mono {
   font-family: var(--mobile-font-mono), "SFMono-Regular", monospace;
+}
+
+.chv-mobile-signal-title {
+  font-family: var(--mobile-font-signal-title), "Arial Black", sans-serif;
+}
+
+@keyframes chv-iridescence-drift {
+  0% {
+    transform: translate3d(-4%, -3%, 0) rotate(0deg) scale(1);
+    opacity: 0.22;
+  }
+  50% {
+    transform: translate3d(3%, 2%, 0) rotate(6deg) scale(1.08);
+    opacity: 0.34;
+  }
+  100% {
+    transform: translate3d(-3%, 4%, 0) rotate(-4deg) scale(1.02);
+    opacity: 0.24;
+  }
+}
+
+@keyframes chv-iridescence-spin {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.06);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+@keyframes chv-ripple-pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.88);
+    opacity: 0.08;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.08);
+    opacity: 0.18;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.22);
+    opacity: 0.04;
+  }
+}
+
+@keyframes chv-sheen-sweep {
+  0% {
+    transform: translate3d(-10%, -2%, 0) rotate(-10deg);
+    opacity: 0.26;
+  }
+  50% {
+    transform: translate3d(8%, 3%, 0) rotate(6deg);
+    opacity: 0.4;
+  }
+  100% {
+    transform: translate3d(-8%, -3%, 0) rotate(-8deg);
+    opacity: 0.24;
+  }
+}
+
+.chv-mobile-iridescence {
+  background:
+    radial-gradient(120% 86% at 50% 0%, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0) 34%),
+    linear-gradient(180deg, #090b12 0%, #04050b 54%, #010103 100%);
+  overflow: hidden;
+}
+
+.chv-mobile-iridescence::before,
+.chv-mobile-iridescence::after {
+  content: "";
+  position: absolute;
+  inset: -14%;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.chv-mobile-iridescence::before {
+  background:
+    radial-gradient(circle at 24% 28%, rgba(157, 205, 255, 0.26), rgba(157, 205, 255, 0) 28%),
+    radial-gradient(circle at 76% 22%, rgba(255, 211, 157, 0.2), rgba(255, 211, 157, 0) 24%),
+    radial-gradient(circle at 68% 72%, rgba(201, 162, 255, 0.22), rgba(201, 162, 255, 0) 24%),
+    radial-gradient(circle at 30% 82%, rgba(117, 255, 223, 0.14), rgba(117, 255, 223, 0) 24%);
+  filter: blur(54px) saturate(1.2);
+  mix-blend-mode: screen;
+  animation: chv-iridescence-drift 18s ease-in-out infinite alternate;
+}
+
+.chv-mobile-iridescence::after {
+  inset: -18%;
+  background:
+    conic-gradient(
+      from 180deg at 50% 50%,
+      rgba(255, 255, 255, 0) 0deg,
+      rgba(146, 194, 255, 0.16) 46deg,
+      rgba(255, 224, 188, 0.14) 112deg,
+      rgba(205, 171, 255, 0.14) 194deg,
+      rgba(110, 255, 227, 0.12) 252deg,
+      rgba(255, 255, 255, 0) 360deg
+    );
+  filter: blur(80px) saturate(1.16);
+  mix-blend-mode: screen;
+  animation: chv-iridescence-spin 24s linear infinite;
+  opacity: 0.34;
+}
+
+.chv-mobile-ripple-ring {
+  position: absolute;
+  left: 50%;
+  top: 33%;
+  width: min(88vw, 27rem);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 22%, rgba(255, 255, 255, 0) 64%);
+  box-shadow:
+    inset 0 0 44px rgba(255, 255, 255, 0.04),
+    0 0 90px rgba(111, 180, 255, 0.08);
+  filter: blur(0.2px);
+  animation: chv-ripple-pulse 13s ease-out infinite;
+}
+
+.chv-mobile-ripple-ring[data-delay="2"] {
+  animation-delay: 4.4s;
+}
+
+.chv-mobile-ripple-ring[data-delay="3"] {
+  animation-delay: 8.8s;
+}
+
+.chv-mobile-sheen-sweep {
+  position: absolute;
+  inset: -18% -6% auto;
+  height: 52%;
+  background:
+    linear-gradient(
+      116deg,
+      rgba(255, 255, 255, 0) 18%,
+      rgba(255, 255, 255, 0.14) 33%,
+      rgba(184, 224, 255, 0.14) 42%,
+      rgba(255, 228, 206, 0.08) 50%,
+      rgba(255, 255, 255, 0) 68%
+    );
+  filter: blur(28px);
+  mix-blend-mode: screen;
+  animation: chv-sheen-sweep 15s ease-in-out infinite alternate;
+}
+
+.chv-mobile-signal-card-wrap {
+  perspective: 1400px;
+}
+
+.chv-mobile-signal-card {
+  --signal-accent: rgba(255, 255, 255, 0.4);
+  position: relative;
+  isolation: isolate;
+  transform-style: preserve-3d;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.015) 24%, rgba(255, 255, 255, 0.035) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.05),
+    0 12px 18px rgba(0, 0, 0, 0.24),
+    0 26px 56px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(18px) saturate(132%);
+}
+
+.chv-mobile-signal-card::before,
+.chv-mobile-signal-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.chv-mobile-signal-card::before {
+  inset: 1px;
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.03) 38%, rgba(255, 255, 255, 0) 62%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0) 34%);
+  opacity: 0.84;
+}
+
+.chv-mobile-signal-card::after {
+  inset: auto 8% -24px;
+  height: 28px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--signal-accent) 18%, rgba(255, 255, 255, 0.18)) 0%, transparent 72%);
+  filter: blur(16px);
+  opacity: 0.54;
+  transform: translateZ(-26px);
+}
+
+.chv-mobile-signal-card[data-active="true"] {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.06),
+    0 18px 22px rgba(0, 0, 0, 0.22),
+    0 36px 82px rgba(0, 0, 0, 0.42),
+    0 0 0 1px color-mix(in srgb, var(--signal-accent) 10%, rgba(255, 255, 255, 0.1));
+}
+
+.chv-mobile-signal-layer {
+  transform: translateZ(28px);
+}
+
+.chv-mobile-signal-layer--deep {
+  transform: translateZ(40px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chv-mobile-iridescence::before,
+  .chv-mobile-iridescence::after,
+  .chv-mobile-ripple-ring,
+  .chv-mobile-sheen-sweep {
+    animation: none;
+  }
 }
 
 .chv-mobile-grain {

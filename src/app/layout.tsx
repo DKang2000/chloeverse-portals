@@ -6,6 +6,7 @@ import {
   IBM_Plex_Mono,
   Inter,
   Literata,
+  Oxanium,
   Space_Grotesk,
 } from "next/font/google";
 import "./globals.css";
@@ -49,6 +50,13 @@ const ibmPlexMono = IBM_Plex_Mono({
   display: "swap",
 });
 
+const oxanium = Oxanium({
+  variable: "--font-mobile-signal-title",
+  subsets: ["latin"],
+  weight: ["700", "800"],
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "chloeverse.io",
   description: "chloeverse.io",
@@ -63,7 +71,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${spaceGrotesk.variable} ${bodoniModa.variable} ${literata.variable} ${ibmPlexMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${spaceGrotesk.variable} ${bodoniModa.variable} ${literata.variable} ${ibmPlexMono.variable} ${oxanium.variable} antialiased`}
       >
         {children}
       </body>
