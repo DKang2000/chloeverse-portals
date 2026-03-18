@@ -14,6 +14,182 @@ type MobileHomeExperienceProps = {
 
 const ITEM_HEIGHT = 132;
 
+function MobileLiquidChromeField({
+  accent,
+  reducedMotion,
+}: {
+  accent: string;
+  reducedMotion: boolean;
+}) {
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,#05070a_0%,#030406_44%,#020205_100%)]" />
+      <svg
+        aria-hidden="true"
+        className="absolute inset-[-8%] h-[116%] w-[116%] opacity-[0.62]"
+        preserveAspectRatio="xMidYMid slice"
+        viewBox="0 0 100 170"
+      >
+        <defs>
+          <linearGradient id="chv-metal-base" x1="0%" x2="100%" y1="0%" y2="100%">
+            <stop offset="0%" stopColor="#040506" />
+            <stop offset="24%" stopColor="#d9d9d9" />
+            <stop offset="42%" stopColor="#111214" />
+            <stop offset="62%" stopColor="#f4f4f4" />
+            <stop offset="82%" stopColor="#050607" />
+            <stop offset="100%" stopColor="#d8d8d8" />
+          </linearGradient>
+          <linearGradient id="chv-iridescent-flow" x1="0%" x2="100%" y1="10%" y2="90%">
+            <stop offset="0%" stopColor="#6fb9ff" stopOpacity="0" />
+            <stop offset="24%" stopColor="#6fb9ff" stopOpacity="0.34" />
+            <stop offset="46%" stopColor="#ffd6aa" stopOpacity="0.2" />
+            <stop offset="68%" stopColor="#d8a6ff" stopOpacity="0.28" />
+            <stop offset="84%" stopColor="#6cffd8" stopOpacity="0.2" />
+            <stop offset="100%" stopColor="#6cffd8" stopOpacity="0" />
+          </linearGradient>
+          <filter
+            id="chv-liquid-chrome"
+            colorInterpolationFilters="sRGB"
+            height="140%"
+            width="140%"
+            x="-20%"
+            y="-20%"
+          >
+            <feTurbulence
+              baseFrequency="0.014 0.008"
+              numOctaves="2"
+              result="noise"
+              seed="7"
+              type="fractalNoise"
+            >
+              {reducedMotion ? null : (
+                <animate
+                  attributeName="baseFrequency"
+                  dur="24s"
+                  repeatCount="indefinite"
+                  values="0.014 0.008;0.02 0.012;0.016 0.007;0.014 0.008"
+                />
+              )}
+            </feTurbulence>
+            <feDisplacementMap
+              in="SourceGraphic"
+              in2="noise"
+              result="displaced"
+              scale="34"
+              xChannelSelector="R"
+              yChannelSelector="B"
+            >
+              {reducedMotion ? null : (
+                <animate
+                  attributeName="scale"
+                  dur="18s"
+                  repeatCount="indefinite"
+                  values="28;42;34;28"
+                />
+              )}
+            </feDisplacementMap>
+            <feGaussianBlur in="displaced" result="softened" stdDeviation="0.65" />
+            <feColorMatrix
+              in="softened"
+              type="matrix"
+              values="1.18 0 0 0 0  0 1.18 0 0 0  0 0 1.18 0 0  0 0 0 1 0"
+            />
+          </filter>
+          <filter
+            id="chv-liquid-color"
+            colorInterpolationFilters="sRGB"
+            height="140%"
+            width="140%"
+            x="-20%"
+            y="-20%"
+          >
+            <feTurbulence
+              baseFrequency="0.01 0.016"
+              numOctaves="2"
+              result="noise"
+              seed="11"
+              type="fractalNoise"
+            >
+              {reducedMotion ? null : (
+                <animate
+                  attributeName="baseFrequency"
+                  dur="26s"
+                  repeatCount="indefinite"
+                  values="0.01 0.016;0.014 0.02;0.011 0.014;0.01 0.016"
+                />
+              )}
+            </feTurbulence>
+            <feDisplacementMap
+              in="SourceGraphic"
+              in2="noise"
+              scale="42"
+              xChannelSelector="G"
+              yChannelSelector="R"
+            >
+              {reducedMotion ? null : (
+                <animate
+                  attributeName="scale"
+                  dur="20s"
+                  repeatCount="indefinite"
+                  values="34;48;38;34"
+                />
+              )}
+            </feDisplacementMap>
+            <feGaussianBlur stdDeviation="1.1" />
+          </filter>
+        </defs>
+
+        <rect fill="#040507" height="170" width="100" />
+        <g filter="url(#chv-liquid-chrome)" opacity="0.58">
+          <ellipse cx="12" cy="14" fill="url(#chv-metal-base)" rx="16" ry="22" transform="rotate(-14 12 14)" />
+          <ellipse cx="34" cy="26" fill="url(#chv-metal-base)" rx="18" ry="16" transform="rotate(12 34 26)" />
+          <ellipse cx="68" cy="18" fill="url(#chv-metal-base)" rx="16" ry="20" transform="rotate(-18 68 18)" />
+          <ellipse cx="86" cy="42" fill="url(#chv-metal-base)" rx="18" ry="18" transform="rotate(8 86 42)" />
+          <ellipse cx="22" cy="64" fill="url(#chv-metal-base)" rx="22" ry="18" transform="rotate(20 22 64)" />
+          <ellipse cx="52" cy="60" fill="url(#chv-metal-base)" rx="16" ry="22" transform="rotate(-12 52 60)" />
+          <ellipse cx="78" cy="78" fill="url(#chv-metal-base)" rx="22" ry="18" transform="rotate(14 78 78)" />
+          <ellipse cx="14" cy="108" fill="url(#chv-metal-base)" rx="18" ry="24" transform="rotate(-8 14 108)" />
+          <ellipse cx="46" cy="102" fill="url(#chv-metal-base)" rx="22" ry="18" transform="rotate(6 46 102)" />
+          <ellipse cx="72" cy="122" fill="url(#chv-metal-base)" rx="20" ry="20" transform="rotate(-20 72 122)" />
+          <ellipse cx="26" cy="146" fill="url(#chv-metal-base)" rx="20" ry="16" transform="rotate(14 26 146)" />
+          <ellipse cx="84" cy="150" fill="url(#chv-metal-base)" rx="18" ry="22" transform="rotate(-6 84 150)" />
+        </g>
+
+        <g filter="url(#chv-liquid-color)" opacity="0.24">
+          <rect fill="url(#chv-iridescent-flow)" height="170" width="100">
+            {reducedMotion ? null : (
+              <animateTransform
+                attributeName="transform"
+                dur="26s"
+                repeatCount="indefinite"
+                type="translate"
+                values="-6 0; 8 4; -4 8; -6 0"
+              />
+            )}
+          </rect>
+        </g>
+      </svg>
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,4,7,0.3)_0%,rgba(2,3,5,0.46)_38%,rgba(2,2,4,0.68)_100%)]" />
+      <motion.div
+        animate={
+          reducedMotion
+            ? undefined
+            : {
+                opacity: [0.08, 0.18, 0.1],
+                scale: [1, 1.08, 1.02],
+                x: [0, 18, -8],
+                y: [0, 22, -12],
+              }
+        }
+        transition={{ duration: 14, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
+        className="absolute left-1/2 top-[12%] h-[24rem] w-[24rem] -translate-x-1/2 rounded-full blur-3xl"
+        style={{ background: `radial-gradient(circle, ${accent}88 0%, transparent 66%)` }}
+      />
+      <div className="chv-mobile-liquid-metal__vignette absolute inset-0" />
+    </div>
+  );
+}
+
 export function MobileHomeExperience(_: MobileHomeExperienceProps) {
   void _.titleFontClassName;
   void _.monoFontClassName;
@@ -60,26 +236,7 @@ export function MobileHomeExperience(_: MobileHomeExperienceProps) {
       showHeader={false}
       ambient={
         <>
-          <div className="chv-mobile-iridescence absolute inset-0" />
-          <div className="chv-mobile-prism-band" data-variant="top" />
-          <div className="chv-mobile-prism-band" data-variant="mid" />
-          <div className="chv-mobile-prism-band" />
-          <div className="chv-mobile-sheen-sweep" />
-          <motion.div
-            animate={
-              reducedMotion
-                ? undefined
-                : {
-                    opacity: [0.18, 0.34, 0.2],
-                    scale: [1, 1.08, 1.03],
-                    x: [0, 8, -4],
-                    y: [0, 16, -10],
-                  }
-            }
-            transition={{ duration: 10.5, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
-            className="absolute left-1/2 top-[10%] h-72 w-72 -translate-x-1/2 rounded-full blur-3xl"
-            style={{ background: `radial-gradient(circle, ${activePortal.accent}88 0%, transparent 68%)` }}
-          />
+          <MobileLiquidChromeField accent={activePortal.accent} reducedMotion={Boolean(reducedMotion)} />
         </>
       }
     >
