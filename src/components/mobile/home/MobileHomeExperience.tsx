@@ -363,7 +363,12 @@ export function MobileHomeExperience(_: MobileHomeExperienceProps) {
           paddingBottom: "env(safe-area-inset-bottom,0px)",
         }}
       >
-        <div className="pointer-events-none absolute inset-x-0 top-[8.75rem] z-0 h-[18rem] bg-[radial-gradient(82%_108%_at_50%_12%,rgba(255,255,255,0.08),rgba(255,255,255,0.02)_42%,rgba(0,0,0,0)_78%)] blur-3xl" />
+        <div
+          className="pointer-events-none absolute left-1/2 top-[6.35rem] z-0 h-[16rem] w-[23rem] -translate-x-1/2 rounded-full blur-3xl"
+          style={{
+            background: `radial-gradient(circle at 50% 34%, color-mix(in srgb, ${activePortal.accent} 18%, rgba(255,255,255,0.12)) 0%, rgba(255,255,255,0.05) 28%, rgba(255,255,255,0) 72%)`,
+          }}
+        />
 
         <section className="relative z-10 shrink-0 pt-5 text-center">
           <div className="relative mx-auto max-w-[17.2rem]">
