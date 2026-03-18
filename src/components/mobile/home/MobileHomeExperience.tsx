@@ -25,22 +25,23 @@ function MobileSignalWord({
   reducedMotion: boolean;
   delay?: number;
 }) {
-  const extrusionLayers = Array.from({ length: 6 }, (_, index) => index);
+  const extrusionLayers = Array.from({ length: 4 }, (_, index) => index);
 
   return (
     <motion.span
-      initial={reducedMotion ? false : { opacity: 0, filter: "blur(8px)" }}
+      initial={reducedMotion ? false : { opacity: 0, y: 10, filter: "blur(6px)" }}
       animate={
         reducedMotion
           ? undefined
           : {
-              opacity: [1, 1, 0.12, 1, 0.04, 1],
+              opacity: [1, 1, 0.18, 1, 0.08, 1],
+              y: [0, 0, 1.5, 0, 1, 0],
               filter: [
                 "blur(0px)",
                 "blur(0px)",
-                "blur(1.6px)",
+                "blur(1.2px)",
                 "blur(0px)",
-                "blur(2px)",
+                "blur(1.6px)",
                 "blur(0px)",
               ],
             }
@@ -52,19 +53,19 @@ function MobileSignalWord({
         repeat: Number.POSITIVE_INFINITY,
         ease: "easeInOut",
       }}
-      className="relative block"
+      className="relative block pb-1"
     >
       <span className="pointer-events-none absolute inset-0 [transform-style:preserve-3d]">
         {extrusionLayers.map((layer) => (
           <span
             key={`${text}-${layer}`}
-            className="chv-mobile-signal-title absolute inset-0 text-[#090b10]"
+            className="chv-mobile-signal-title absolute inset-0 text-[#11141b]"
             style={{
-              transform: `translate3d(${layer * 0.7}px, ${layer * 1.15}px, 0)`,
-              opacity: Math.max(0.2, 0.9 - layer * 0.12),
+              transform: `translate3d(${layer * 1.2}px, ${layer * 1.6}px, 0)`,
+              opacity: Math.max(0.28, 0.86 - layer * 0.14),
               textShadow:
                 layer === extrusionLayers.length - 1
-                  ? `0 12px 24px rgba(0,0,0,0.42), 0 0 18px ${accent}22`
+                  ? `0 10px 18px rgba(0,0,0,0.34), 0 0 14px ${accent}18`
                   : undefined,
             }}
             aria-hidden="true"
@@ -80,25 +81,25 @@ function MobileSignalWord({
           reducedMotion
             ? undefined
             : {
-                opacity: [0.16, 0.28, 0.16],
-                x: [-2, 2, -2],
+                opacity: [0.08, 0.18, 0.1],
+                x: [-1.5, 1.5, -1.5],
               }
         }
         transition={{
-          duration: 5.5,
+          duration: 6.5,
           delay,
           repeat: Number.POSITIVE_INFINITY,
           ease: "easeInOut",
         }}
-        className="chv-mobile-signal-title absolute inset-0 text-white/24 blur-[1.6px]"
+        className="chv-mobile-signal-title absolute inset-0 text-white/18 blur-[1px]"
       >
         {text}
       </motion.span>
 
       <span
-        className="chv-mobile-signal-title relative block bg-[linear-gradient(180deg,#fffdfa_0%,#f2eee7_38%,#bfc6d2_76%,#7f8898_100%)] bg-clip-text text-transparent"
+        className="chv-mobile-signal-title relative block bg-[linear-gradient(180deg,#fcfeff_0%,#f1f6fb_24%,#cad2de_56%,#7b8697_100%)] bg-clip-text text-transparent"
         style={{
-          textShadow: `0 1px 0 rgba(255,255,255,0.16), 0 18px 34px rgba(0,0,0,0.34), 0 0 18px ${accent}1c`,
+          textShadow: `0 1px 0 rgba(255,255,255,0.16), 0 12px 24px rgba(0,0,0,0.28), 0 0 12px ${accent}14`,
         }}
       >
         {text}
@@ -115,11 +116,14 @@ function MobileLiquidChromeField({
   reducedMotion: boolean;
 }) {
   return (
-    <div className="absolute inset-0 overflow-hidden">
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,#05070a_0%,#030406_44%,#020205_100%)]" />
+    <div className="chv-mobile-liquid-metal absolute inset-0 overflow-hidden">
+      <div className="chv-mobile-liquid-metal__shadow" />
+      <div className="chv-mobile-liquid-metal__sheet" />
+      <div className="chv-mobile-liquid-metal__color" />
+      <div className="chv-mobile-liquid-metal__sheen" />
       <svg
         aria-hidden="true"
-        className="absolute inset-[-8%] h-[116%] w-[116%] opacity-[0.62]"
+        className="absolute inset-[-10%] h-[120%] w-[120%] opacity-[0.74]"
         preserveAspectRatio="xMidYMid slice"
         viewBox="0 0 100 170"
       >
@@ -141,19 +145,19 @@ function MobileLiquidChromeField({
           </pattern>
           <linearGradient id="chv-metal-sweep" x1="0%" x2="100%" y1="0%" y2="100%">
             <stop offset="0%" stopColor="#040506" />
-            <stop offset="16%" stopColor="#d7d8db" />
+            <stop offset="12%" stopColor="#eef2f6" />
             <stop offset="30%" stopColor="#141518" />
-            <stop offset="48%" stopColor="#f6f6f6" />
+            <stop offset="48%" stopColor="#ffffff" />
             <stop offset="66%" stopColor="#090a0c" />
-            <stop offset="84%" stopColor="#c8c9cd" />
+            <stop offset="84%" stopColor="#d8dde6" />
             <stop offset="100%" stopColor="#050607" />
           </linearGradient>
           <linearGradient id="chv-iridescent-flow" x1="0%" x2="100%" y1="10%" y2="90%">
             <stop offset="0%" stopColor="#6fb9ff" stopOpacity="0" />
-            <stop offset="22%" stopColor="#6fb9ff" stopOpacity="0.42" />
-            <stop offset="44%" stopColor="#ffd6aa" stopOpacity="0.28" />
-            <stop offset="66%" stopColor="#d8a6ff" stopOpacity="0.34" />
-            <stop offset="84%" stopColor="#6cffd8" stopOpacity="0.26" />
+            <stop offset="18%" stopColor="#6fb9ff" stopOpacity="0.62" />
+            <stop offset="42%" stopColor="#ffd6aa" stopOpacity="0.42" />
+            <stop offset="66%" stopColor="#d8a6ff" stopOpacity="0.54" />
+            <stop offset="84%" stopColor="#6cffd8" stopOpacity="0.44" />
             <stop offset="100%" stopColor="#6cffd8" stopOpacity="0" />
           </linearGradient>
           <filter
@@ -174,9 +178,9 @@ function MobileLiquidChromeField({
               {reducedMotion ? null : (
                 <animate
                   attributeName="baseFrequency"
-                  dur="10s"
+                  dur="7.5s"
                   repeatCount="indefinite"
-                  values="0.012 0.032;0.017 0.05;0.011 0.026;0.012 0.032"
+                  values="0.012 0.032;0.02 0.054;0.011 0.024;0.012 0.032"
                 />
               )}
             </feTurbulence>
@@ -185,16 +189,16 @@ function MobileLiquidChromeField({
               in="SourceGraphic"
               in2="noiseSoft"
               result="displaced"
-              scale="62"
+              scale="74"
               xChannelSelector="R"
               yChannelSelector="B"
             >
               {reducedMotion ? null : (
                 <animate
                   attributeName="scale"
-                  dur="8s"
+                  dur="6.5s"
                   repeatCount="indefinite"
-                  values="48;78;56;48"
+                  values="58;92;64;58"
                 />
               )}
             </feDisplacementMap>
@@ -202,9 +206,9 @@ function MobileLiquidChromeField({
               in="noiseSoft"
               lightingColor="#ffffff"
               result="specular"
-              specularConstant="1.4"
-              specularExponent="28"
-              surfaceScale="10"
+              specularConstant="1.7"
+              specularExponent="34"
+              surfaceScale="12"
             >
               <fePointLight x="42" y="-18" z="118" />
             </feSpecularLighting>
@@ -235,53 +239,53 @@ function MobileLiquidChromeField({
               {reducedMotion ? null : (
                 <animate
                   attributeName="baseFrequency"
-                  dur="12s"
+                  dur="8.5s"
                   repeatCount="indefinite"
-                  values="0.016 0.024;0.022 0.03;0.014 0.02;0.016 0.024"
+                  values="0.016 0.024;0.026 0.034;0.014 0.018;0.016 0.024"
                 />
               )}
             </feTurbulence>
             <feDisplacementMap
               in="SourceGraphic"
               in2="noise"
-              scale="56"
+              scale="72"
               xChannelSelector="G"
               yChannelSelector="R"
             >
               {reducedMotion ? null : (
                 <animate
                   attributeName="scale"
-                  dur="9s"
+                  dur="7s"
                   repeatCount="indefinite"
-                  values="40;64;46;40"
+                  values="54;84;60;54"
                 />
               )}
             </feDisplacementMap>
-            <feGaussianBlur stdDeviation="0.9" />
+            <feGaussianBlur stdDeviation="0.6" />
           </filter>
         </defs>
 
         <rect fill="#040507" height="170" width="100" />
-        <g filter="url(#chv-liquid-chrome)" opacity="0.58">
+        <g filter="url(#chv-liquid-chrome)" opacity="0.7">
           <rect fill="url(#chv-metal-bands)" height="170" width="100" x="0" y="0" />
-          <rect fill="url(#chv-metal-sweep)" height="170" opacity="0.66" width="100" x="0" y="0" />
+          <rect fill="url(#chv-metal-sweep)" height="170" opacity="0.74" width="100" x="0" y="0" />
         </g>
 
-        <g filter="url(#chv-liquid-color)" opacity="0.34">
+        <g filter="url(#chv-liquid-color)" opacity="0.52">
           <rect fill="url(#chv-iridescent-flow)" height="170" width="100">
             {reducedMotion ? null : (
               <animateTransform
                 attributeName="transform"
-                dur="9s"
+                dur="6.5s"
                 repeatCount="indefinite"
                 type="translate"
-                values="-10 0; 12 6; -6 10; -10 0"
+                values="-12 0; 14 7; -7 11; -12 0"
               />
             )}
           </rect>
         </g>
       </svg>
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,4,7,0.22)_0%,rgba(2,3,5,0.34)_38%,rgba(2,2,4,0.54)_100%)]" />
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,4,7,0.14)_0%,rgba(2,3,5,0.28)_42%,rgba(2,2,4,0.42)_100%)]" />
       <div className="chv-mobile-liquid-metal__iridescence" />
       <div className="chv-mobile-liquid-metal__ripple" />
       <motion.div
@@ -290,12 +294,12 @@ function MobileLiquidChromeField({
             ? undefined
             : {
                 opacity: [0.14, 0.28, 0.16],
-                scale: [1, 1.14, 1.06],
-                x: [0, 28, -12],
-                y: [0, 30, -16],
+                scale: [1, 1.18, 1.08],
+                x: [0, 34, -14],
+                y: [0, 26, -18],
               }
         }
-        transition={{ duration: 9, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
+        transition={{ duration: 7.5, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
         className="absolute left-1/2 top-[12%] h-[24rem] w-[24rem] -translate-x-1/2 rounded-full blur-3xl"
         style={{ background: `radial-gradient(circle, ${accent}88 0%, transparent 66%)` }}
       />
@@ -439,15 +443,16 @@ export function MobileHomeExperience(_: MobileHomeExperienceProps) {
                     reducedMotion
                       ? undefined
                       : {
-                          rotateX: active ? 10 : 1,
-                          rotateY: active ? 0 : index < activeIndex ? -5 : 5,
-                          y: active ? -8 : 2,
-                          scale: active ? 1.03 : 0.97,
-                          opacity: active ? 1 : 0.76,
+                          rotateX: active ? 16 : 4,
+                          rotateY: active ? 0 : index < activeIndex ? -8 : 8,
+                          y: active ? -12 : 4,
+                          z: active ? 18 : -4,
+                          scale: active ? 1.04 : 0.955,
+                          opacity: active ? 1 : 0.8,
                         }
                   }
-                  whileTap={reducedMotion ? undefined : { scale: 0.992, y: -4, rotateX: 7 }}
-                  transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+                  whileTap={reducedMotion ? undefined : { scale: 0.99, y: -6, rotateX: 10 }}
+                  transition={{ type: "spring", stiffness: 220, damping: 24, mass: 0.7 }}
                   className="chv-mobile-signal-card relative flex min-h-[112px] items-center justify-between gap-5 rounded-[2rem] border border-white/8 px-5"
                   style={
                     {
@@ -459,6 +464,7 @@ export function MobileHomeExperience(_: MobileHomeExperienceProps) {
                     className="absolute inset-x-6 top-0 h-px"
                     style={{ background: `linear-gradient(90deg, transparent, ${item.accent}66, transparent)` }}
                   />
+                  <div className="chv-mobile-signal-card__shine absolute inset-[1px] rounded-[calc(2rem-1px)]" />
                   <div className="absolute inset-y-4 left-[2.35rem] w-px bg-[linear-gradient(180deg,transparent,rgba(255,255,255,0.26),transparent)] [transform:translateZ(18px)]" />
                   <div className="chv-mobile-signal-layer relative pl-6">
                     <p className="chv-mobile-mono text-[0.56rem] uppercase tracking-[0.3em] text-white/34">
@@ -472,11 +478,25 @@ export function MobileHomeExperience(_: MobileHomeExperienceProps) {
                     <span className="chv-mobile-mono text-[0.56rem] uppercase tracking-[0.28em] text-white/34">
                       {String(index + 1).padStart(2, "0")}
                     </span>
-                    <span
+                    <motion.span
                       className="mt-4 block h-9 w-9 rounded-full border border-white/10"
+                      animate={
+                        reducedMotion
+                          ? undefined
+                          : {
+                              scale: active ? [1, 1.08, 1] : 1,
+                              boxShadow: active
+                                ? [
+                                    `0 0 0px ${item.accent}00`,
+                                    `0 0 22px ${item.accent}55`,
+                                    `0 0 12px ${item.accent}30`,
+                                  ]
+                                : `0 0 0px ${item.accent}00`,
+                            }
+                      }
+                      transition={{ duration: 1.8, repeat: active ? Number.POSITIVE_INFINITY : 0, ease: "easeInOut" }}
                       style={{
-                        background: `radial-gradient(circle at 50% 50%, ${item.accent}bb 0%, transparent 58%)`,
-                        boxShadow: active ? `0 0 26px ${item.accent}55` : "none",
+                        background: `radial-gradient(circle at 50% 50%, ${item.accent}dd 0%, ${item.accent}55 34%, transparent 62%)`,
                       }}
                     />
                   </div>
