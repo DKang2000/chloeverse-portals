@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 import { MobileRouteLink } from "@/components/mobile/shared/MobileRouteLink";
 import { MobileRouteFrame } from "@/components/mobile/shared/MobileRouteFrame";
+import { MobileLiquidChromeShader } from "@/components/mobile/home/MobileLiquidChromeShader";
 import { HOME_PORTALS } from "@/lib/mobile-content";
 
 type MobileHomeExperienceProps = {
@@ -111,181 +112,16 @@ function MobileSignalWord({
 function MobileLiquidChromeField({
   accent,
   reducedMotion,
+  onReady,
 }: {
   accent: string;
   reducedMotion: boolean;
+  onReady?: () => void;
 }) {
   return (
     <div className="chv-mobile-liquid-metal absolute inset-0 overflow-hidden">
-      <div className="chv-mobile-liquid-metal__shadow" />
-      <div className="chv-mobile-liquid-metal__sheet" />
-      <div className="chv-mobile-liquid-metal__color" />
-      <div className="chv-mobile-liquid-metal__sheen" />
-      <svg
-        aria-hidden="true"
-        className="absolute inset-[-10%] h-[120%] w-[120%] opacity-[0.74]"
-        preserveAspectRatio="xMidYMid slice"
-        viewBox="0 0 100 170"
-      >
-        <defs>
-          <pattern
-            id="chv-metal-bands"
-            height="34"
-            patternTransform="rotate(22)"
-            patternUnits="userSpaceOnUse"
-            width="34"
-          >
-            <rect fill="#050607" height="34" width="34" />
-            <rect fill="#f4f4f4" height="34" opacity="0.96" width="6" x="0" />
-            <rect fill="#a7a7ac" height="34" opacity="0.72" width="4" x="6" />
-            <rect fill="#1a1b1f" height="34" opacity="0.98" width="7" x="10" />
-            <rect fill="#d7d8db" height="34" opacity="0.84" width="5" x="17" />
-            <rect fill="#0a0b0d" height="34" opacity="0.98" width="6" x="22" />
-            <rect fill="#ececee" height="34" opacity="0.92" width="6" x="28" />
-          </pattern>
-          <linearGradient id="chv-metal-sweep" x1="0%" x2="100%" y1="0%" y2="100%">
-            <stop offset="0%" stopColor="#040506" />
-            <stop offset="12%" stopColor="#eef2f6" />
-            <stop offset="30%" stopColor="#141518" />
-            <stop offset="48%" stopColor="#ffffff" />
-            <stop offset="66%" stopColor="#090a0c" />
-            <stop offset="84%" stopColor="#d8dde6" />
-            <stop offset="100%" stopColor="#050607" />
-          </linearGradient>
-          <linearGradient id="chv-iridescent-flow" x1="0%" x2="100%" y1="10%" y2="90%">
-            <stop offset="0%" stopColor="#6fb9ff" stopOpacity="0" />
-            <stop offset="18%" stopColor="#6fb9ff" stopOpacity="0.62" />
-            <stop offset="42%" stopColor="#ffd6aa" stopOpacity="0.42" />
-            <stop offset="66%" stopColor="#d8a6ff" stopOpacity="0.54" />
-            <stop offset="84%" stopColor="#6cffd8" stopOpacity="0.44" />
-            <stop offset="100%" stopColor="#6cffd8" stopOpacity="0" />
-          </linearGradient>
-          <filter
-            id="chv-liquid-chrome"
-            colorInterpolationFilters="sRGB"
-            height="140%"
-            width="140%"
-            x="-20%"
-            y="-20%"
-          >
-            <feTurbulence
-              baseFrequency="0.012 0.032"
-              numOctaves="3"
-              result="noise"
-              seed="7"
-              type="turbulence"
-            >
-              {reducedMotion ? null : (
-                <animate
-                  attributeName="baseFrequency"
-                  dur="7.5s"
-                  repeatCount="indefinite"
-                  values="0.012 0.032;0.02 0.054;0.011 0.024;0.012 0.032"
-                />
-              )}
-            </feTurbulence>
-            <feGaussianBlur in="noise" result="noiseSoft" stdDeviation="0.3" />
-            <feDisplacementMap
-              in="SourceGraphic"
-              in2="noiseSoft"
-              result="displaced"
-              scale="74"
-              xChannelSelector="R"
-              yChannelSelector="B"
-            >
-              {reducedMotion ? null : (
-                <animate
-                  attributeName="scale"
-                  dur="6.5s"
-                  repeatCount="indefinite"
-                  values="58;92;64;58"
-                />
-              )}
-            </feDisplacementMap>
-            <feSpecularLighting
-              in="noiseSoft"
-              lightingColor="#ffffff"
-              result="specular"
-              specularConstant="1.7"
-              specularExponent="34"
-              surfaceScale="12"
-            >
-              <fePointLight x="42" y="-18" z="118" />
-            </feSpecularLighting>
-            <feComposite in="specular" in2="displaced" operator="in" result="litMetal" />
-            <feBlend in="displaced" in2="litMetal" mode="screen" result="brightened" />
-            <feGaussianBlur in="brightened" result="softened" stdDeviation="0.5" />
-            <feColorMatrix
-              in="softened"
-              type="matrix"
-              values="1.34 0 0 0 0  0 1.34 0 0 0  0 0 1.34 0 0  0 0 0 1 0"
-            />
-          </filter>
-          <filter
-            id="chv-liquid-color"
-            colorInterpolationFilters="sRGB"
-            height="140%"
-            width="140%"
-            x="-20%"
-            y="-20%"
-          >
-            <feTurbulence
-              baseFrequency="0.016 0.024"
-              numOctaves="2"
-              result="noise"
-              seed="11"
-              type="fractalNoise"
-            >
-              {reducedMotion ? null : (
-                <animate
-                  attributeName="baseFrequency"
-                  dur="8.5s"
-                  repeatCount="indefinite"
-                  values="0.016 0.024;0.026 0.034;0.014 0.018;0.016 0.024"
-                />
-              )}
-            </feTurbulence>
-            <feDisplacementMap
-              in="SourceGraphic"
-              in2="noise"
-              scale="72"
-              xChannelSelector="G"
-              yChannelSelector="R"
-            >
-              {reducedMotion ? null : (
-                <animate
-                  attributeName="scale"
-                  dur="7s"
-                  repeatCount="indefinite"
-                  values="54;84;60;54"
-                />
-              )}
-            </feDisplacementMap>
-            <feGaussianBlur stdDeviation="0.6" />
-          </filter>
-        </defs>
-
-        <rect fill="#040507" height="170" width="100" />
-        <g filter="url(#chv-liquid-chrome)" opacity="0.7">
-          <rect fill="url(#chv-metal-bands)" height="170" width="100" x="0" y="0" />
-          <rect fill="url(#chv-metal-sweep)" height="170" opacity="0.74" width="100" x="0" y="0" />
-        </g>
-
-        <g filter="url(#chv-liquid-color)" opacity="0.52">
-          <rect fill="url(#chv-iridescent-flow)" height="170" width="100">
-            {reducedMotion ? null : (
-              <animateTransform
-                attributeName="transform"
-                dur="6.5s"
-                repeatCount="indefinite"
-                type="translate"
-                values="-12 0; 14 7; -7 11; -12 0"
-              />
-            )}
-          </rect>
-        </g>
-      </svg>
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,4,7,0.14)_0%,rgba(2,3,5,0.28)_42%,rgba(2,2,4,0.42)_100%)]" />
+      <MobileLiquidChromeShader accent={accent} reducedMotion={reducedMotion} onReady={onReady} />
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,4,7,0.18)_0%,rgba(2,3,5,0.28)_42%,rgba(2,2,4,0.5)_100%)]" />
       <div className="chv-mobile-liquid-metal__iridescence" />
       <div className="chv-mobile-liquid-metal__ripple" />
       <motion.div
@@ -308,6 +144,62 @@ function MobileLiquidChromeField({
   );
 }
 
+function MobileLandingLoader({
+  accent,
+  visible,
+}: {
+  accent: string;
+  visible: boolean;
+}) {
+  return (
+    <AnimatePresence>
+      {visible ? (
+        <motion.div
+          key="mobile-landing-loader"
+          initial={{ opacity: 1 }}
+          exit={{ opacity: 0, transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] } }}
+          className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center bg-[radial-gradient(circle_at_50%_38%,rgba(255,255,255,0.09),rgba(4,5,8,0.88)_42%,rgba(2,3,6,0.98)_100%)]"
+        >
+          <motion.div
+            animate={{ scale: [0.985, 1.015, 0.985], opacity: [0.94, 1, 0.94] }}
+            transition={{ duration: 2.4, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
+            className="relative flex h-36 w-36 items-center justify-center rounded-full border border-white/10 bg-black/20 shadow-[0_30px_90px_rgba(0,0,0,0.55)] backdrop-blur-xl"
+          >
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 4.5, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+              className="absolute inset-[10px] rounded-full border border-white/10"
+              style={{
+                background: `conic-gradient(from 40deg, transparent 0deg, ${accent}66 70deg, rgba(255,255,255,0.65) 130deg, transparent 220deg, rgba(150,220,255,0.3) 300deg, transparent 360deg)`,
+                boxShadow: `inset 0 0 0 1px rgba(255,255,255,0.06), 0 0 28px ${accent}22`,
+              }}
+            />
+            <div className="absolute inset-[24px] rounded-full border border-white/8 bg-[radial-gradient(circle_at_35%_30%,rgba(255,255,255,0.16),rgba(255,255,255,0.02)_38%,rgba(0,0,0,0.16)_100%)]" />
+            <motion.div
+              animate={{ rotate: -360 }}
+              transition={{ duration: 7, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+              className="absolute inset-[18px] rounded-full"
+            >
+              <span
+                className="absolute left-1/2 top-0 block h-3.5 w-3.5 -translate-x-1/2 rounded-full border border-white/15"
+                style={{
+                  background: `radial-gradient(circle, ${accent}dd 0%, ${accent}55 40%, transparent 72%)`,
+                  boxShadow: `0 0 24px ${accent}88`,
+                }}
+              />
+            </motion.div>
+            <div className="relative flex h-12 w-12 items-center justify-center rounded-full border border-white/12 bg-[radial-gradient(circle_at_35%_28%,rgba(255,255,255,0.22),rgba(255,255,255,0.04)_44%,rgba(0,0,0,0.26)_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.16),0_0_22px_rgba(255,255,255,0.08)]">
+              <span className="chv-mobile-mono text-[0.52rem] uppercase tracking-[0.34em] text-white/72">
+                tune
+              </span>
+            </div>
+          </motion.div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
+  );
+}
+
 export function MobileHomeExperience(_: MobileHomeExperienceProps) {
   void _.titleFontClassName;
   void _.monoFontClassName;
@@ -315,6 +207,9 @@ export function MobileHomeExperience(_: MobileHomeExperienceProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const itemRefs = useRef<Array<HTMLElement | null>>([]);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [assetsReady, setAssetsReady] = useState(false);
+  const [shaderReady, setShaderReady] = useState(false);
+  const [showLoader, setShowLoader] = useState(true);
 
   useEffect(() => {
     const root = containerRef.current;
@@ -342,6 +237,43 @@ export function MobileHomeExperience(_: MobileHomeExperienceProps) {
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const fontPromise =
+      typeof document !== "undefined" && "fonts" in document
+        ? document.fonts.ready.catch(() => undefined)
+        : Promise.resolve();
+    const loadPromise =
+      document.readyState === "complete"
+        ? Promise.resolve()
+        : new Promise<void>((resolve) => {
+            window.addEventListener("load", () => resolve(), { once: true });
+          });
+
+    Promise.all([fontPromise, loadPromise, new Promise((resolve) => window.setTimeout(resolve, 320))]).then(
+      () => {
+        if (!cancelled) {
+          setAssetsReady(true);
+        }
+      },
+    );
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!assetsReady || !shaderReady) return;
+
+    const timer = window.setTimeout(() => {
+      setShowLoader(false);
+    }, 220);
+
+    return () => window.clearTimeout(timer);
+  }, [assetsReady, shaderReady]);
+
   const activePortal = HOME_PORTALS[activeIndex] ?? HOME_PORTALS[0];
 
   return (
@@ -355,7 +287,11 @@ export function MobileHomeExperience(_: MobileHomeExperienceProps) {
       contentClassName="h-[100svh] !px-0 !pb-0 !pt-0"
       ambient={
         <>
-          <MobileLiquidChromeField accent={activePortal.accent} reducedMotion={Boolean(reducedMotion)} />
+          <MobileLiquidChromeField
+            accent={activePortal.accent}
+            reducedMotion={Boolean(reducedMotion)}
+            onReady={() => setShaderReady(true)}
+          />
         </>
       }
     >
@@ -528,6 +464,7 @@ export function MobileHomeExperience(_: MobileHomeExperienceProps) {
           </div>
         </section>
       </div>
+      <MobileLandingLoader accent={activePortal.accent} visible={showLoader} />
     </MobileRouteFrame>
   );
 }
