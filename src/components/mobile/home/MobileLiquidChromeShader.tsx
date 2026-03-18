@@ -111,17 +111,17 @@ void main() {
   vec3 iridescence = spectral(fract(h * 0.38 + band * 0.42 + uTime * 0.045 * uMotion));
   iridescence = mix(iridescence, mix(iridescence, uAccent, 0.22), 0.55);
 
-  vec3 silverDark = vec3(0.032, 0.04, 0.056);
-  vec3 silverLight = vec3(0.76, 0.8, 0.88);
-  vec3 metal = mix(silverDark, silverLight, smoothstep(0.22, 1.2, h * 0.56 + diffuse * 0.72));
+  vec3 silverDark = vec3(0.014, 0.018, 0.03);
+  vec3 silverLight = vec3(0.52, 0.58, 0.68);
+  vec3 metal = mix(silverDark, silverLight, smoothstep(0.3, 1.28, h * 0.52 + diffuse * 0.68));
 
-  metal += specular * 0.42;
-  metal += iridescence * (0.12 + fresnel * 0.32 + band * 0.06);
+  metal += specular * 0.34;
+  metal += iridescence * (0.09 + fresnel * 0.26 + band * 0.04);
   metal = mix(metal, metal * vec3(0.72, 0.78, 0.88), smoothstep(0.0, 1.0, uv.y * 0.4 + 0.1));
-  metal *= 0.84;
+  metal *= 0.66;
 
   float vignette = smoothstep(1.18, 0.16, length((uv - 0.5) * vec2(uResolution.x / max(uResolution.y, 1.0), 1.0)));
-  metal *= mix(0.72, 1.0, vignette);
+  metal *= mix(0.56, 1.0, vignette);
   metal = pow(clamp(metal, 0.0, 1.45), vec3(0.92));
 
   gl_FragColor = vec4(metal, 1.0);

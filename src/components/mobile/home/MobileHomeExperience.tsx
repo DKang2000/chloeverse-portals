@@ -121,7 +121,7 @@ function MobileLiquidChromeField({
   return (
     <div className="chv-mobile-liquid-metal absolute inset-0 overflow-hidden">
       <MobileLiquidChromeShader accent={accent} reducedMotion={reducedMotion} onReady={onReady} />
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,4,7,0.18)_0%,rgba(2,3,5,0.28)_42%,rgba(2,2,4,0.5)_100%)]" />
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(1,2,4,0.38)_0%,rgba(1,2,4,0.44)_42%,rgba(1,2,4,0.62)_100%)]" />
       <div className="chv-mobile-liquid-metal__iridescence" />
       <div className="chv-mobile-liquid-metal__ripple" />
       <motion.div
@@ -129,15 +129,15 @@ function MobileLiquidChromeField({
           reducedMotion
             ? undefined
             : {
-                opacity: [0.14, 0.28, 0.16],
-                scale: [1, 1.18, 1.08],
-                x: [0, 34, -14],
-                y: [0, 26, -18],
+                opacity: [0.08, 0.16, 0.1],
+                scale: [1, 1.12, 1.05],
+                x: [0, 24, -10],
+                y: [0, 18, -12],
               }
         }
         transition={{ duration: 7.5, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
         className="absolute left-1/2 top-[12%] h-[24rem] w-[24rem] -translate-x-1/2 rounded-full blur-3xl"
-        style={{ background: `radial-gradient(circle, ${accent}88 0%, transparent 66%)` }}
+        style={{ background: `radial-gradient(circle, ${accent}44 0%, transparent 66%)` }}
       />
       <div className="chv-mobile-liquid-metal__vignette absolute inset-0" />
     </div>
