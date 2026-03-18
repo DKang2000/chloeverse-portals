@@ -1413,7 +1413,7 @@ export default function ChloeverseMainLanding({
                   }}
                   href={link.href}
                   prefetch={link.href === "/contact" ? false : undefined}
-                  className={`${monoFontClassName} chv-menu-card group relative inline-flex items-center overflow-hidden rounded-full border border-white/12 bg-black/35 px-5 py-2 text-[0.74rem] tracking-[0.22em] text-white/78 backdrop-blur-md transition-colors duration-200 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60`}
+                  className={`${monoFontClassName} chv-menu-card group relative inline-flex items-center overflow-hidden rounded-full border border-black/10 bg-white px-5 py-2 text-[0.74rem] tracking-[0.22em] text-black backdrop-blur-md transition-colors duration-200 hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/35`}
                   style={{
                     "--card-depth": "8.2px",
                     "--card-lift": "0px",
