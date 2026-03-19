@@ -276,17 +276,24 @@ export function MobileHomeExperience(_: MobileHomeExperienceProps) {
               style={{ background: `radial-gradient(circle, ${activePortal.accent}36 0%, rgba(255,255,255,0.08) 34%, transparent 72%)` }}
             />
             <div className="relative pt-3">
-              <div className="relative inline-flex flex-col items-center px-5 pb-3 pt-4">
+              <div
+                className="relative inline-flex flex-col items-center overflow-hidden px-5 pb-3 pt-4"
+                style={
+                  {
+                    "--signal-radius": "44px 58px 38px 54px / 30px 42px 28px 40px",
+                    borderRadius: "var(--signal-radius)",
+                  } as CSSProperties
+                }
+              >
                 <motion.div
                   initial={reducedMotion ? false : { opacity: 0, scale: 0.96, y: 4 }}
                   animate={reducedMotion ? undefined : { opacity: 1, scale: 1, y: 0 }}
                   transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-                  className="pointer-events-none absolute inset-0 z-0"
+                  className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[var(--signal-radius)]"
                   style={
                     {
                       "--signal-accent": activePortal.accent,
                       "--signal-bloom-x": "50%",
-                      "--signal-radius": "44px 58px 38px 54px / 30px 42px 28px 40px",
                     } as CSSProperties
                   }
                 >
@@ -330,11 +337,11 @@ export function MobileHomeExperience(_: MobileHomeExperienceProps) {
                     reducedMotion
                       ? { duration: 0.55, delay: 0.85, ease: [0.22, 1, 0.36, 1] }
                       : {
-                          duration: 1,
+                          duration: 3,
                           delay: 0.85,
                           repeat: Number.POSITIVE_INFINITY,
                           ease: "linear",
-                          times: [0, 0.58, 0.74, 1],
+                          times: [0, 0.55, 0.74, 1],
                         }
                   }
                   className="chv-mobile-body relative z-10 mt-1.5 whitespace-nowrap text-[0.88rem] italic leading-7 tracking-[0.01em] text-white/74"
