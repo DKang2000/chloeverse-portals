@@ -1002,9 +1002,12 @@ function MetricsCard() {
 
 function MetricTile({ metric }: { metric: (typeof MEDIACARD_METRICS)[number] }) {
   return (
-    <div className="rounded-[1.4rem] border border-black/8 bg-[rgba(255,255,255,0.65)] px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+    <div className="flex min-h-[7.85rem] flex-col justify-between rounded-[1.4rem] border border-black/8 bg-[rgba(255,255,255,0.65)] px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
       <p className="chv-mobile-mono text-[0.5rem] uppercase tracking-[0.3em] text-black/34">{metric.label}</p>
-      <p className="mt-4 chv-mobile-display text-[2.18rem] leading-[0.9] tracking-[-0.06em] text-black/84">
+      <p
+        className="mt-4 chv-mobile-display text-[2.1rem] leading-[0.9] tracking-[-0.06em] text-black/84"
+        style={{ fontVariantNumeric: "lining-nums tabular-nums" }}
+      >
         {metric.value}
       </p>
     </div>
@@ -1016,24 +1019,25 @@ function MarketsCard() {
     <div className="rounded-[1.5rem] border border-black/8 bg-[rgba(255,255,255,0.68)] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
       <div className="rounded-[1.15rem] border border-black/8 bg-white/58 px-4 py-3">
         <p className="chv-mobile-mono text-[0.5rem] uppercase tracking-[0.3em] text-black/34">primary audience markets</p>
-        <p className="mt-2 text-[0.82rem] leading-6 text-black/52">Core territories currently reflected in the media card.</p>
+        <p className="mt-2 text-[0.82rem] leading-6 text-black/52">Four core territories currently reflected in the media card.</p>
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-3">
+      <div className="mt-3 overflow-hidden rounded-[1.2rem] border border-black/8 bg-white/72 shadow-[inset_0_1px_0_rgba(255,255,255,0.82)]">
         {MEDIACARD_AUDIENCE.map((market, index) => (
           <div
             key={market}
-            className="flex min-h-[5.7rem] flex-col justify-between rounded-[1.2rem] border border-black/8 bg-white/72 px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.82)]"
+            className="flex items-center justify-between gap-4 border-b border-black/8 px-4 py-4 last:border-b-0"
           >
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-4">
               <span className="chv-mobile-mono text-[0.52rem] uppercase tracking-[0.26em] text-black/30">
                 {String(index + 1).padStart(2, "0")}
               </span>
-              <span className="block h-2.5 w-2.5 rounded-full bg-black/60" />
+              <span className="h-8 w-px bg-black/8" />
+              <p className="chv-mobile-display text-[1.08rem] leading-none tracking-[-0.04em] text-black/78">
+                {market}
+              </p>
             </div>
-            <p className="mt-4 chv-mobile-display text-[1.02rem] leading-[0.98] tracking-[-0.04em] text-black/78">
-              {market}
-            </p>
+            <span className="block h-2.5 w-2.5 rounded-full bg-black/60" />
           </div>
         ))}
       </div>
