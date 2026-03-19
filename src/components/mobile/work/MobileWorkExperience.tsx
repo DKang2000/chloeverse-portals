@@ -2,13 +2,13 @@
 
 import { Canvas, useFrame } from "@react-three/fiber";
 import { useReducedMotion } from "framer-motion";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import * as THREE from "three";
 
 import { MobileRouteFrame } from "@/components/mobile/shared/MobileRouteFrame";
 import { WORK_ENTRIES, WORK_ROLE_STACK, type WorkEntry } from "@/lib/mobile-content";
 
-const WORK_ACCENT = "#bbfff1";
+const WORK_ACCENT = "#d4fff6";
 
 const monthMap: Record<string, number> = {
   Jan: 0,
@@ -25,43 +25,37 @@ const monthMap: Record<string, number> = {
   Dec: 11,
 };
 
-const cardLayouts = [
-  { x: -24, width: 90, rotateY: 10, rotateZ: -6 },
-  { x: 20, width: 84, rotateY: -11, rotateZ: 5 },
-  { x: -10, width: 88, rotateY: 8, rotateZ: -3 },
-  { x: 24, width: 82, rotateY: -10, rotateZ: 6 },
-  { x: -18, width: 86, rotateY: 9, rotateZ: -5 },
-  { x: 14, width: 89, rotateY: -8, rotateZ: 4 },
+const cardLanes = [
+  { x: 0, width: 87, rotateZ: -1.4 },
+  { x: 10, width: 85, rotateZ: 1.8 },
+  { x: -8, width: 86, rotateZ: -1.7 },
+  { x: 12, width: 84, rotateZ: 1.6 },
+  { x: -11, width: 85, rotateZ: -1.4 },
+  { x: 6, width: 86, rotateZ: 1.1 },
 ] as const;
 
-const fractureVertexShader = `
+const smokeVertexShader = `
 varying vec2 vUv;
 
 void main() {
   vUv = uv;
-  gl_Position = vec4(position.xy, 0.0, 1.0);
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
 }
 `;
 
-const fractureFragmentShader = `
+const smokeFragmentShader = `
 precision highp float;
 
 uniform float uTime;
-uniform vec2 uResolution;
-uniform vec2 uDrift;
+uniform vec2 uFlow;
 uniform float uMotion;
 
 varying vec2 vUv;
 
 float hash21(vec2 p) {
-  p = fract(p * vec2(234.34, 435.345));
-  p += dot(p, p + 34.23);
+  p = fract(p * vec2(123.34, 456.21));
+  p += dot(p, p + 45.32);
   return fract(p.x * p.y);
-}
-
-vec2 hash22(vec2 p) {
-  float n = hash21(p);
-  return fract(vec2(n, n * 12.34) * vec2(533.3, 371.3));
 }
 
 float noise(vec2 p) {
@@ -83,74 +77,30 @@ float fbm(vec2 p) {
 
   for (int i = 0; i < 5; i++) {
     value += amplitude * noise(p);
-    p = p * 2.03 + vec2(8.7, -5.3);
-    amplitude *= 0.52;
+    p = p * 2.04 + vec2(11.2, -6.4);
+    amplitude *= 0.5;
   }
 
   return value;
 }
 
 void main() {
-  vec2 aspect = vec2(uResolution.x / max(uResolution.y, 1.0), 1.0);
-  vec2 uv = vUv;
-  vec2 p = (uv - 0.5) * aspect * 1.25;
-  float time = uTime * 0.12 * uMotion;
-  p += uDrift * vec2(0.18, 0.1);
-  p += vec2(sin(time + p.y * 1.4), cos(time * 0.8 + p.x * 1.2)) * 0.02;
+  vec2 uv = vUv - 0.5;
+  float time = uTime * 0.08 * uMotion;
+  vec2 flow = uFlow * 0.16;
 
-  vec2 lattice = p * 8.2;
-  vec2 cell = floor(lattice);
-  vec2 local = fract(lattice);
+  vec2 p = uv * vec2(0.8, 1.15);
+  p += flow;
+  p += vec2(sin(time + uv.y * 4.0), cos(time * 0.8 + uv.x * 3.2)) * 0.06;
 
-  float nearest = 10.0;
-  float secondNearest = 10.0;
-  vec2 nearestVec = vec2(0.0);
+  float wisps = fbm(p * 2.4 + vec2(time * 0.6, -time * 0.35));
+  float mist = fbm(p * 4.2 - vec2(time * 0.28, time * 0.22));
+  float alpha = smoothstep(0.38, 0.82, wisps * 0.72 + mist * 0.38);
+  alpha *= smoothstep(1.12, 0.18, length(uv * vec2(1.15, 0.95)));
+  alpha *= 0.16;
 
-  for (int y = -1; y <= 1; y++) {
-    for (int x = -1; x <= 1; x++) {
-      vec2 offset = vec2(float(x), float(y));
-      vec2 point = 0.18 + 0.68 * hash22(cell + offset);
-      point += vec2(
-        sin(time * 0.7 + dot(cell + offset, vec2(1.9, 2.7))) * 0.012,
-        cos(time * 0.8 + dot(cell + offset, vec2(2.2, 1.5))) * 0.012
-      );
-      vec2 delta = offset + point - local;
-      float dist = dot(delta, delta);
-
-      if (dist < nearest) {
-        secondNearest = nearest;
-        nearest = dist;
-        nearestVec = delta;
-      } else if (dist < secondNearest) {
-        secondNearest = dist;
-      }
-    }
-  }
-
-  float ridge = 1.0 - smoothstep(0.0, 0.028, secondNearest - nearest);
-  float bodyNoise = fbm(p * 5.5 + nearestVec * 1.8);
-  float dust = fbm(p * 14.0 - vec2(time * 0.6, -time * 0.4));
-  float refraction = fbm(p * 3.8 - nearestVec * 2.4);
-
-  vec3 base = mix(vec3(0.01, 0.015, 0.026), vec3(0.05, 0.08, 0.13), bodyNoise * 0.72 + 0.12);
-  vec3 cold = vec3(0.74, 0.92, 1.0);
-  vec3 mint = vec3(0.76, 1.0, 0.92);
-  vec3 violet = vec3(0.7, 0.75, 0.9);
-
-  vec3 color = base;
-  color += mix(cold, mint, refraction) * ridge * 0.82;
-  color += violet * pow(max(0.0, 1.0 - length(p - vec2(0.28, -0.16)) * 1.35), 3.0) * 0.1;
-  color += cold * pow(max(0.0, 1.0 - length(p - vec2(-0.22, 0.08)) * 1.7), 3.5) * 0.14;
-  color += vec3(dust) * 0.035;
-
-  float shardCore = pow(max(0.0, 1.0 - length(nearestVec) * 1.8), 2.4);
-  color += mix(cold, mint, bodyNoise) * shardCore * 0.16;
-
-  float vignette = smoothstep(1.2, 0.12, length((uv - 0.5) * aspect));
-  color *= mix(0.42, 1.0, vignette);
-  color = pow(clamp(color, 0.0, 1.2), vec3(0.92));
-
-  gl_FragColor = vec4(color, 1.0);
+  vec3 color = mix(vec3(0.88, 0.94, 0.96), vec3(0.78, 0.84, 0.88), mist);
+  gl_FragColor = vec4(color, alpha);
 }
 `;
 
@@ -160,15 +110,8 @@ type ScrollSnapshot = {
 };
 
 type WorkSceneItem =
-  | {
-      kind: "intro";
-      id: string;
-    }
-  | {
-      kind: "entry";
-      id: string;
-      entry: WorkEntry;
-    };
+  | { kind: "intro"; id: string }
+  | { kind: "entry"; id: string; entry: WorkEntry };
 
 function modulo(value: number, length: number) {
   if (length === 0) return 0;
@@ -177,6 +120,11 @@ function modulo(value: number, length: number) {
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
+}
+
+function seededNoise(seed: number) {
+  const raw = Math.sin(seed * 127.1) * 43758.5453123;
+  return raw - Math.floor(raw);
 }
 
 function parseResumeDate(dateRange: string) {
@@ -208,18 +156,13 @@ function normalizeLocation(location: string) {
   return location.replace(/\s{2,}/g, " • ");
 }
 
-function seededNoise(seed: number) {
-  const x = Math.sin(seed * 127.1) * 43758.5453123;
-  return x - Math.floor(x);
-}
-
 function makeShardShape(seed: number) {
-  const pointCount = 3 + Math.floor(seededNoise(seed + 1) * 4);
+  const pointCount = 3 + Math.floor(seededNoise(seed * 2.1) * 4);
   const points: THREE.Vector2[] = [];
 
   for (let index = 0; index < pointCount; index += 1) {
-    const angle = (index / pointCount) * Math.PI * 2 + seededNoise(seed + index * 4.13) * 0.4;
-    const radius = 0.55 + seededNoise(seed * 2.11 + index * 1.73) * 0.9;
+    const angle = (index / pointCount) * Math.PI * 2 + seededNoise(seed + index * 4.13) * 0.34;
+    const radius = 0.42 + seededNoise(seed * 1.72 + index * 1.37) * 1.2;
     points.push(new THREE.Vector2(Math.cos(angle) * radius, Math.sin(angle) * radius));
   }
 
@@ -230,20 +173,115 @@ function makeShardShape(seed: number) {
   return shape;
 }
 
-function FractureField({
+function makeRadialShardShape(seed: number) {
+  const length = 1.8 + seededNoise(seed * 1.93) * 2.8;
+  const inner = 0.12 + seededNoise(seed * 3.11) * 0.16;
+  const outer = 0.18 + seededNoise(seed * 4.27) * 0.32;
+  const skew = seededNoise(seed * 5.17) * 0.42 - 0.21;
+  const taper = seededNoise(seed * 6.61) * 0.24 - 0.12;
+
+  const shape = new THREE.Shape();
+  shape.moveTo(-inner, 0.0);
+  shape.lineTo(inner, 0.0);
+  shape.lineTo(outer + taper, length * 0.78);
+  shape.lineTo(skew, length);
+  shape.lineTo(-outer + taper * 0.3, length * 0.82);
+  shape.closePath();
+
+  return shape;
+}
+
+function useInfiniteSmoothScroll({
+  loopLength,
+  viewportHeight,
   reducedMotion,
-  scrollRef,
 }: {
+  loopLength: number;
+  viewportHeight: number;
   reducedMotion: boolean;
+}) {
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const stateRef = useRef({
+    target: 0,
+    current: 0,
+    velocity: 0,
+    virtualOffset: 0,
+  });
+  const [frame, setFrame] = useState<ScrollSnapshot>({ position: 0, velocity: 0 });
+
+  useEffect(() => {
+    const element = scrollRef.current;
+    if (!element || loopLength <= 0) return;
+
+    const initial = loopLength;
+    element.scrollTop = initial;
+    stateRef.current.target = 0;
+    stateRef.current.current = 0;
+    stateRef.current.velocity = 0;
+    stateRef.current.virtualOffset = 0;
+
+    const handleScroll = () => {
+      let top = element.scrollTop;
+
+      if (top < loopLength * 0.55) {
+        top += loopLength;
+        element.scrollTop = top;
+        stateRef.current.virtualOffset -= loopLength;
+      } else if (top > loopLength * 1.45) {
+        top -= loopLength;
+        element.scrollTop = top;
+        stateRef.current.virtualOffset += loopLength;
+      }
+
+      stateRef.current.target = stateRef.current.virtualOffset + (top - loopLength);
+    };
+
+    let frameId = 0;
+    let previous = performance.now();
+
+    const tick = (now: number) => {
+      const delta = Math.min(now - previous, 34);
+      previous = now;
+
+      const state = stateRef.current;
+      const before = state.current;
+      const ease = reducedMotion ? 0.22 : 0.095;
+      state.current += (state.target - state.current) * ease;
+      state.velocity = (state.current - before) / Math.max(delta / 16.67, 0.001);
+
+      setFrame({
+        position: modulo(state.current, loopLength),
+        velocity: state.velocity,
+      });
+
+      frameId = window.requestAnimationFrame(tick);
+    };
+
+    element.addEventListener("scroll", handleScroll, { passive: true });
+    frameId = window.requestAnimationFrame(tick);
+
+    return () => {
+      element.removeEventListener("scroll", handleScroll);
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [loopLength, reducedMotion, viewportHeight]);
+
+  return { frame, scrollRef };
+}
+
+function SmokePlane({
+  scrollRef,
+  reducedMotion,
+}: {
   scrollRef: React.MutableRefObject<ScrollSnapshot>;
+  reducedMotion: boolean;
 }) {
   const materialRef = useRef<THREE.ShaderMaterial | null>(null);
   const uniforms = useMemo(
     () => ({
       uTime: { value: 0 },
-      uResolution: { value: new THREE.Vector2(1, 1) },
-      uDrift: { value: new THREE.Vector2(0, 0) },
-      uMotion: { value: reducedMotion ? 0.35 : 1 },
+      uFlow: { value: new THREE.Vector2(0, 0) },
+      uMotion: { value: reducedMotion ? 0.28 : 1 },
     }),
     [reducedMotion],
   );
@@ -257,18 +295,17 @@ function FractureField({
     const material = materialRef.current;
     if (!material) return;
 
-    const driftX = clamp(scrollRef.current.velocity * 0.0012, -0.12, 0.12);
-    const driftY = modulo(scrollRef.current.position, 1200) / 1200 - 0.5;
-
     material.uniforms.uTime.value = state.clock.getElapsedTime();
-    material.uniforms.uResolution.value.set(state.size.width, state.size.height);
-    material.uniforms.uDrift.value.set(driftX, driftY);
+    material.uniforms.uFlow.value.set(
+      clamp(scrollRef.current.velocity * 0.012, -0.28, 0.28),
+      modulo(scrollRef.current.position, 2400) / 2400 - 0.5,
+    );
   });
 
   return (
-    <mesh position={[0, 0, -14]}>
-      <planeGeometry args={[24, 36]} />
-      <shaderMaterial ref={materialRef} uniforms={uniforms} vertexShader={fractureVertexShader} fragmentShader={fractureFragmentShader} />
+    <mesh position={[0, 0, -18]} scale={[16, 24, 1]}>
+      <planeGeometry args={[1, 1]} />
+      <shaderMaterial ref={materialRef} transparent depthWrite={false} uniforms={uniforms} vertexShader={smokeVertexShader} fragmentShader={smokeFragmentShader} />
     </mesh>
   );
 }
@@ -282,23 +319,26 @@ function GlassShard({
 }) {
   const groupRef = useRef<THREE.Group | null>(null);
   const edgeRef = useRef<THREE.LineSegments | null>(null);
+
   const shape = useMemo(() => makeShardShape(seed), [seed]);
   const geometry = useMemo(() => new THREE.ShapeGeometry(shape), [shape]);
   const edgeGeometry = useMemo(() => new THREE.EdgesGeometry(geometry, 14), [geometry]);
-
-  const config = useMemo(
-    () => ({
-      x: (seededNoise(seed * 1.9) - 0.5) * 14,
-      y: (seededNoise(seed * 2.7) - 0.5) * 28,
-      z: -2 - seededNoise(seed * 4.1) * 12,
-      scale: 0.42 + seededNoise(seed * 5.3) * 1.2,
-      rotX: -0.8 + seededNoise(seed * 6.1) * 1.6,
-      rotY: -0.9 + seededNoise(seed * 7.3) * 1.8,
-      rotZ: seededNoise(seed * 8.7) * Math.PI * 2,
-      opacity: 0.02 + seededNoise(seed * 9.9) * 0.06,
-    }),
-    [seed],
-  );
+  const config = useMemo(() => {
+    const angle = seededNoise(seed * 2.3) * Math.PI * 2;
+    const radius = 4.2 + seededNoise(seed * 4.9) * 5.8;
+    return {
+      angle,
+      radius,
+      x: Math.cos(angle) * radius * (0.86 + seededNoise(seed * 8.1) * 0.34),
+      y: Math.sin(angle) * radius * (1.1 + seededNoise(seed * 5.7) * 0.48),
+      z: -0.6 - seededNoise(seed * 6.3) * 9.4,
+      scale: 0.8 + seededNoise(seed * 7.9) * 2.2,
+      rotX: -0.9 + seededNoise(seed * 9.4) * 1.8,
+      rotY: -1.0 + seededNoise(seed * 10.3) * 2.0,
+      rotZ: seededNoise(seed * 11.8) * Math.PI * 2,
+      opacity: 0.14 + seededNoise(seed * 12.9) * 0.16,
+    };
+  }, [seed]);
 
   useEffect(() => {
     return () => {
@@ -312,18 +352,18 @@ function GlassShard({
     const edge = edgeRef.current;
     if (!group || !edge) return;
 
+    const drift = clamp(scrollRef.current.velocity * 0.018, -0.35, 0.35);
     const time = state.clock.getElapsedTime();
-    const loop = modulo(scrollRef.current.position, 2200) / 2200;
-    const drift = clamp(scrollRef.current.velocity * 0.003, -0.25, 0.25);
+    const loopPhase = modulo(scrollRef.current.position, 2600) / 2600;
 
-    group.position.x = config.x + Math.sin(time * 0.18 + seed) * 0.16 + drift * (config.z + 8) * -0.18;
-    group.position.y = config.y + Math.cos(time * 0.14 + seed * 0.73 + loop * Math.PI * 2) * 0.3;
-    group.rotation.x = config.rotX + Math.sin(time * 0.11 + seed * 0.4) * 0.08;
-    group.rotation.y = config.rotY + Math.cos(time * 0.09 + seed * 0.27 + drift * 2.4) * 0.1;
-    group.rotation.z = config.rotZ + loop * 0.22 + Math.sin(time * 0.07 + seed) * 0.04;
+    group.position.x = config.x - drift * (1.8 + config.scale) + Math.sin(time * 0.12 + seed) * 0.08;
+    group.position.y = config.y + Math.cos(time * 0.1 + seed * 0.43 + loopPhase * Math.PI * 2) * 0.12;
+    group.rotation.x = config.rotX + Math.sin(time * 0.08 + seed * 0.3) * 0.08;
+    group.rotation.y = config.rotY + Math.cos(time * 0.09 + seed * 0.2) * 0.1;
+    group.rotation.z = config.rotZ + loopPhase * 0.14 + Math.sin(time * 0.05 + seed) * 0.03;
 
     const material = edge.material as THREE.LineBasicMaterial;
-    material.opacity = clamp(0.16 + (10 - Math.abs(config.z)) * 0.02, 0.14, 0.34);
+    material.opacity = clamp(0.12 + (10 - Math.abs(config.z)) * 0.018, 0.12, 0.28);
   });
 
   return (
@@ -331,186 +371,379 @@ function GlassShard({
       <mesh>
         <shapeGeometry args={[shape]} />
         <meshPhysicalMaterial
-          color="#daf6ff"
-          emissive="#88d6ff"
-          emissiveIntensity={0.04}
+          color="#eefcff"
           transparent
           opacity={config.opacity}
-          roughness={0.12}
-          metalness={0.04}
-          transmission={0.88}
-          thickness={0.9}
-          ior={1.08}
+          transmission={0.96}
+          roughness={0.05}
+          metalness={0.03}
+          ior={1.09}
+          thickness={1.35}
           clearcoat={1}
-          clearcoatRoughness={0.12}
+          clearcoatRoughness={0.04}
           side={THREE.DoubleSide}
           depthWrite={false}
         />
       </mesh>
-      <mesh scale={1.02} position={[0, 0, -0.02]}>
-        <shapeGeometry args={[shape]} />
-        <meshBasicMaterial color="#d9ffff" transparent opacity={0.035} side={THREE.DoubleSide} depthWrite={false} />
-      </mesh>
       <lineSegments ref={edgeRef} geometry={edgeGeometry}>
-        <lineBasicMaterial color="#d7f7ff" transparent opacity={0.18} />
+        <lineBasicMaterial color="#f8feff" transparent opacity={0.22} />
       </lineSegments>
     </group>
   );
 }
 
-function DebrisRig({
-  reducedMotion,
+function RadialGlassShard({
+  seed,
   scrollRef,
 }: {
-  reducedMotion: boolean;
+  seed: number;
   scrollRef: React.MutableRefObject<ScrollSnapshot>;
 }) {
-  const shards = useMemo(() => Array.from({ length: 42 }, (_, index) => index + 1), []);
-  const cameraRigRef = useRef<THREE.Group | null>(null);
+  const groupRef = useRef<THREE.Group | null>(null);
+  const edgeRef = useRef<THREE.LineSegments | null>(null);
+
+  const shape = useMemo(() => makeRadialShardShape(seed), [seed]);
+  const geometry = useMemo(() => new THREE.ShapeGeometry(shape), [shape]);
+  const edgeGeometry = useMemo(() => new THREE.EdgesGeometry(geometry, 8), [geometry]);
+  const config = useMemo(() => {
+    const angle = seededNoise(seed * 3.2) * Math.PI * 2;
+    const radius = 0.58 + seededNoise(seed * 5.8) * 1.8;
+    return {
+      angle,
+      radius,
+      x: Math.cos(angle) * radius * 0.7,
+      y: Math.sin(angle) * radius * 0.96,
+      z: -0.4 - seededNoise(seed * 6.4) * 4.8,
+      scale: 1.6 + seededNoise(seed * 8.2) * 2.2,
+      tilt: -0.28 + seededNoise(seed * 9.7) * 0.56,
+      opacity: 0.18 + seededNoise(seed * 10.3) * 0.16,
+    };
+  }, [seed]);
+
+  useEffect(() => {
+    return () => {
+      geometry.dispose();
+      edgeGeometry.dispose();
+    };
+  }, [edgeGeometry, geometry]);
 
   useFrame((state) => {
-    const rig = cameraRigRef.current;
-    if (!rig) return;
+    const group = groupRef.current;
+    const edge = edgeRef.current;
+    if (!group || !edge) return;
 
+    const drift = clamp(scrollRef.current.velocity * 0.016, -0.3, 0.3);
     const time = state.clock.getElapsedTime();
-    const velocity = clamp(scrollRef.current.velocity * 0.0015, -0.16, 0.16);
-    rig.position.x += ((velocity * 0.8 + Math.sin(time * 0.08) * 0.06) - rig.position.x) * 0.08;
-    rig.position.y += ((Math.cos(time * 0.09) * 0.08) - rig.position.y) * 0.08;
-    rig.rotation.z += ((velocity * -0.1) - rig.rotation.z) * 0.08;
+
+    group.rotation.z = config.angle + Math.sin(time * 0.04 + seed) * 0.04;
+    group.rotation.x = config.tilt + Math.cos(time * 0.06 + seed * 0.4) * 0.06;
+    group.rotation.y = drift * 0.18;
+    group.position.x = config.x - drift * 0.22;
+    group.position.y = config.y + Math.sin(time * 0.05 + seed * 0.2) * 0.05;
+
+    const material = edge.material as THREE.LineBasicMaterial;
+    material.opacity = clamp(0.5 - Math.abs(drift) * 0.12, 0.34, 0.56);
   });
 
   return (
-    <group ref={cameraRigRef}>
-      <FractureField reducedMotion={reducedMotion} scrollRef={scrollRef} />
-      {shards.map((seed) => (
-        <GlassShard key={seed} seed={seed} scrollRef={scrollRef} />
-      ))}
+    <group ref={groupRef} position={[config.x, config.y, config.z]} scale={config.scale}>
+      <mesh>
+        <shapeGeometry args={[shape]} />
+        <meshPhysicalMaterial
+          color="#eafcff"
+          transparent
+          opacity={config.opacity}
+          transmission={0.94}
+          roughness={0.04}
+          metalness={0.02}
+          ior={1.09}
+          thickness={1.15}
+          clearcoat={1}
+          clearcoatRoughness={0.03}
+          side={THREE.DoubleSide}
+          depthWrite={false}
+        />
+      </mesh>
+      <lineSegments ref={edgeRef} geometry={edgeGeometry}>
+        <lineBasicMaterial color="#ffffff" transparent opacity={0.52} />
+      </lineSegments>
     </group>
   );
 }
 
-function GlassDebrisScene({
+function RiftScene({
   reducedMotion,
   scrollRef,
 }: {
   reducedMotion: boolean;
   scrollRef: React.MutableRefObject<ScrollSnapshot>;
 }) {
+  const floatingShards = useMemo(() => Array.from({ length: 18 }, (_, index) => index + 1), []);
+  const radialShards = useMemo(() => Array.from({ length: 10 }, (_, index) => index + 101), []);
+  const rigRef = useRef<THREE.Group | null>(null);
+
+  function SceneRig() {
+    useFrame((state) => {
+      const rig = rigRef.current;
+      if (!rig) return;
+
+      const time = state.clock.getElapsedTime();
+      const drift = clamp(scrollRef.current.velocity * 0.016, -0.34, 0.34);
+      const phase = modulo(scrollRef.current.position, 2800) / 2800;
+
+      rig.position.x += ((drift * 0.7 + Math.sin(time * 0.06) * 0.06) - rig.position.x) * 0.08;
+      rig.position.y += ((Math.cos(time * 0.08 + phase * Math.PI * 2) * 0.08) - rig.position.y) * 0.08;
+      rig.rotation.z += ((drift * -0.05) - rig.rotation.z) * 0.08;
+    });
+
+    return (
+      <group ref={rigRef}>
+        <SmokePlane scrollRef={scrollRef} reducedMotion={reducedMotion} />
+        <mesh position={[0, 0.2, -12]} scale={[3.5, 5.1, 1]}>
+          <circleGeometry args={[1, 72]} />
+          <meshBasicMaterial color="#020406" transparent opacity={0.98} depthWrite={false} />
+        </mesh>
+        <mesh position={[0, 0.2, -11.8]} scale={[4.5, 6.2, 1]}>
+          <circleGeometry args={[1, 72]} />
+          <meshBasicMaterial color="#071017" transparent opacity={0.12} depthWrite={false} />
+        </mesh>
+        {radialShards.map((seed) => (
+          <RadialGlassShard key={seed} seed={seed} scrollRef={scrollRef} />
+        ))}
+        {floatingShards.map((seed) => (
+          <GlassShard key={seed} seed={seed} scrollRef={scrollRef} />
+        ))}
+      </group>
+    );
+  }
+
   return (
     <div className="pointer-events-none absolute inset-0">
       <Canvas
         dpr={[1, 1.6]}
         gl={{ alpha: true, antialias: true, powerPreference: "high-performance" }}
-        camera={{ position: [0, 0, 8], fov: 36, near: 0.1, far: 60 }}
+        camera={{ position: [0, 0, 9], fov: 34, near: 0.1, far: 50 }}
         className="absolute inset-0 h-full w-full"
       >
-        <color attach="background" args={["#03060b"]} />
-        <fog attach="fog" args={["#02050a", 8, 20]} />
-        <ambientLight intensity={0.45} color="#a7d4ff" />
-        <directionalLight position={[3, 4, 6]} intensity={1.15} color="#e7fbff" />
-        <pointLight position={[-4, -2, 4]} intensity={0.95} color="#7be7ff" />
-        <pointLight position={[4, 3, 3]} intensity={0.82} color="#c8fff2" />
-        <DebrisRig reducedMotion={reducedMotion} scrollRef={scrollRef} />
+        <color attach="background" args={["#020406"]} />
+        <fog attach="fog" args={["#020406", 8, 19]} />
+        <ambientLight intensity={0.28} color="#dff9ff" />
+        <directionalLight position={[2.8, 4.2, 6]} intensity={1.15} color="#f7ffff" />
+        <pointLight position={[-4, 1, 3]} intensity={1.05} color="#c1f5ff" />
+        <pointLight position={[4, -3, 4]} intensity={0.82} color="#f5ffff" />
+        <pointLight position={[0, 0, 6]} intensity={0.6} color="#ffffff" />
+        <SceneRig />
       </Canvas>
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_8%,rgba(222,255,253,0.16),transparent_28%),radial-gradient(circle_at_18%_24%,rgba(150,224,255,0.16),transparent_24%),radial-gradient(circle_at_80%_70%,rgba(193,255,236,0.12),transparent_26%),linear-gradient(180deg,rgba(2,6,10,0.22)_0%,rgba(3,6,10,0.08)_26%,rgba(2,5,9,0.42)_70%,rgba(2,3,7,0.84)_100%)]" />
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.05)_0%,transparent_18%,transparent_82%,rgba(255,255,255,0.03)_100%)] mix-blend-screen opacity-45" />
+
+      <ShatteredGlassOverlay scrollRef={scrollRef} />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_46%,rgba(0,0,0,0.86)_0%,rgba(0,0,0,0.24)_12%,rgba(0,0,0,0.0)_24%),radial-gradient(circle_at_50%_10%,rgba(224,255,250,0.08),transparent_28%),linear-gradient(180deg,rgba(1,4,8,0.12)_0%,rgba(1,4,8,0.02)_26%,rgba(1,4,8,0.62)_74%,rgba(1,4,8,0.92)_100%)]" />
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.03)_0%,transparent_18%,transparent_82%,rgba(255,255,255,0.02)_100%)] mix-blend-screen opacity-45" />
     </div>
   );
 }
 
-function useLoopingField({
-  totalSpan,
-  reducedMotion,
+function ShatteredGlassOverlay({
   scrollRef,
 }: {
-  totalSpan: number;
-  reducedMotion: boolean;
   scrollRef: React.MutableRefObject<ScrollSnapshot>;
 }) {
-  const [frame, setFrame] = useState<ScrollSnapshot>({ position: 0, velocity: 0 });
-  const targetRef = useRef(0);
-  const currentRef = useRef(0);
-  const velocityRef = useRef(0);
-  const draggingRef = useRef(false);
-  const pointerRef = useRef<{ id: number | null; y: number; lastDelta: number }>({
-    id: null,
-    y: 0,
-    lastDelta: 0,
-  });
+  const rootRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     let frameId = 0;
-    let previous = performance.now();
 
-    const tick = (now: number) => {
-      const delta = Math.min(now - previous, 34);
-      previous = now;
-
-      if (!draggingRef.current) {
-        targetRef.current += velocityRef.current * (delta / 16.67);
-        velocityRef.current *= reducedMotion ? 0.86 : 0.935;
-        if (Math.abs(velocityRef.current) < 0.015) velocityRef.current = 0;
-      }
-
-      const previousCurrent = currentRef.current;
-      const easing = reducedMotion ? 0.18 : 0.092;
-      currentRef.current += (targetRef.current - currentRef.current) * easing;
-
-      const velocity = currentRef.current - previousCurrent;
-      const position = modulo(currentRef.current, totalSpan);
-      const snapshot = { position, velocity };
-
-      scrollRef.current = snapshot;
-      setFrame(snapshot);
+    const tick = () => {
+      const drift = clamp(scrollRef.current.velocity * 12, -16, 16);
+      rootRef.current?.style.setProperty("--rift-drift", `${drift}px`);
       frameId = window.requestAnimationFrame(tick);
     };
 
     frameId = window.requestAnimationFrame(tick);
     return () => window.cancelAnimationFrame(frameId);
-  }, [reducedMotion, scrollRef, totalSpan]);
+  }, [scrollRef]);
 
-  const nudge = (delta: number, momentum = delta * 0.32) => {
-    targetRef.current += delta;
-    velocityRef.current = momentum;
-  };
+  const majorShards = [
+    { top: "1%", left: "40%", width: "20%", height: "36%", rotate: "-10deg", clip: "polygon(26% 0%, 62% 6%, 100% 92%, 40% 100%, 0% 70%)", drift: 0.28 },
+    { top: "5%", left: "60%", width: "18%", height: "30%", rotate: "18deg", clip: "polygon(12% 0%, 100% 20%, 74% 100%, 0% 72%)", drift: 0.22 },
+    { top: "8%", left: "18%", width: "16%", height: "26%", rotate: "-22deg", clip: "polygon(34% 0%, 100% 18%, 62% 100%, 0% 76%)", drift: 0.18 },
+    { top: "20%", left: "68%", width: "22%", height: "32%", rotate: "28deg", clip: "polygon(10% 0%, 100% 24%, 74% 100%, 0% 66%)", drift: 0.26 },
+    { top: "24%", left: "8%", width: "20%", height: "34%", rotate: "-30deg", clip: "polygon(32% 0%, 100% 16%, 68% 100%, 0% 74%)", drift: 0.24 },
+    { top: "50%", left: "72%", width: "18%", height: "32%", rotate: "22deg", clip: "polygon(16% 0%, 100% 22%, 72% 100%, 0% 72%)", drift: 0.22 },
+    { top: "54%", left: "10%", width: "20%", height: "32%", rotate: "-20deg", clip: "polygon(28% 0%, 100% 20%, 70% 100%, 0% 72%)", drift: 0.22 },
+    { top: "64%", left: "42%", width: "24%", height: "32%", rotate: "4deg", clip: "polygon(18% 0%, 82% 8%, 96% 100%, 0% 84%)", drift: 0.18 },
+  ] as const;
 
-  return {
-    frame,
-    handlers: {
-      onWheel: (event: React.WheelEvent<HTMLDivElement>) => {
-        nudge(event.deltaY * 1.05, event.deltaY * 0.42);
-      },
-      onPointerDown: (event: React.PointerEvent<HTMLDivElement>) => {
-        draggingRef.current = true;
-        velocityRef.current = 0;
-        pointerRef.current = { id: event.pointerId, y: event.clientY, lastDelta: 0 };
-        event.currentTarget.setPointerCapture(event.pointerId);
-      },
-      onPointerMove: (event: React.PointerEvent<HTMLDivElement>) => {
-        if (!draggingRef.current || pointerRef.current.id !== event.pointerId) return;
-        const delta = event.clientY - pointerRef.current.y;
-        pointerRef.current = { id: event.pointerId, y: event.clientY, lastDelta: delta };
-        targetRef.current -= delta * 1.58;
-      },
-      onPointerUp: (event: React.PointerEvent<HTMLDivElement>) => {
-        if (pointerRef.current.id !== event.pointerId) return;
-        draggingRef.current = false;
-        velocityRef.current = -pointerRef.current.lastDelta * 1.3;
-        pointerRef.current = { id: null, y: 0, lastDelta: 0 };
-        event.currentTarget.releasePointerCapture(event.pointerId);
-      },
-      onPointerCancel: (event: React.PointerEvent<HTMLDivElement>) => {
-        if (pointerRef.current.id !== event.pointerId) return;
-        draggingRef.current = false;
-        velocityRef.current = 0;
-        pointerRef.current = { id: null, y: 0, lastDelta: 0 };
-        event.currentTarget.releasePointerCapture(event.pointerId);
-      },
-    },
-  };
+  const nearShards = [
+    { top: "-6%", left: "-8%", width: "34%", height: "26%", rotate: "-16deg", clip: "polygon(0% 10%, 88% 0%, 100% 78%, 10% 100%)", drift: 0.06 },
+    { top: "12%", left: "78%", width: "26%", height: "24%", rotate: "18deg", clip: "polygon(6% 0%, 100% 18%, 88% 100%, 0% 72%)", drift: 0.06 },
+    { top: "76%", left: "-10%", width: "32%", height: "22%", rotate: "-12deg", clip: "polygon(0% 14%, 90% 0%, 100% 80%, 8% 100%)", drift: 0.05 },
+    { top: "72%", left: "74%", width: "30%", height: "24%", rotate: "16deg", clip: "polygon(8% 0%, 100% 14%, 92% 100%, 0% 78%)", drift: 0.05 },
+  ] as const;
+
+  const fragments = [
+    { top: "12%", left: "18%", width: "8%", height: "10%", rotate: "-12deg", clip: "polygon(24% 0%, 100% 24%, 60% 100%, 0% 70%)", drift: 0.14 },
+    { top: "16%", left: "80%", width: "7%", height: "9%", rotate: "18deg", clip: "polygon(16% 0%, 100% 28%, 74% 100%, 0% 62%)", drift: 0.1 },
+    { top: "34%", left: "12%", width: "6%", height: "8%", rotate: "-26deg", clip: "polygon(42% 0%, 100% 18%, 62% 100%, 0% 78%)", drift: 0.14 },
+    { top: "38%", left: "84%", width: "8%", height: "9%", rotate: "22deg", clip: "polygon(18% 0%, 100% 26%, 58% 100%, 0% 62%)", drift: 0.12 },
+    { top: "64%", left: "20%", width: "7%", height: "10%", rotate: "-16deg", clip: "polygon(34% 0%, 100% 22%, 66% 100%, 0% 70%)", drift: 0.12 },
+    { top: "74%", left: "78%", width: "8%", height: "10%", rotate: "14deg", clip: "polygon(22% 0%, 100% 18%, 74% 100%, 0% 72%)", drift: 0.1 },
+    { top: "48%", left: "30%", width: "6%", height: "8%", rotate: "-10deg", clip: "polygon(20% 0%, 100% 20%, 70% 100%, 0% 68%)", drift: 0.16 },
+    { top: "50%", left: "68%", width: "6%", height: "8%", rotate: "18deg", clip: "polygon(20% 0%, 100% 20%, 70% 100%, 0% 68%)", drift: 0.16 },
+  ] as const;
+
+  const spokes = [
+    { top: "6%", left: "50%", width: "0.22rem", height: "33%", rotate: "0deg", glow: 0.74 },
+    { top: "10%", left: "61%", width: "0.18rem", height: "28%", rotate: "18deg", glow: 0.66 },
+    { top: "10%", left: "39%", width: "0.18rem", height: "28%", rotate: "-18deg", glow: 0.66 },
+    { top: "26%", left: "74%", width: "0.16rem", height: "24%", rotate: "34deg", glow: 0.58 },
+    { top: "26%", left: "26%", width: "0.16rem", height: "24%", rotate: "-34deg", glow: 0.58 },
+    { top: "56%", left: "50%", width: "0.18rem", height: "26%", rotate: "2deg", glow: 0.62 },
+  ] as const;
+
+  const sparks = [
+    { top: "18%", left: "58%" },
+    { top: "28%", left: "32%" },
+    { top: "42%", left: "68%" },
+    { top: "58%", left: "36%" },
+    { top: "70%", left: "62%" },
+  ] as const;
+
+  return (
+    <div ref={rootRef} className="absolute inset-0 [--rift-drift:0px]">
+      <div
+        className="absolute left-1/2 top-[47%] h-[42%] w-[52%] -translate-x-1/2 -translate-y-1/2 bg-black"
+        style={{
+          clipPath: "polygon(26% 0%, 56% 6%, 86% 18%, 100% 46%, 84% 82%, 58% 100%, 18% 92%, 0% 56%, 8% 22%)",
+          boxShadow: "0 0 0 1px rgba(255,255,255,0.16), 0 0 140px rgba(0,0,0,0.98)",
+        }}
+      />
+      <div
+        className="absolute left-1/2 top-[47%] h-[50%] w-[58%] -translate-x-1/2 -translate-y-1/2 opacity-90"
+        style={{
+          background: "radial-gradient(circle at 50% 50%, rgba(255,255,255,0.22), rgba(255,255,255,0.0) 34%)",
+          filter: "blur(20px)",
+        }}
+      />
+      <div
+        className="absolute left-1/2 top-[47%] h-[43%] w-[54%] -translate-x-1/2 -translate-y-1/2 opacity-70"
+        style={{
+          clipPath: "polygon(26% 0%, 56% 6%, 86% 18%, 100% 46%, 84% 82%, 58% 100%, 18% 92%, 0% 56%, 8% 22%)",
+          boxShadow: "0 0 0 1px rgba(255,255,255,0.42), 0 0 22px rgba(220,248,255,0.28)",
+        }}
+      />
+
+      {nearShards.map((panel) => (
+        <div
+          key={`${panel.top}-${panel.left}`}
+          className="absolute"
+          style={{
+            top: panel.top,
+            left: panel.left,
+            width: panel.width,
+            height: panel.height,
+            transform: `translate3d(calc(var(--rift-drift) * ${panel.drift}), 0, 0) rotate(${panel.rotate})`,
+          }}
+        >
+          <div
+            className="absolute inset-0 border border-white/12 bg-[linear-gradient(150deg,rgba(240,252,255,0.06)_0%,rgba(0,0,0,0.24)_34%,rgba(0,0,0,0.56)_100%)]"
+            style={{
+              clipPath: panel.clip,
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.18), 0 24px 80px rgba(0,0,0,0.52)",
+            }}
+          />
+        </div>
+      ))}
+
+      {spokes.map((line) => (
+        <div
+          key={`${line.top}-${line.left}`}
+          className="absolute rounded-full bg-[linear-gradient(180deg,rgba(255,255,255,0.0),rgba(244,252,255,1),rgba(255,255,255,0.0))] blur-[0.4px]"
+          style={{
+            top: line.top,
+            left: line.left,
+            width: line.width,
+            height: line.height,
+            transform: `translate3d(calc(var(--rift-drift) * 0.18), 0, 0) rotate(${line.rotate})`,
+            opacity: line.glow,
+            boxShadow: "0 0 18px rgba(214,246,255,0.36)",
+          }}
+        />
+      ))}
+
+      {majorShards.map((shard) => (
+        <div
+          key={`${shard.top}-${shard.left}`}
+          className="absolute"
+          style={{
+            top: shard.top,
+            left: shard.left,
+            width: shard.width,
+            height: shard.height,
+            transform: `translate3d(calc(var(--rift-drift) * ${shard.drift}), 0, 0) rotate(${shard.rotate})`,
+          }}
+        >
+          <div
+            className="absolute inset-0 border border-white/52 bg-[linear-gradient(158deg,rgba(255,255,255,0.2)_0%,rgba(255,255,255,0.08)_10%,rgba(18,26,32,0.48)_28%,rgba(0,0,0,0.88)_100%)]"
+            style={{
+              clipPath: shard.clip,
+              boxShadow: "0 0 0 1px rgba(255,255,255,0.14), inset 0 1px 0 rgba(255,255,255,0.42), inset 0 -1px 0 rgba(255,255,255,0.08), 0 24px 72px rgba(0,0,0,0.54)",
+            }}
+          />
+          <div
+            className="absolute inset-0 bg-[linear-gradient(132deg,rgba(255,255,255,0.42)_0%,rgba(255,255,255,0.08)_18%,transparent_44%,rgba(255,255,255,0.06)_100%)] opacity-90"
+            style={{ clipPath: shard.clip }}
+          />
+          <div
+            className="absolute inset-0 opacity-80"
+            style={{
+              clipPath: shard.clip,
+              boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.18), 0 0 18px rgba(226,248,255,0.12)",
+            }}
+          />
+        </div>
+      ))}
+
+      {fragments.map((shard) => (
+        <div
+          key={`${shard.top}-${shard.left}`}
+          className="absolute"
+          style={{
+            top: shard.top,
+            left: shard.left,
+            width: shard.width,
+            height: shard.height,
+            transform: `translate3d(calc(var(--rift-drift) * ${shard.drift}), 0, 0) rotate(${shard.rotate})`,
+            opacity: 0.88,
+          }}
+        >
+          <div
+            className="absolute inset-0 border border-white/36 bg-[linear-gradient(150deg,rgba(245,252,255,0.14)_0%,rgba(255,255,255,0.03)_22%,rgba(0,0,0,0.52)_100%)]"
+            style={{
+              clipPath: shard.clip,
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.24), 0 0 18px rgba(220,244,255,0.08)",
+            }}
+          />
+        </div>
+      ))}
+
+      {sparks.map((spark) => (
+        <div
+          key={`${spark.top}-${spark.left}`}
+          className="absolute h-2 w-2 rounded-full bg-white"
+          style={{
+            top: spark.top,
+            left: spark.left,
+            boxShadow: "0 0 18px rgba(255,255,255,0.92), 0 0 36px rgba(210,244,255,0.42)",
+          }}
+        />
+      ))}
+
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_47%,rgba(255,255,255,0.24),transparent_10%),radial-gradient(circle_at_50%_47%,rgba(255,255,255,0.06),transparent_22%)] opacity-80" />
+    </div>
+  );
 }
 
-function WorkIntroCard({
+function IntroCard({
   y,
   viewportHeight,
   velocity,
@@ -519,59 +752,51 @@ function WorkIntroCard({
   viewportHeight: number;
   velocity: number;
 }) {
-  const center = y + viewportHeight * 0.38;
-  const progress = (center - viewportHeight * 0.52) / viewportHeight;
-  const focus = 1 - clamp(Math.abs(progress) / 1.2, 0, 1);
-  const scale = 0.88 + focus * 0.18;
-  const opacity = 0.18 + focus * 0.82;
-  const translateX = progress * 34 - velocity * 24;
-  const rotateX = progress * 16 - velocity * 18;
-  const rotateY = -progress * 13 + velocity * 14;
-  const rotateZ = progress * -4;
-  const blur = clamp(Math.abs(progress) * 1.1, 0, 1.8);
+  const center = y + viewportHeight * 0.28;
+  const progress = (center - viewportHeight * 0.56) / viewportHeight;
+  const focus = 1 - clamp(Math.abs(progress) / 0.94, 0, 1);
+  const curve = Math.sin(progress * Math.PI * 0.72);
+  const x = curve * 18 - velocity * 6;
+  const depth = clamp(112 - Math.abs(progress) * 210, -84, 126);
+  const scale = 0.68 + focus * 0.34;
+  const opacity = 0.2 + focus * 0.8;
+  const blur = clamp(Math.abs(progress) * 0.7, 0, 1.05);
 
   return (
     <article
       className="absolute left-1/2 top-0 will-change-transform"
       style={{
-        width: "90%",
-        transform: `translate3d(calc(-50% + ${translateX}px), ${y}px, ${120 + focus * 120}px) scale(${scale}) rotateX(${rotateX}deg) rotateY(${rotateY}deg) rotateZ(${rotateZ}deg)`,
+        width: "88%",
+        transform: `translate3d(calc(-50% + ${x}px), ${y}px, ${depth}px) scale(${scale}) rotateX(${clamp(progress * 18, -18, 18)}deg) rotateY(${clamp(curve * -9 + velocity * 5, -14, 14)}deg) rotateZ(${curve * -1.5}deg)`,
+        transformOrigin: "50% 35%",
         opacity,
         filter: `blur(${blur}px)`,
       }}
     >
-      <div className="absolute inset-0 rounded-[2rem] bg-[radial-gradient(circle_at_50%_12%,rgba(215,255,247,0.34),transparent_56%)] blur-3xl" />
-      <div className="absolute inset-x-[16%] -bottom-8 h-12 rounded-full bg-black/45 blur-3xl" />
-      <div className="relative overflow-hidden rounded-[2rem] border border-white/18 bg-[linear-gradient(180deg,rgba(238,252,255,0.26),rgba(220,246,255,0.14)_22%,rgba(54,90,110,0.1)_58%,rgba(7,14,22,0.22)_100%)] px-5 py-5 shadow-[0_28px_70px_rgba(0,0,0,0.38),inset_0_1px_0_rgba(255,255,255,0.42),inset_0_-1px_0_rgba(182,255,239,0.16)] backdrop-blur-[28px]">
-        <div className="absolute inset-0 bg-[linear-gradient(128deg,rgba(255,255,255,0.28)_0%,rgba(255,255,255,0.08)_34%,transparent_60%,rgba(180,255,234,0.12)_100%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_14%_16%,rgba(255,255,255,0.24),transparent_18%),radial-gradient(circle_at_86%_74%,rgba(160,255,238,0.12),transparent_22%)]" />
-        <div className="relative">
-          <p className="chv-mobile-mono text-[0.58rem] uppercase tracking-[0.34em] text-[rgba(224,253,249,0.76)]">
-            Work dossier
-          </p>
-          <div className="mt-4">
-            <h1 className="text-[1.52rem] leading-[0.92] tracking-[-0.06em] text-white">Chloe Kang</h1>
-            <p className="mt-3 max-w-[14rem] text-[0.88rem] leading-6 text-[rgba(224,241,246,0.76)]">
-              A continuous field of roles, contracts, and growth chapters.
-            </p>
-          </div>
-          <div className="mt-5 grid grid-cols-2 gap-2">
-            {WORK_ROLE_STACK.map((role) => (
-              <span
-                key={role}
-                className="rounded-full border border-white/16 bg-white/[0.07] px-3 py-2 text-[0.56rem] uppercase tracking-[0.22em] text-white/72"
-              >
-                {role}
-              </span>
-            ))}
-          </div>
+      <CardShell className="px-5 py-5">
+        <p className="chv-mobile-mono text-[0.58rem] uppercase tracking-[0.34em] text-[rgba(228,251,250,0.72)]">
+          Work dossier
+        </p>
+        <h1 className="mt-4 text-[1.52rem] leading-[0.92] tracking-[-0.06em] text-white">Chloe Kang</h1>
+        <p className="mt-3 max-w-[16rem] text-[0.9rem] leading-6 text-[rgba(228,241,244,0.76)]">
+          A continuous reverse-chronological resume loop drifting through fractured glass.
+        </p>
+        <div className="mt-5 grid grid-cols-2 gap-2.5">
+          {WORK_ROLE_STACK.map((role) => (
+            <span
+              key={role}
+              className="rounded-full border border-white/16 bg-white/[0.07] px-3 py-2 text-[0.56rem] uppercase tracking-[0.24em] text-white/76"
+            >
+              {role}
+            </span>
+          ))}
         </div>
-      </div>
+      </CardShell>
     </article>
   );
 }
 
-function WorkEntryCard({
+function EntryCard({
   entry,
   index,
   y,
@@ -584,19 +809,17 @@ function WorkEntryCard({
   viewportHeight: number;
   velocity: number;
 }) {
-  const layout = cardLayouts[index % cardLayouts.length];
+  const layout = cardLanes[index % cardLanes.length];
   const { company, role } = splitRoleTitle(entry.title);
-  const center = y + viewportHeight * 0.38;
-  const progress = (center - viewportHeight * 0.54) / viewportHeight;
-  const focus = 1 - clamp(Math.abs(progress) / 1.18, 0, 1);
-  const scale = 0.86 + focus * 0.18;
-  const opacity = 0.16 + focus * 0.86;
-  const translateX = layout.x + Math.sin(progress * 1.8 + index * 0.5) * 18 - velocity * 22;
-  const rotateX = progress * 18 - velocity * 20;
-  const rotateY = layout.rotateY - progress * 13 + velocity * 16;
-  const rotateZ = layout.rotateZ + Math.sin(progress * 2.2) * 2.2;
-  const depth = -100 + focus * 220;
-  const blur = clamp(Math.abs(progress) * 1.2, 0, 1.9);
+  const center = y + viewportHeight * 0.28;
+  const progress = (center - viewportHeight * 0.56) / viewportHeight;
+  const focus = 1 - clamp(Math.abs(progress) / 0.98, 0, 1);
+  const curve = Math.sin(progress * Math.PI * 0.68);
+  const x = layout.x + curve * 18 - velocity * 6;
+  const depth = clamp(96 - Math.abs(progress) * 220 + focus * 12, -88, 118);
+  const scale = 0.74 + focus * 0.26;
+  const opacity = 0.18 + focus * 0.82;
+  const blur = clamp(Math.abs(progress) * 0.78, 0, 1.15);
   const locationLine = normalizeLocation(entry.location);
 
   return (
@@ -604,51 +827,67 @@ function WorkEntryCard({
       className="absolute left-1/2 top-0 will-change-transform"
       style={{
         width: `${layout.width}%`,
-        transform: `translate3d(calc(-50% + ${translateX}px), ${y}px, ${depth}px) scale(${scale}) rotateX(${rotateX}deg) rotateY(${rotateY}deg) rotateZ(${rotateZ}deg)`,
+        transform: `translate3d(calc(-50% + ${x}px), ${y}px, ${depth}px) scale(${scale}) rotateX(${clamp(progress * 18, -18, 18)}deg) rotateY(${clamp(curve * -8 + layout.x * 0.24 - velocity * 4, -16, 16)}deg) rotateZ(${layout.rotateZ + curve * 0.8}deg)`,
+        transformOrigin: "50% 35%",
         opacity,
         filter: `blur(${blur}px)`,
       }}
     >
-      <div className="absolute inset-0 rounded-[2rem] bg-[radial-gradient(circle_at_50%_6%,rgba(200,255,245,0.26),transparent_56%)] blur-3xl" />
-      <div className="absolute inset-x-[10%] -bottom-7 h-11 rounded-full bg-black/45 blur-3xl" />
-      <div className="relative overflow-hidden rounded-[2rem] border border-white/18 bg-[linear-gradient(180deg,rgba(245,253,255,0.26)_0%,rgba(229,247,255,0.14)_20%,rgba(120,176,198,0.08)_52%,rgba(8,16,26,0.2)_100%)] shadow-[0_30px_80px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.38),inset_0_-1px_0_rgba(184,247,255,0.14)] backdrop-blur-[28px]">
-        <div className="absolute inset-0 bg-[linear-gradient(132deg,rgba(255,255,255,0.3)_0%,rgba(255,255,255,0.1)_28%,transparent_58%,rgba(186,255,245,0.1)_100%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_16%_12%,rgba(255,255,255,0.25),transparent_18%),radial-gradient(circle_at_80%_84%,rgba(154,247,255,0.14),transparent_24%)]" />
-        <div className="absolute left-[11%] top-0 h-full w-px bg-[linear-gradient(180deg,rgba(255,255,255,0.3),transparent_20%,transparent_78%,rgba(255,255,255,0.16))]" />
-        <div className="relative px-5 pb-5 pt-4">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="chv-mobile-mono text-[0.58rem] uppercase tracking-[0.32em] text-[rgba(233,255,252,0.76)]">
-                {entry.date}
-              </p>
-              <h2 className="mt-3 text-[1.22rem] leading-[1] tracking-[-0.05em] text-white">{role}</h2>
-              <p className="mt-1 text-[0.82rem] uppercase tracking-[0.18em] text-[rgba(222,249,255,0.72)]">{company}</p>
-            </div>
-            {entry.type ? (
-              <span className="rounded-full border border-white/14 bg-white/[0.08] px-2.5 py-1 text-[0.54rem] uppercase tracking-[0.24em] text-white/70">
-                {entry.type}
-              </span>
-            ) : null}
+      <CardShell className="px-5 pb-5 pt-4">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="chv-mobile-mono text-[0.56rem] uppercase tracking-[0.32em] text-[rgba(232,252,250,0.74)]">
+              {entry.date}
+            </p>
+            <h2 className="mt-3 text-[1.2rem] leading-[1.01] tracking-[-0.05em] text-white">{role}</h2>
+            <p className="mt-1 text-[0.82rem] uppercase tracking-[0.18em] text-[rgba(224,250,255,0.68)]">{company}</p>
           </div>
-
-          <div className="mt-4 rounded-[1.2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(8,16,24,0.18),rgba(6,12,18,0.08))] px-3.5 py-3">
-            <p className="chv-mobile-mono text-[0.55rem] uppercase tracking-[0.28em] text-white/48">location</p>
-            <p className="mt-1 text-[0.82rem] leading-6 text-[rgba(232,243,247,0.8)]">{locationLine}</p>
-          </div>
-
-          <div className="mt-4 space-y-2.5">
-            {entry.bullets.map((bullet) => (
-              <div
-                key={bullet}
-                className="rounded-[1.15rem] border border-white/10 bg-[linear-gradient(180deg,rgba(10,20,30,0.2),rgba(6,12,18,0.08))] px-3.5 py-3.5"
-              >
-                <p className="text-[0.9rem] leading-6 text-[rgba(243,248,250,0.92)]">{bullet}</p>
-              </div>
-            ))}
-          </div>
+          {entry.type ? (
+            <span className="rounded-full border border-white/14 bg-white/[0.07] px-2.5 py-1 text-[0.54rem] uppercase tracking-[0.24em] text-white/70">
+              {entry.type}
+            </span>
+          ) : null}
         </div>
-      </div>
+
+        <div className="mt-4 rounded-[1.15rem] border border-white/10 bg-[linear-gradient(180deg,rgba(8,16,24,0.16),rgba(5,12,18,0.06))] px-3.5 py-3">
+          <p className="chv-mobile-mono text-[0.54rem] uppercase tracking-[0.28em] text-white/48">location</p>
+          <p className="mt-1 text-[0.82rem] leading-6 text-[rgba(230,243,247,0.8)]">{locationLine}</p>
+        </div>
+
+        <div className="mt-4 space-y-2.5">
+          {entry.bullets.map((bullet) => (
+            <div
+              key={bullet}
+              className="rounded-[1.1rem] border border-white/10 bg-[linear-gradient(180deg,rgba(10,20,30,0.18),rgba(7,12,18,0.08))] px-3.5 py-3.5"
+            >
+              <p className="text-[0.9rem] leading-6 text-[rgba(245,248,250,0.92)]">{bullet}</p>
+            </div>
+          ))}
+        </div>
+      </CardShell>
     </article>
+  );
+}
+
+function CardShell({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className: string;
+}) {
+  return (
+    <div className="relative">
+      <div className="absolute inset-0 rounded-[2rem] bg-[radial-gradient(circle_at_50%_6%,rgba(210,255,244,0.24),transparent_52%)] blur-3xl" />
+      <div className="absolute inset-x-[14%] -bottom-5 h-9 rounded-full bg-black/34 blur-3xl" />
+      <div className={`relative overflow-hidden rounded-[2rem] border border-white/22 bg-[linear-gradient(180deg,rgba(252,255,255,0.36)_0%,rgba(232,247,255,0.22)_18%,rgba(150,192,208,0.12)_46%,rgba(10,18,27,0.36)_100%)] shadow-[0_28px_90px_rgba(0,0,0,0.3),0_0_0_1px_rgba(255,255,255,0.08),inset_0_1px_0_rgba(255,255,255,0.42),inset_0_-1px_0_rgba(196,248,255,0.12)] backdrop-blur-[34px] ${className}`}>
+        <div className="absolute inset-0 bg-[linear-gradient(126deg,rgba(255,255,255,0.36)_0%,rgba(255,255,255,0.14)_18%,transparent_44%,rgba(165,240,255,0.14)_74%,rgba(255,255,255,0.08)_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_14%_14%,rgba(255,255,255,0.3),transparent_16%),radial-gradient(circle_at_84%_88%,rgba(176,255,243,0.14),transparent_24%)]" />
+        <div className="absolute inset-x-[6%] top-[7%] h-[26%] rounded-[1.8rem] bg-[linear-gradient(180deg,rgba(255,255,255,0.16),rgba(255,255,255,0.0))] opacity-70 blur-2xl" />
+        <div className="absolute left-[10%] top-0 h-full w-px bg-[linear-gradient(180deg,rgba(255,255,255,0.24),transparent_22%,transparent_78%,rgba(255,255,255,0.14))]" />
+        <div className="relative">{children}</div>
+      </div>
+    </div>
   );
 }
 
@@ -666,16 +905,16 @@ function renderSceneItem({
   index: number;
 }) {
   if (item.kind === "intro") {
-    return <WorkIntroCard y={y} viewportHeight={viewportHeight} velocity={velocity} />;
+    return <IntroCard y={y} viewportHeight={viewportHeight} velocity={velocity} />;
   }
 
-  return <WorkEntryCard entry={item.entry} index={index} y={y} viewportHeight={viewportHeight} velocity={velocity} />;
+  return <EntryCard entry={item.entry} index={index} y={y} viewportHeight={viewportHeight} velocity={velocity} />;
 }
 
 export function MobileWorkExperience() {
   const reducedMotion = useReducedMotion() ?? false;
   const [viewportHeight, setViewportHeight] = useState(820);
-  const scrollRef = useRef<ScrollSnapshot>({ position: 0, velocity: 0 });
+  const sceneScrollRef = useRef<ScrollSnapshot>({ position: 0, velocity: 0 });
 
   useEffect(() => {
     const update = () => setViewportHeight(window.innerHeight);
@@ -698,10 +937,7 @@ export function MobileWorkExperience() {
 
   const items = useMemo<WorkSceneItem[]>(
     () => [
-      {
-        kind: "intro",
-        id: "intro",
-      },
+      { kind: "intro", id: "intro" },
       ...sortedEntries.map((entry) => ({
         kind: "entry" as const,
         id: entry.title,
@@ -711,13 +947,17 @@ export function MobileWorkExperience() {
     [sortedEntries],
   );
 
-  const itemSpan = Math.max(370, viewportHeight * 0.78);
-  const totalSpan = items.length * itemSpan;
-  const { frame, handlers } = useLoopingField({
-    totalSpan,
+  const itemSpan = Math.max(360, viewportHeight * 0.66);
+  const loopLength = items.length * itemSpan;
+  const { frame, scrollRef } = useInfiniteSmoothScroll({
+    loopLength,
+    viewportHeight,
     reducedMotion,
-    scrollRef,
   });
+
+  useEffect(() => {
+    sceneScrollRef.current = frame;
+  }, [frame]);
 
   const repeatedItems = useMemo(
     () =>
@@ -726,11 +966,15 @@ export function MobileWorkExperience() {
           item,
           index,
           key: `${copy}-${item.id}`,
-          y: viewportHeight * 0.16 + (copy * items.length + index) * itemSpan - frame.position,
+          y: viewportHeight * 0.22 + (copy * items.length + index) * itemSpan - frame.position,
         })),
       ),
     [frame.position, itemSpan, items, viewportHeight],
   );
+
+  const scrollGhostStyle = {
+    height: `${loopLength * 3 + viewportHeight}px`,
+  } satisfies CSSProperties;
 
   return (
     <MobileRouteFrame
@@ -740,22 +984,40 @@ export function MobileWorkExperience() {
       description="Scroll the work timeline."
       accent={WORK_ACCENT}
       showHeader={false}
-      ambient={<GlassDebrisScene reducedMotion={reducedMotion} scrollRef={scrollRef} />}
+      ambient={<RiftScene reducedMotion={reducedMotion} scrollRef={sceneScrollRef} />}
       contentClassName="h-[100svh] !px-0 !pb-0 !pt-0"
     >
-      <section
-        className="relative h-[100svh] overflow-hidden touch-none"
-        style={{ perspective: "1800px", transformStyle: "preserve-3d" }}
-        {...handlers}
-      >
-        <div className="pointer-events-none absolute inset-0 z-10 bg-[radial-gradient(circle_at_50%_50%,transparent_0%,rgba(3,5,9,0.08)_44%,rgba(2,4,7,0.54)_100%)]" />
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-40 bg-[linear-gradient(180deg,rgba(2,5,9,0.92)_0%,rgba(2,5,9,0.72)_26%,rgba(2,5,9,0.0)_100%)]" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-44 bg-[linear-gradient(180deg,rgba(2,5,9,0.0)_0%,rgba(2,5,9,0.82)_68%,rgba(2,5,9,0.96)_100%)]" />
-        <div className="pointer-events-none absolute inset-0 z-20 opacity-30 mix-blend-screen" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px)", backgroundSize: "100% 22px", maskImage: "linear-gradient(180deg,transparent 0%,rgba(0,0,0,0.72) 16%,rgba(0,0,0,0.78) 84%,transparent 100%)" }} />
+      <section className="relative h-[100svh] overflow-hidden">
+        <div
+          ref={scrollRef}
+          className="absolute inset-0 z-40 overflow-y-auto overscroll-none"
+          style={{
+            WebkitOverflowScrolling: "touch",
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
+          }}
+        >
+          <div style={scrollGhostStyle} />
+        </div>
 
-        <div className="absolute inset-0 z-30" style={{ transform: `translate3d(0, 0, ${clamp(Math.abs(frame.velocity) * 180, 0, 120)}px)` }}>
+        <div className="pointer-events-none absolute inset-0 z-10 bg-[radial-gradient(circle_at_50%_48%,transparent_0%,rgba(2,5,9,0.1)_40%,rgba(2,5,9,0.62)_100%)]" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-36 bg-[linear-gradient(180deg,rgba(2,5,9,0.94)_0%,rgba(2,5,9,0.56)_32%,rgba(2,5,9,0.0)_100%)]" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-44 bg-[linear-gradient(180deg,rgba(2,5,9,0.0)_0%,rgba(2,5,9,0.78)_70%,rgba(2,5,9,0.95)_100%)]" />
+
+        <div
+          className="pointer-events-none absolute inset-0 z-30"
+          style={{ perspective: "2200px", transformStyle: "preserve-3d" }}
+        >
           {repeatedItems.map(({ item, index, key, y }) => (
-            <div key={key}>{renderSceneItem({ item, y, viewportHeight, velocity: frame.velocity, index })}</div>
+            <div key={key}>
+              {renderSceneItem({
+                item,
+                y,
+                viewportHeight,
+                velocity: frame.velocity,
+                index,
+              })}
+            </div>
           ))}
         </div>
       </section>
