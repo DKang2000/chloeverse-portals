@@ -96,6 +96,105 @@ void main() {
 }
 `;
 
+const sheenVertexShader = `
+varying vec2 vUv;
+
+void main() {
+  vUv = uv;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}
+`;
+
+const sheenFragmentShader = `
+precision highp float;
+
+uniform float uTime;
+uniform vec2 uFlow;
+uniform float uMotion;
+
+varying vec2 vUv;
+
+float hash21(vec2 p) {
+  p = fract(p * vec2(123.34, 456.21));
+  p += dot(p, p + 45.32);
+  return fract(p.x * p.y);
+}
+
+float noise(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = fract(p);
+
+  float a = hash21(i);
+  float b = hash21(i + vec2(1.0, 0.0));
+  float c = hash21(i + vec2(0.0, 1.0));
+  float d = hash21(i + vec2(1.0, 1.0));
+
+  vec2 u = f * f * (3.0 - 2.0 * f);
+  return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
+}
+
+float fbm(vec2 p) {
+  float value = 0.0;
+  float amplitude = 0.5;
+
+  for (int i = 0; i < 5; i++) {
+    value += amplitude * noise(p);
+    p = p * 2.03 + vec2(11.4, -7.9);
+    amplitude *= 0.53;
+  }
+
+  return value;
+}
+
+float field(vec2 uv) {
+  vec2 p = (uv - 0.5) * vec2(1.0, 1.35);
+  float t = uTime * 0.18 * uMotion;
+  p += uFlow * 0.18;
+
+  vec2 warp = vec2(
+    fbm(p * 2.4 + vec2(0.0, t)),
+    fbm(p * 2.1 - vec2(t * 0.8, -t * 0.24))
+  );
+
+  p += (warp - 0.5) * 0.72;
+
+  float ridges = abs(sin((p.x * 8.2 + p.y * 2.8 + fbm(p * 2.2) * 4.0) + t * 5.2));
+  float foil = abs(sin((p.y * 10.8 - p.x * 5.2) + t * 3.4 + fbm(p * 3.0) * 4.6));
+  float pools = fbm(p * 4.4 - vec2(t * 0.55, t * 0.28));
+
+  return ridges * 0.42 + foil * 0.28 + pools * 0.6;
+}
+
+void main() {
+  vec2 uv = vUv;
+  float h = field(uv);
+  float epsilon = 0.0032;
+  float hx = field(uv + vec2(epsilon, 0.0)) - h;
+  float hy = field(uv + vec2(0.0, epsilon)) - h;
+
+  vec3 normal = normalize(vec3(-hx * 3.2, -hy * 3.2, 1.0));
+  vec3 lightA = normalize(vec3(-0.35, 0.6, 1.0));
+  vec3 lightB = normalize(vec3(0.48, -0.18, 0.74));
+  vec3 viewDir = vec3(0.0, 0.0, 1.0);
+
+  float diffuse = max(dot(normal, lightA), 0.0) * 0.62 + max(dot(normal, lightB), 0.0) * 0.3;
+  float fresnel = pow(1.0 - max(dot(normal, viewDir), 0.0), 2.4);
+  float specular = pow(max(dot(reflect(-lightA, normal), viewDir), 0.0), 26.0);
+  specular += pow(max(dot(reflect(-lightB, normal), viewDir), 0.0), 16.0) * 0.5;
+
+  vec3 silverDark = vec3(0.018, 0.024, 0.032);
+  vec3 silverLight = vec3(0.44, 0.54, 0.62);
+  vec3 metal = mix(silverDark, silverLight, smoothstep(0.24, 1.18, h * 0.56 + diffuse * 0.58));
+  metal += vec3(0.74, 0.92, 1.0) * (fresnel * 0.08 + specular * 0.12);
+
+  float vignette = smoothstep(1.08, 0.18, length((uv - 0.5) * vec2(0.92, 1.0)));
+  float alpha = (0.2 + fresnel * 0.18 + specular * 0.12) * vignette;
+  alpha *= smoothstep(0.06, 0.22, uv.y) * smoothstep(0.02, 0.26, 1.0 - uv.y);
+
+  gl_FragColor = vec4(metal, clamp(alpha, 0.0, 0.32));
+}
+`;
+
 type ScrollSnapshot = {
   position: number;
   velocity: number;
@@ -227,9 +326,16 @@ function useSmoothSceneScroll({
 
       const state = stateRef.current;
       const before = state.current;
-      const ease = reducedMotion ? 0.22 : 0.064;
-      state.current += (state.target - state.current) * ease;
+      const diff = state.target - state.current;
+      const ease = reducedMotion ? 0.44 : 0.2;
+      state.current += diff * ease;
+      if (Math.abs(state.target - state.current) < 0.45) {
+        state.current = state.target;
+      }
       state.velocity = (state.current - before) / Math.max(delta / 16.67, 0.001);
+      if (Math.abs(state.target - state.current) < 0.45) {
+        state.velocity = 0;
+      }
 
       setFrame({
         position: state.current,
@@ -288,6 +394,54 @@ function SmokePlane({
     <mesh position={[0, 0, -18]} scale={[16, 24, 1]}>
       <planeGeometry args={[1, 1]} />
       <shaderMaterial ref={materialRef} transparent depthWrite={false} uniforms={uniforms} vertexShader={smokeVertexShader} fragmentShader={smokeFragmentShader} />
+    </mesh>
+  );
+}
+
+function FractureSheenPlane({
+  scrollRef,
+  reducedMotion,
+}: {
+  scrollRef: React.MutableRefObject<ScrollSnapshot>;
+  reducedMotion: boolean;
+}) {
+  const materialRef = useRef<THREE.ShaderMaterial | null>(null);
+  const uniforms = useMemo(
+    () => ({
+      uTime: { value: 0 },
+      uFlow: { value: new THREE.Vector2(0, 0) },
+      uMotion: { value: reducedMotion ? 0.24 : 1 },
+    }),
+    [reducedMotion],
+  );
+
+  useEffect(() => {
+    const material = materialRef.current;
+    return () => material?.dispose();
+  }, []);
+
+  useFrame((state) => {
+    const material = materialRef.current;
+    if (!material) return;
+
+    material.uniforms.uTime.value = state.clock.getElapsedTime();
+    material.uniforms.uFlow.value.set(
+      clamp(scrollRef.current.velocity * 0.016, -0.32, 0.32),
+      modulo(scrollRef.current.position, 2400) / 2400 - 0.5,
+    );
+  });
+
+  return (
+    <mesh position={[0, -0.2, -16.5]} scale={[18, 24, 1]}>
+      <planeGeometry args={[1, 1]} />
+      <shaderMaterial
+        ref={materialRef}
+        transparent
+        depthWrite={false}
+        uniforms={uniforms}
+        vertexShader={sheenVertexShader}
+        fragmentShader={sheenFragmentShader}
+      />
     </mesh>
   );
 }
@@ -457,6 +611,78 @@ function RadialGlassShard({
   );
 }
 
+function FramingGlassShard({
+  seed,
+  x,
+  y,
+  z,
+  scale,
+  rotation,
+  scrollRef,
+}: {
+  seed: number;
+  x: number;
+  y: number;
+  z: number;
+  scale: number;
+  rotation: [number, number, number];
+  scrollRef: React.MutableRefObject<ScrollSnapshot>;
+}) {
+  const groupRef = useRef<THREE.Group | null>(null);
+  const edgeRef = useRef<THREE.LineSegments | null>(null);
+  const shape = useMemo(() => makeShardShape(seed), [seed]);
+  const geometry = useMemo(() => makeGlassGeometry(shape, 0.18, 0.05), [shape]);
+  const edgeGeometry = useMemo(() => new THREE.EdgesGeometry(geometry, 10), [geometry]);
+
+  useEffect(() => {
+    return () => {
+      geometry.dispose();
+      edgeGeometry.dispose();
+    };
+  }, [edgeGeometry, geometry]);
+
+  useFrame((state) => {
+    const group = groupRef.current;
+    const edge = edgeRef.current;
+    if (!group || !edge) return;
+
+    const time = state.clock.getElapsedTime();
+    const drift = clamp(scrollRef.current.velocity * 0.03, -0.7, 0.7);
+    group.position.x = x - drift * (0.7 + scale * 0.12);
+    group.position.y = y + Math.sin(time * 0.05 + seed) * 0.08;
+    group.rotation.x = rotation[0] + Math.sin(time * 0.04 + seed * 0.2) * 0.05;
+    group.rotation.y = rotation[1] + drift * 0.06;
+    group.rotation.z = rotation[2] + Math.cos(time * 0.04 + seed * 0.18) * 0.04;
+
+    const material = edge.material as THREE.LineBasicMaterial;
+    material.opacity = 0.28 + Math.abs(drift) * 0.04;
+  });
+
+  return (
+    <group ref={groupRef} position={[x, y, z]} scale={scale}>
+      <mesh geometry={geometry}>
+        <meshPhysicalMaterial
+          color="#f7fdff"
+          transparent
+          opacity={0.2}
+          transmission={0.99}
+          roughness={0.016}
+          metalness={0.02}
+          ior={1.18}
+          thickness={4.8}
+          clearcoat={1}
+          clearcoatRoughness={0.02}
+          side={THREE.DoubleSide}
+          depthWrite={false}
+        />
+      </mesh>
+      <lineSegments ref={edgeRef} geometry={edgeGeometry}>
+        <lineBasicMaterial color="#ffffff" transparent opacity={0.28} />
+      </lineSegments>
+    </group>
+  );
+}
+
 function RiftScene({
   reducedMotion,
   scrollRef,
@@ -466,6 +692,17 @@ function RiftScene({
 }) {
   const floatingShards = useMemo(() => Array.from({ length: 12 }, (_, index) => index + 1), []);
   const radialShards = useMemo(() => Array.from({ length: 12 }, (_, index) => index + 101), []);
+  const framingShards = useMemo(
+    () => [
+      { seed: 201, x: -7.2, y: 4.8, z: 2.2, scale: 3.9, rotation: [-0.18, 0.42, -0.38] as [number, number, number] },
+      { seed: 202, x: 7.4, y: 4.2, z: 1.8, scale: 3.6, rotation: [0.24, -0.36, 0.44] as [number, number, number] },
+      { seed: 203, x: -8.1, y: -0.4, z: 1.4, scale: 4.6, rotation: [-0.12, 0.34, -0.52] as [number, number, number] },
+      { seed: 204, x: 8.4, y: -1.0, z: 1.1, scale: 4.8, rotation: [0.18, -0.28, 0.58] as [number, number, number] },
+      { seed: 205, x: -6.6, y: -5.6, z: 2.4, scale: 3.5, rotation: [0.14, 0.26, -0.26] as [number, number, number] },
+      { seed: 206, x: 6.8, y: -5.2, z: 2.1, scale: 3.4, rotation: [-0.18, -0.22, 0.22] as [number, number, number] },
+    ],
+    [],
+  );
   const rigRef = useRef<THREE.Group | null>(null);
 
   function SceneRig() {
@@ -480,11 +717,17 @@ function RiftScene({
       rig.position.x += ((drift * 0.7 + Math.sin(time * 0.06) * 0.06) - rig.position.x) * 0.08;
       rig.position.y += ((Math.cos(time * 0.08 + phase * Math.PI * 2) * 0.08) - rig.position.y) * 0.08;
       rig.rotation.z += ((drift * -0.05) - rig.rotation.z) * 0.08;
+
+      state.camera.position.x += ((drift * 0.9 + Math.sin(time * 0.05) * 0.12) - state.camera.position.x) * 0.06;
+      state.camera.position.y += ((Math.cos(time * 0.06 + phase * Math.PI * 2) * 0.18) - state.camera.position.y) * 0.06;
+      state.camera.position.z += ((9 - Math.abs(drift) * 0.35) - state.camera.position.z) * 0.08;
+      state.camera.lookAt(0, 0, -2.8);
     });
 
     return (
       <group ref={rigRef}>
         <SmokePlane scrollRef={scrollRef} reducedMotion={reducedMotion} />
+        <FractureSheenPlane scrollRef={scrollRef} reducedMotion={reducedMotion} />
         <mesh position={[0, 0.18, -12.4]} scale={[3.1, 4.2, 1]}>
           <circleGeometry args={[1, 7]} />
           <meshBasicMaterial color="#010204" transparent opacity={0.98} depthWrite={false} />
@@ -515,6 +758,9 @@ function RiftScene({
         ))}
         {floatingShards.map((seed) => (
           <GlassShard key={seed} seed={seed} scrollRef={scrollRef} />
+        ))}
+        {framingShards.map((shard) => (
+          <FramingGlassShard key={shard.seed} scrollRef={scrollRef} {...shard} />
         ))}
       </group>
     );
@@ -569,16 +815,10 @@ function ShatteredGlassOverlay({
     { top: "-1%", left: "40%", width: "20%", height: "38%", rotate: "-9deg", clip: "polygon(28% 0%, 58% 4%, 100% 96%, 38% 100%, 0% 64%)", drift: 0.16 },
     { top: "8%", left: "61%", width: "18%", height: "28%", rotate: "18deg", clip: "polygon(12% 0%, 100% 18%, 74% 100%, 0% 74%)", drift: 0.14 },
     { top: "9%", left: "19%", width: "16%", height: "28%", rotate: "-18deg", clip: "polygon(34% 0%, 100% 18%, 62% 100%, 0% 76%)", drift: 0.14 },
-    { top: "23%", left: "70%", width: "18%", height: "26%", rotate: "24deg", clip: "polygon(8% 0%, 100% 22%, 70% 100%, 0% 68%)", drift: 0.12 },
-    { top: "24%", left: "13%", width: "18%", height: "28%", rotate: "-22deg", clip: "polygon(28% 0%, 100% 14%, 68% 100%, 0% 72%)", drift: 0.12 },
-    { top: "56%", left: "72%", width: "18%", height: "28%", rotate: "18deg", clip: "polygon(18% 0%, 100% 22%, 72% 100%, 0% 72%)", drift: 0.1 },
-    { top: "60%", left: "11%", width: "18%", height: "28%", rotate: "-14deg", clip: "polygon(30% 0%, 100% 18%, 70% 100%, 0% 74%)", drift: 0.1 },
   ] as const;
 
   const nearShards = [
     { top: "-6%", left: "-8%", width: "34%", height: "26%", rotate: "-16deg", clip: "polygon(0% 10%, 88% 0%, 100% 78%, 10% 100%)", drift: 0.04 },
-    { top: "12%", left: "78%", width: "26%", height: "24%", rotate: "18deg", clip: "polygon(6% 0%, 100% 18%, 88% 100%, 0% 72%)", drift: 0.04 },
-    { top: "76%", left: "-10%", width: "32%", height: "22%", rotate: "-12deg", clip: "polygon(0% 14%, 90% 0%, 100% 80%, 8% 100%)", drift: 0.04 },
     { top: "72%", left: "74%", width: "30%", height: "24%", rotate: "16deg", clip: "polygon(8% 0%, 100% 14%, 92% 100%, 0% 78%)", drift: 0.04 },
   ] as const;
 
@@ -587,19 +827,6 @@ function ShatteredGlassOverlay({
     { top: "40%", left: "83%", width: "7%", height: "9%", rotate: "22deg", clip: "polygon(18% 0%, 100% 26%, 58% 100%, 0% 62%)", drift: 0.05 },
     { top: "68%", left: "20%", width: "6%", height: "10%", rotate: "-16deg", clip: "polygon(34% 0%, 100% 22%, 66% 100%, 0% 70%)", drift: 0.05 },
     { top: "74%", left: "78%", width: "7%", height: "10%", rotate: "14deg", clip: "polygon(22% 0%, 100% 18%, 74% 100%, 0% 72%)", drift: 0.05 },
-  ] as const;
-
-  const cracks = [
-    { angle: "-72deg", height: "38%", glow: 0.48, width: "0.14rem" },
-    { angle: "-42deg", height: "34%", glow: 0.36, width: "0.12rem" },
-    { angle: "-16deg", height: "30%", glow: 0.28, width: "0.11rem" },
-    { angle: "18deg", height: "32%", glow: 0.32, width: "0.12rem" },
-    { angle: "44deg", height: "38%", glow: 0.42, width: "0.14rem" },
-    { angle: "72deg", height: "34%", glow: 0.46, width: "0.12rem" },
-    { angle: "168deg", height: "28%", glow: 0.26, width: "0.1rem" },
-    { angle: "202deg", height: "30%", glow: 0.26, width: "0.1rem" },
-    { angle: "226deg", height: "34%", glow: 0.34, width: "0.12rem" },
-    { angle: "246deg", height: "36%", glow: 0.4, width: "0.14rem" },
   ] as const;
 
   const glints = [
@@ -650,25 +877,11 @@ function ShatteredGlassOverlay({
             className="absolute inset-0 border border-white/12 bg-[linear-gradient(150deg,rgba(240,252,255,0.08)_0%,rgba(16,22,28,0.36)_30%,rgba(0,0,0,0.72)_100%)]"
             style={{
               clipPath: panel.clip,
-              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.14), 0 24px 80px rgba(0,0,0,0.58)",
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.12), 0 18px 60px rgba(0,0,0,0.52)",
+              opacity: 0.6,
             }}
           />
         </div>
-      ))}
-
-      {cracks.map((line) => (
-        <div
-          key={line.angle}
-          className="absolute left-1/2 top-[47%] rounded-full bg-[linear-gradient(180deg,rgba(255,255,255,0.0),rgba(246,252,255,1),rgba(255,255,255,0.0))] blur-[0.15px]"
-          style={{
-            width: line.width,
-            height: line.height,
-            transform: `translate3d(calc(-50% + var(--rift-drift) * 0.08), 0, 0) rotate(${line.angle})`,
-            transformOrigin: "50% 0%",
-            opacity: line.glow,
-            boxShadow: "0 0 10px rgba(214,246,255,0.22)",
-          }}
-        />
       ))}
 
       {majorShards.map((shard) => (
@@ -687,7 +900,8 @@ function ShatteredGlassOverlay({
             className="absolute inset-0 border border-white/52 bg-[linear-gradient(158deg,rgba(255,255,255,0.2)_0%,rgba(255,255,255,0.08)_10%,rgba(18,26,32,0.48)_28%,rgba(0,0,0,0.88)_100%)]"
             style={{
               clipPath: shard.clip,
-              boxShadow: "0 0 0 1px rgba(255,255,255,0.14), inset 0 1px 0 rgba(255,255,255,0.42), inset 0 -1px 0 rgba(255,255,255,0.08), 0 24px 72px rgba(0,0,0,0.54)",
+              boxShadow: "0 0 0 1px rgba(255,255,255,0.12), inset 0 1px 0 rgba(255,255,255,0.32), inset 0 -1px 0 rgba(255,255,255,0.06), 0 18px 54px rgba(0,0,0,0.46)",
+              opacity: 0.72,
             }}
           />
           <div
@@ -978,7 +1192,7 @@ export function MobileWorkExperience() {
           accent={WORK_ACCENT}
           label="Chloeverse"
           aria-label="Return to the Chloeverse"
-          className="fixed left-4 top-[calc(env(safe-area-inset-top,0px)+0.9rem)] z-40 flex h-11 w-11 items-center justify-center rounded-full border border-white/12 bg-[rgba(10,10,12,0.82)] text-white/84 backdrop-blur-xl"
+          className="fixed left-4 top-[calc(env(safe-area-inset-top,0px)+0.9rem)] z-50 flex h-11 w-11 items-center justify-center rounded-full border border-white/12 bg-[rgba(10,10,12,0.82)] text-white/84 backdrop-blur-xl"
         >
           <span aria-hidden="true" className="text-[1.25rem] leading-none">
             &#x2039;
