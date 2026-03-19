@@ -1,8 +1,11 @@
 "use client";
 
 import Image from "next/image";
+import { Decal, RoundedBox, Sparkles } from "@react-three/drei";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { AnimatePresence, motion, useReducedMotion, type PanInfo } from "framer-motion";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import * as THREE from "three";
 
 import { MobileRouteLink } from "@/components/mobile/shared/MobileRouteLink";
 import {
@@ -13,8 +16,9 @@ import {
 } from "@/lib/mobile-content";
 
 const ACCENT = "#f4eee6";
-const CUBE_SIZE = 13.2;
-const HALF_DEPTH = `${CUBE_SIZE / 2}rem`;
+const CUBE_UNIT = 2.28;
+const FACE_OFFSET = CUBE_UNIT / 2 + 0.02;
+const BASE_YAW = -Math.PI / 4;
 
 type FaceId = "metrics" | "markets" | "collabs" | "terms";
 
@@ -23,7 +27,8 @@ type CubeFace = {
   label: string;
   detailTitle: string;
   eyebrow: string;
-  transform: string;
+  position: [number, number, number];
+  rotation: [number, number, number];
 };
 
 const SIDE_FACES: CubeFace[] = [
@@ -32,38 +37,34 @@ const SIDE_FACES: CubeFace[] = [
     label: "metrics",
     detailTitle: "Metrics",
     eyebrow: "audience scale",
-    transform: `translateZ(${HALF_DEPTH})`,
+    position: [0, 0, FACE_OFFSET],
+    rotation: [0, 0, 0],
   },
   {
     id: "markets",
     label: "markets",
     detailTitle: "Markets",
     eyebrow: "audience territories",
-    transform: `rotateY(90deg) translateZ(${HALF_DEPTH})`,
+    position: [FACE_OFFSET, 0, 0],
+    rotation: [0, Math.PI / 2, 0],
   },
   {
     id: "collabs",
     label: "collabs",
     detailTitle: "Collabs",
     eyebrow: "selected names",
-    transform: `rotateY(180deg) translateZ(${HALF_DEPTH})`,
+    position: [0, 0, -FACE_OFFSET],
+    rotation: [0, Math.PI, 0],
   },
   {
     id: "terms",
     label: "terms",
     detailTitle: "Terms",
     eyebrow: "partnership details",
-    transform: `rotateY(-90deg) translateZ(${HALF_DEPTH})`,
+    position: [-FACE_OFFSET, 0, 0],
+    rotation: [0, -Math.PI / 2, 0],
   },
 ] as const;
-
-const TOP_FACE_STYLE = {
-  transform: `rotateX(90deg) translateZ(${HALF_DEPTH})`,
-} as const;
-
-const BOTTOM_FACE_STYLE = {
-  transform: `rotateX(-90deg) translateZ(${HALF_DEPTH})`,
-} as const;
 
 const MARKET_LAYOUT = [
   { left: "10%", top: "16%" },
@@ -72,38 +73,208 @@ const MARKET_LAYOUT = [
   { left: "56%", top: "56%" },
 ] as const;
 
+const crystalVertexShader = `
+varying vec3 vWorldPosition;
+varying vec3 vObjectPosition;
+varying vec3 vNormalDir;
+
+void main() {
+  vObjectPosition = position;
+  vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+  vWorldPosition = worldPosition.xyz;
+  vNormalDir = normalize(mat3(modelMatrix) * normal);
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}
+`;
+
+const crystalNoiseShader = `
+float hash31(vec3 p) {
+  p = fract(p * 0.1031);
+  p += dot(p, p.yzx + 33.33);
+  return fract((p.x + p.y) * p.z);
+}
+
+float noise3d(vec3 p) {
+  vec3 i = floor(p);
+  vec3 f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+
+  float n000 = hash31(i + vec3(0.0, 0.0, 0.0));
+  float n100 = hash31(i + vec3(1.0, 0.0, 0.0));
+  float n010 = hash31(i + vec3(0.0, 1.0, 0.0));
+  float n110 = hash31(i + vec3(1.0, 1.0, 0.0));
+  float n001 = hash31(i + vec3(0.0, 0.0, 1.0));
+  float n101 = hash31(i + vec3(1.0, 0.0, 1.0));
+  float n011 = hash31(i + vec3(0.0, 1.0, 1.0));
+  float n111 = hash31(i + vec3(1.0, 1.0, 1.0));
+
+  float nx00 = mix(n000, n100, f.x);
+  float nx10 = mix(n010, n110, f.x);
+  float nx01 = mix(n001, n101, f.x);
+  float nx11 = mix(n011, n111, f.x);
+  float nxy0 = mix(nx00, nx10, f.y);
+  float nxy1 = mix(nx01, nx11, f.y);
+
+  return mix(nxy0, nxy1, f.z);
+}
+
+float fbm3d(vec3 p) {
+  float value = 0.0;
+  float amplitude = 0.5;
+
+  for (int i = 0; i < 5; i++) {
+    value += amplitude * noise3d(p);
+    p = p * 2.02 + vec3(7.3, -3.7, 4.6);
+    amplitude *= 0.5;
+  }
+
+  return value;
+}
+`;
+
+const crystalCoreFragmentShader = `
+precision highp float;
+
+uniform float uTime;
+uniform float uEnergy;
+
+varying vec3 vWorldPosition;
+varying vec3 vObjectPosition;
+varying vec3 vNormalDir;
+
+${crystalNoiseShader}
+
+void main() {
+  vec3 viewDir = normalize(cameraPosition - vWorldPosition);
+  vec3 normal = normalize(vNormalDir);
+  float fresnel = pow(1.0 - max(dot(normal, viewDir), 0.0), 2.8);
+
+  float strata = fbm3d(vObjectPosition * 2.6 + vec3(0.0, uTime * 0.08, uTime * 0.05));
+  float veins = fbm3d(vObjectPosition * 4.2 - vec3(uTime * 0.04, 0.0, uTime * 0.09));
+  float pulse = sin(uTime * 1.8 + (vObjectPosition.x + vObjectPosition.y + vObjectPosition.z) * 3.6) * 0.5 + 0.5;
+  float beacon = smoothstep(0.1, 1.2, 1.0 - length(vObjectPosition.xy) * 0.42);
+
+  vec3 cold = vec3(0.78, 0.90, 1.0);
+  vec3 warm = vec3(1.0, 0.96, 0.92);
+  vec3 lavender = vec3(0.94, 0.90, 1.0);
+
+  vec3 color = mix(cold, warm, strata * 0.46);
+  color = mix(color, lavender, veins * 0.26);
+  color += vec3(1.0) * (0.22 + beacon * 0.34 + pulse * 0.08);
+  color += vec3(0.76, 0.88, 1.0) * fresnel * (0.32 + uEnergy * 0.22);
+  color += vec3(1.0, 0.98, 0.95) * veins * 0.18;
+
+  float alpha = 0.42 + fresnel * 0.32 + beacon * 0.14 + uEnergy * 0.1;
+  gl_FragColor = vec4(color, alpha);
+}
+`;
+
+const crystalShellFragmentShader = `
+precision highp float;
+
+uniform float uTime;
+uniform float uEnergy;
+
+varying vec3 vWorldPosition;
+varying vec3 vObjectPosition;
+varying vec3 vNormalDir;
+
+${crystalNoiseShader}
+
+void main() {
+  vec3 viewDir = normalize(cameraPosition - vWorldPosition);
+  vec3 normal = normalize(vNormalDir);
+  float fresnel = pow(1.0 - max(dot(normal, viewDir), 0.0), 4.4);
+  float shimmer = fbm3d(vObjectPosition * 6.0 + vec3(uTime * 0.18, -uTime * 0.15, uTime * 0.11));
+  float glint = pow(max(0.0, sin((vObjectPosition.x - vObjectPosition.z) * 12.0 + uTime * 1.8)), 10.0);
+  float ridge = pow(max(abs(normal.x), max(abs(normal.y), abs(normal.z))), 14.0);
+
+  vec3 spectral = mix(vec3(0.84, 0.92, 1.0), vec3(1.0, 0.96, 0.9), shimmer);
+  vec3 color = spectral * (0.18 + fresnel * 1.1 + glint * 0.22 + ridge * 0.4);
+  color += vec3(1.0) * (0.1 + uEnergy * 0.26);
+
+  float alpha = clamp(fresnel * 0.95 + ridge * 0.16 + shimmer * 0.08 + uEnergy * 0.08, 0.0, 1.0);
+  gl_FragColor = vec4(color, alpha);
+}
+`;
+
+const auraVertexShader = `
+varying vec2 vUv;
+
+void main() {
+  vUv = uv;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}
+`;
+
+const auraFragmentShader = `
+precision highp float;
+
+uniform float uTime;
+uniform float uEnergy;
+
+varying vec2 vUv;
+
+void main() {
+  vec2 uv = vUv - 0.5;
+  float r = length(uv);
+  float ring = smoothstep(0.36, 0.0, r);
+  float halo = smoothstep(0.7, 0.0, r);
+  float pulse = sin(uTime * 1.2) * 0.5 + 0.5;
+  float shimmer = sin((uv.x + uv.y) * 10.0 + uTime * 1.4) * 0.5 + 0.5;
+  vec3 color = mix(vec3(0.82, 0.90, 1.0), vec3(1.0, 0.98, 0.94), shimmer * 0.45 + pulse * 0.2);
+  float alpha = ring * (0.14 + uEnergy * 0.12) + halo * 0.07;
+  gl_FragColor = vec4(color, alpha);
+}
+`;
+
+function createFaceLabelTexture(label: string) {
+  if (typeof document === "undefined") return null;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = 1024;
+  canvas.height = 512;
+
+  const context = canvas.getContext("2d");
+  if (!context) return null;
+
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.font = '600 168px "Iowan Old Style", "Times New Roman", serif';
+  context.lineJoin = "round";
+  context.lineWidth = 16;
+  context.strokeStyle = "rgba(255,255,255,0.42)";
+  context.fillStyle = "rgba(18,18,20,0.92)";
+  context.shadowColor = "rgba(255,255,255,0.15)";
+  context.shadowBlur = 22;
+  context.strokeText(label, canvas.width / 2, canvas.height / 2);
+  context.shadowBlur = 0;
+  context.fillText(label, canvas.width / 2, canvas.height / 2);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 8;
+  texture.needsUpdate = true;
+  return texture;
+}
+
 function brandLogoPath(brand: string) {
   return `/mediacard/logos/${brand.toLowerCase().replace(/\s+/g, "")}.png`;
 }
 
 export function MobileMediaCardExperience() {
   const reducedMotion = useReducedMotion();
-  const rotationRef = useRef(0);
-  const [rotationY, setRotationY] = useState(0);
   const [activeFaceId, setActiveFaceId] = useState<FaceId | null>(null);
-
-  useEffect(() => {
-    if (reducedMotion || activeFaceId) return;
-
-    let previousTime = performance.now();
-    let frameId = 0;
-
-    const tick = (now: number) => {
-      const dt = Math.min((now - previousTime) / 1000, 0.04);
-      previousTime = now;
-      rotationRef.current = (rotationRef.current + dt * 12) % 360;
-      setRotationY(rotationRef.current);
-      frameId = window.requestAnimationFrame(tick);
-    };
-
-    frameId = window.requestAnimationFrame(tick);
-    return () => window.cancelAnimationFrame(frameId);
-  }, [activeFaceId, reducedMotion]);
+  const [hoveredFaceId, setHoveredFaceId] = useState<FaceId | null>(null);
+  const [manualTurns, setManualTurns] = useState(0);
 
   const activeFace = useMemo(
     () => SIDE_FACES.find((face) => face.id === activeFaceId) ?? null,
     [activeFaceId],
   );
+
+  const highlightedFaceId = activeFaceId ?? hoveredFaceId;
 
   const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     if (activeFaceId) return;
@@ -111,8 +282,7 @@ export function MobileMediaCardExperience() {
     const shouldRotate = Math.abs(info.offset.x) > 40 || Math.abs(info.velocity.x) > 360;
     if (!shouldRotate) return;
 
-    rotationRef.current += info.offset.x < 0 || info.velocity.x < 0 ? -90 : 90;
-    setRotationY(rotationRef.current);
+    setManualTurns((value) => value + (info.offset.x < 0 || info.velocity.x < 0 ? -1 : 1));
   };
 
   const pagePadding = {
@@ -123,14 +293,14 @@ export function MobileMediaCardExperience() {
   return (
     <main className="chv-mobile-root relative min-h-[100svh] overflow-hidden bg-[#020202] text-white">
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,#050505_0%,#020202_54%,#010101_100%)]" />
-        <div className="absolute left-1/2 top-1/2 h-[24rem] w-[24rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.12),transparent_68%)] blur-3xl" />
-        <div className="absolute left-1/2 top-[30%] h-[16rem] w-[16rem] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.14),transparent_72%)] blur-[90px]" />
-        <div className="chv-vignette absolute inset-0 opacity-80" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,#030303_0%,#010101_56%,#000000_100%)]" />
+        <div className="absolute left-1/2 top-1/2 h-[28rem] w-[28rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.1),transparent_66%)] blur-[140px]" />
+        <div className="absolute left-1/2 top-[28%] h-[18rem] w-[18rem] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(233,240,255,0.18),transparent_72%)] blur-[120px]" />
+        <div className="chv-vignette absolute inset-0 opacity-85" />
       </div>
 
       <div className="pointer-events-none absolute inset-x-0 top-0 z-30 px-4" style={{ paddingTop: pagePadding.paddingTop }}>
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start justify-start">
           <MobileRouteLink
             href="/"
             accent={ACCENT}
@@ -145,14 +315,6 @@ export function MobileMediaCardExperience() {
               <span className="chv-mobile-body text-[0.7rem] italic tracking-[0.02em] text-white/84">back to chloeverse</span>
             </span>
           </MobileRouteLink>
-
-          <div className="max-w-[11rem] rounded-[1.65rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.12),rgba(255,255,255,0.03))] px-4 py-3 text-right shadow-[0_18px_48px_rgba(0,0,0,0.32)] backdrop-blur-xl">
-            <p className="chv-mobile-mono text-[0.54rem] uppercase tracking-[0.34em] text-white/42">white cube</p>
-            <p className="mt-2 chv-mobile-display text-[1.52rem] leading-[0.9] tracking-[-0.06em] text-[#f8f5f1]">
-              mediacard
-            </p>
-            <p className="mt-2 text-[0.74rem] leading-6 text-white/54">swipe the cube, tap a face.</p>
-          </div>
         </div>
       </div>
 
@@ -160,86 +322,20 @@ export function MobileMediaCardExperience() {
         <motion.div
           drag={reducedMotion ? false : "x"}
           dragConstraints={{ left: 0, right: 0 }}
-          dragElastic={0.14}
+          dragElastic={0.12}
           onDragEnd={handleDragEnd}
-          whileDrag={activeFaceId ? undefined : { scale: 1.02 }}
-          className="relative h-[26rem] w-full max-w-[23rem] touch-none"
+          whileDrag={activeFaceId ? undefined : { scale: 1.01 }}
+          className="relative h-[31rem] w-full max-w-[23rem] touch-none"
         >
-          <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex justify-center">
-            <div className="rounded-full border border-white/10 bg-[rgba(255,255,255,0.05)] px-4 py-2 backdrop-blur-xl">
-              <p className="chv-mobile-body text-[0.78rem] italic tracking-[0.02em] text-white/60">
-                Four stamped sides. One quiet object in empty space.
-              </p>
-            </div>
-          </div>
-
-          <div className="absolute inset-0 flex items-center justify-center [perspective:1800px]">
-            <div className="relative h-[13.2rem] w-[13.2rem] [transform-style:preserve-3d] [transform:rotateX(-28deg)_rotateZ(45deg)]">
-              <motion.div
-                animate={{ rotateY: rotationY }}
-                transition={
-                  activeFaceId
-                    ? { duration: 0.22 }
-                    : reducedMotion
-                      ? { duration: 0.35 }
-                      : { duration: 0.12, ease: "linear" }
-                }
-                className="relative h-full w-full [transform-style:preserve-3d]"
-              >
-                {SIDE_FACES.map((face) => (
-                  <button
-                    key={face.id}
-                    type="button"
-                    onClick={() => setActiveFaceId(face.id)}
-                    className="absolute inset-0 flex items-center justify-center overflow-hidden border border-[#d8d2cb] bg-[linear-gradient(180deg,#ffffff_0%,#f1ece5_64%,#e1dbd3_100%)] text-center shadow-[inset_0_0_0_1px_rgba(255,255,255,0.84),0_10px_30px_rgba(0,0,0,0.06)]"
-                    style={{
-                      transform: face.transform,
-                      backfaceVisibility: "hidden",
-                    }}
-                    aria-label={`Open ${face.detailTitle}`}
-                  >
-                    <span className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.82),rgba(255,255,255,0)_36%,rgba(195,189,182,0.16)_100%)]" />
-                    <span className="pointer-events-none absolute inset-[8%] border border-black/6" />
-                    <span className="pointer-events-none absolute inset-x-[14%] top-[22%] h-px bg-black/8" />
-                    <span className="relative flex flex-col items-center justify-center px-4">
-                      <span className="chv-mobile-mono text-[0.52rem] uppercase tracking-[0.34em] text-black/34">
-                        stamp
-                      </span>
-                      <span className="mt-3 chv-mobile-display text-[1.55rem] leading-[0.92] tracking-[-0.06em] text-black/68">
-                        {face.label}
-                      </span>
-                    </span>
-                  </button>
-                ))}
-
-                <div
-                  className="absolute inset-0 border border-[#d8d2cb] bg-[linear-gradient(180deg,#f7f3ed_0%,#eee8e1_100%)]"
-                  style={{ ...TOP_FACE_STYLE, backfaceVisibility: "hidden" }}
-                />
-                <div
-                  className="absolute inset-0 border border-[#d8d2cb] bg-[linear-gradient(180deg,#d6d1ca_0%,#c3beb7_100%)]"
-                  style={{ ...BOTTOM_FACE_STYLE, backfaceVisibility: "hidden" }}
-                />
-              </motion.div>
-            </div>
-          </div>
-
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex items-end justify-between gap-4">
-            <div className="max-w-[10rem]">
-              <p className="chv-mobile-mono text-[0.54rem] uppercase tracking-[0.32em] text-white/36">interaction</p>
-              <p className="mt-2 text-[0.82rem] leading-6 text-white/54">
-                Each side is stamped once. Tap a face and it opens cleanly.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2 rounded-full border border-white/10 bg-[rgba(255,255,255,0.05)] px-3 py-2 backdrop-blur-xl">
-              {SIDE_FACES.map((face) => (
-                <span
-                  key={face.id}
-                  className={`block h-2.5 rounded-full ${activeFaceId === face.id ? "w-8 bg-white/76" : "w-2.5 bg-white/24"}`}
-                />
-              ))}
-            </div>
+          <div className="absolute inset-0 overflow-hidden rounded-[2.4rem]">
+            <CrystalCubeViewport
+              activeFaceId={activeFaceId}
+              highlightedFaceId={highlightedFaceId}
+              manualTurns={manualTurns}
+              reducedMotion={Boolean(reducedMotion)}
+              onHoverFaceChange={setHoveredFaceId}
+              onSelectFace={setActiveFaceId}
+            />
           </div>
         </motion.div>
       </section>
@@ -250,7 +346,7 @@ export function MobileMediaCardExperience() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-50 flex items-center justify-center bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.08),rgba(0,0,0,0.72)_44%,rgba(0,0,0,0.9)_100%)] px-4"
+            className="absolute inset-0 z-50 flex items-center justify-center bg-[radial-gradient(circle_at_50%_46%,rgba(255,255,255,0.08),rgba(0,0,0,0.7)_42%,rgba(0,0,0,0.92)_100%)] px-4"
             style={{
               paddingTop: "calc(env(safe-area-inset-top, 0px) + 4.9rem)",
               paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1.2rem)",
@@ -263,7 +359,7 @@ export function MobileMediaCardExperience() {
               transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
               className="relative w-full max-w-[22rem] overflow-hidden rounded-[2rem] border border-black/8 bg-[linear-gradient(180deg,#ffffff_0%,#f6f2eb_100%)] px-5 py-5 text-black shadow-[0_30px_90px_rgba(0,0,0,0.3)]"
             >
-              <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.9),rgba(255,255,255,0)_38%,rgba(210,204,196,0.18)_100%)]" />
+              <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.92),rgba(255,255,255,0)_38%,rgba(210,204,196,0.2)_100%)]" />
               <div className="relative">
                 <div className="flex items-start justify-between gap-4 border-b border-black/8 pb-4">
                   <div>
@@ -296,6 +392,386 @@ export function MobileMediaCardExperience() {
         ) : null}
       </AnimatePresence>
     </main>
+  );
+}
+
+function CrystalCubeViewport({
+  activeFaceId,
+  highlightedFaceId,
+  manualTurns,
+  reducedMotion,
+  onHoverFaceChange,
+  onSelectFace,
+}: {
+  activeFaceId: FaceId | null;
+  highlightedFaceId: FaceId | null;
+  manualTurns: number;
+  reducedMotion: boolean;
+  onHoverFaceChange: (faceId: FaceId | null) => void;
+  onSelectFace: (faceId: FaceId) => void;
+}) {
+  return (
+    <Canvas
+      dpr={[1, 2]}
+      camera={{ position: [0, 0, 8.2], fov: 28 }}
+      gl={{ alpha: true, antialias: true, powerPreference: "high-performance" }}
+      onCreated={({ gl }) => {
+        gl.toneMapping = THREE.ACESFilmicToneMapping;
+        gl.toneMappingExposure = 1.22;
+      }}
+      className="h-full w-full"
+    >
+      <color attach="background" args={["#020202"]} />
+      <fog attach="fog" args={["#020202", 8.5, 16]} />
+      <ambientLight intensity={0.32} color="#f1f5ff" />
+      <hemisphereLight intensity={0.72} color="#f8fbff" groundColor="#030303" />
+      <directionalLight position={[4.8, 3.6, 5.8]} intensity={1.8} color="#ffffff" />
+      <directionalLight position={[-3.8, -2.4, 3.4]} intensity={1.05} color="#d8e6ff" />
+      <pointLight position={[0, 0.2, 3.1]} intensity={26} distance={14} decay={2} color="#ffffff" />
+      <pointLight position={[0, 0.1, -2.8]} intensity={10} distance={10} decay={2} color="#d7e8ff" />
+      <Sparkles
+        count={10}
+        scale={[8, 8, 8]}
+        size={1.8}
+        speed={reducedMotion ? 0.015 : 0.045}
+        color="#ffffff"
+        opacity={0.12}
+      />
+      <CrystalCubeStage
+        activeFaceId={activeFaceId}
+        highlightedFaceId={highlightedFaceId}
+        manualTurns={manualTurns}
+        reducedMotion={reducedMotion}
+        onHoverFaceChange={onHoverFaceChange}
+        onSelectFace={onSelectFace}
+      />
+    </Canvas>
+  );
+}
+
+function CrystalCubeStage({
+  activeFaceId,
+  highlightedFaceId,
+  manualTurns,
+  reducedMotion,
+  onHoverFaceChange,
+  onSelectFace,
+}: {
+  activeFaceId: FaceId | null;
+  highlightedFaceId: FaceId | null;
+  manualTurns: number;
+  reducedMotion: boolean;
+  onHoverFaceChange: (faceId: FaceId | null) => void;
+  onSelectFace: (faceId: FaceId) => void;
+}) {
+  const groupRef = useRef<THREE.Group | null>(null);
+  const coreMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
+  const shellMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
+  const auraMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
+  const beamMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
+  const targetRotationRef = useRef(manualTurns * (Math.PI / 2));
+  const autoRotationRef = useRef(0);
+  const currentRotationRef = useRef(manualTurns * (Math.PI / 2));
+  const energyRef = useRef(0);
+
+  useEffect(() => {
+    targetRotationRef.current = manualTurns * (Math.PI / 2);
+  }, [manualTurns]);
+
+  useFrame((state, delta) => {
+    const dt = Math.min(delta, 0.033);
+    const elapsed = state.clock.getElapsedTime();
+    const paused = Boolean(activeFaceId);
+    const energized = highlightedFaceId !== null;
+
+    if (!reducedMotion && !paused) {
+      autoRotationRef.current += dt * 0.34;
+    }
+
+    const desiredRotation = BASE_YAW + targetRotationRef.current + (reducedMotion || paused ? 0 : autoRotationRef.current);
+    currentRotationRef.current = THREE.MathUtils.damp(currentRotationRef.current, desiredRotation, paused ? 7 : 2.4, dt);
+    energyRef.current = THREE.MathUtils.damp(energyRef.current, energized ? 1 : 0, 4.2, dt);
+
+    if (groupRef.current) {
+      groupRef.current.rotation.x = THREE.MathUtils.damp(
+        groupRef.current.rotation.x,
+        -0.48 + (reducedMotion ? 0 : Math.sin(elapsed * 0.58) * 0.025),
+        2.8,
+        dt,
+      );
+      groupRef.current.rotation.z = THREE.MathUtils.damp(
+        groupRef.current.rotation.z,
+        0.56 + (reducedMotion ? 0 : Math.cos(elapsed * 0.52) * 0.025),
+        2.8,
+        dt,
+      );
+      groupRef.current.rotation.y = currentRotationRef.current;
+      groupRef.current.position.y = reducedMotion ? 0 : Math.sin(elapsed * 0.76) * 0.05;
+    }
+
+    const shaderTime = elapsed;
+    const energy = energyRef.current;
+
+    if (coreMaterialRef.current) {
+      coreMaterialRef.current.uniforms.uTime.value = shaderTime;
+      coreMaterialRef.current.uniforms.uEnergy.value = energy;
+    }
+
+    if (shellMaterialRef.current) {
+      shellMaterialRef.current.uniforms.uTime.value = shaderTime;
+      shellMaterialRef.current.uniforms.uEnergy.value = energy;
+    }
+
+    if (auraMaterialRef.current) {
+      auraMaterialRef.current.uniforms.uTime.value = shaderTime;
+      auraMaterialRef.current.uniforms.uEnergy.value = energy;
+    }
+
+    if (beamMaterialRef.current) {
+      beamMaterialRef.current.uniforms.uTime.value = shaderTime;
+      beamMaterialRef.current.uniforms.uEnergy.value = energy;
+    }
+  });
+
+  const shaderUniforms = useMemo(
+    () => ({
+      uTime: { value: 0 },
+      uEnergy: { value: 0 },
+    }),
+    [],
+  );
+
+  return (
+    <group ref={groupRef} scale={0.84}>
+      <mesh position={[0, 0, -0.65]} scale={[6.2, 6.2, 1]} renderOrder={0}>
+        <planeGeometry args={[1, 1]} />
+        <shaderMaterial
+          ref={auraMaterialRef}
+          uniforms={shaderUniforms}
+          vertexShader={auraVertexShader}
+          fragmentShader={auraFragmentShader}
+          transparent
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          toneMapped={false}
+        />
+      </mesh>
+
+      <mesh position={[0, 0, -0.55]} rotation={[0, 0, Math.PI / 4]} scale={[3.6, 7.2, 1]} renderOrder={0}>
+        <planeGeometry args={[1, 1]} />
+        <shaderMaterial
+          ref={beamMaterialRef}
+          uniforms={shaderUniforms}
+          vertexShader={auraVertexShader}
+          fragmentShader={auraFragmentShader}
+          transparent
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          toneMapped={false}
+        />
+      </mesh>
+
+      <RoundedBox args={[CUBE_UNIT * 0.72, CUBE_UNIT * 0.72, CUBE_UNIT * 0.72]} radius={0.13} smoothness={6}>
+        <shaderMaterial
+          ref={coreMaterialRef}
+          uniforms={shaderUniforms}
+          vertexShader={crystalVertexShader}
+          fragmentShader={crystalCoreFragmentShader}
+          transparent
+          side={THREE.DoubleSide}
+        />
+      </RoundedBox>
+
+      <RoundedBox args={[CUBE_UNIT * 0.92, CUBE_UNIT * 0.92, CUBE_UNIT * 0.92]} radius={0.15} smoothness={8}>
+        <meshPhysicalMaterial
+          color="#fdfdfd"
+          transparent
+          opacity={0.92}
+          roughness={0.08}
+          metalness={0.02}
+          clearcoat={1}
+          clearcoatRoughness={0.04}
+          transmission={0.16}
+          thickness={1.8}
+          reflectivity={0.85}
+          ior={1.24}
+        />
+      </RoundedBox>
+
+      <RoundedBox args={[CUBE_UNIT, CUBE_UNIT, CUBE_UNIT]} radius={0.16} smoothness={8} renderOrder={2}>
+        <meshPhysicalMaterial
+          color="#ffffff"
+          transparent
+          opacity={0.96}
+          transmission={0.82}
+          roughness={0.04}
+          thickness={1.7}
+          ior={1.28}
+          attenuationDistance={0.8}
+          attenuationColor="#ffffff"
+          clearcoat={1}
+          clearcoatRoughness={0.03}
+          reflectivity={0.9}
+        />
+      </RoundedBox>
+
+      <RoundedBox args={[CUBE_UNIT * 1.03, CUBE_UNIT * 1.03, CUBE_UNIT * 1.03]} radius={0.165} smoothness={8} renderOrder={3}>
+        <shaderMaterial
+          ref={shellMaterialRef}
+          uniforms={shaderUniforms}
+          vertexShader={crystalVertexShader}
+          fragmentShader={crystalShellFragmentShader}
+          transparent
+          depthWrite={false}
+          side={THREE.DoubleSide}
+          blending={THREE.AdditiveBlending}
+          toneMapped={false}
+        />
+      </RoundedBox>
+
+      {SIDE_FACES.map((face) => (
+        <InteractiveFace
+          key={face.id}
+          face={face}
+          highlighted={highlightedFaceId === face.id}
+          onHoverFaceChange={onHoverFaceChange}
+          onSelectFace={onSelectFace}
+        />
+      ))}
+    </group>
+  );
+}
+
+function InteractiveFace({
+  face,
+  highlighted,
+  onHoverFaceChange,
+  onSelectFace,
+}: {
+  face: CubeFace;
+  highlighted: boolean;
+  onHoverFaceChange: (faceId: FaceId | null) => void;
+  onSelectFace: (faceId: FaceId) => void;
+}) {
+  const groupRef = useRef<THREE.Group | null>(null);
+  const plateMaterialRef = useRef<THREE.MeshPhysicalMaterial | null>(null);
+  const glowMaterialRef = useRef<THREE.MeshBasicMaterial | null>(null);
+  const labelTexture = useMemo(() => createFaceLabelTexture(face.label), [face.label]);
+
+  useEffect(() => {
+    return () => {
+      labelTexture?.dispose();
+    };
+  }, [labelTexture]);
+
+  useFrame((_, delta) => {
+    const dt = Math.min(delta, 0.033);
+    const targetScale = highlighted ? 1.018 : 1;
+    const currentGroup = groupRef.current;
+
+    if (currentGroup) {
+      currentGroup.scale.x = THREE.MathUtils.damp(currentGroup.scale.x, targetScale, 4, dt);
+      currentGroup.scale.y = THREE.MathUtils.damp(currentGroup.scale.y, targetScale, 4, dt);
+      currentGroup.scale.z = THREE.MathUtils.damp(currentGroup.scale.z, targetScale, 4, dt);
+    }
+
+    if (plateMaterialRef.current) {
+      plateMaterialRef.current.opacity = THREE.MathUtils.damp(
+        plateMaterialRef.current.opacity,
+        highlighted ? 0.96 : 0.9,
+        4,
+        dt,
+      );
+      plateMaterialRef.current.transmission = THREE.MathUtils.damp(
+        plateMaterialRef.current.transmission,
+        highlighted ? 0.8 : 0.64,
+        4,
+        dt,
+      );
+      plateMaterialRef.current.emissiveIntensity = THREE.MathUtils.damp(
+        plateMaterialRef.current.emissiveIntensity,
+        highlighted ? 0.12 : 0.04,
+        4,
+        dt,
+      );
+      plateMaterialRef.current.roughness = THREE.MathUtils.damp(
+        plateMaterialRef.current.roughness,
+        highlighted ? 0.06 : 0.12,
+        4,
+        dt,
+      );
+    }
+
+    if (glowMaterialRef.current) {
+      glowMaterialRef.current.opacity = THREE.MathUtils.damp(glowMaterialRef.current.opacity, highlighted ? 0.14 : 0.04, 4, dt);
+    }
+  });
+
+  return (
+    <group ref={groupRef} position={face.position} rotation={face.rotation}>
+      <mesh position={[0, 0, -0.04]} renderOrder={0}>
+        <planeGeometry args={[1.2, 0.28]} />
+        <meshBasicMaterial
+          ref={glowMaterialRef}
+          color="#ffffff"
+          transparent
+          opacity={0.04}
+          depthWrite={false}
+          toneMapped={false}
+        />
+      </mesh>
+
+      <RoundedBox args={[1.44, 1.44, 0.05]} radius={0.1} smoothness={4} position={[0, 0, -0.005]} renderOrder={1}>
+        <meshPhysicalMaterial
+          ref={plateMaterialRef}
+          color="#f3f6fb"
+          metalness={0.02}
+          roughness={0.12}
+          transparent
+          opacity={0.9}
+          transmission={0.64}
+          thickness={1.1}
+          clearcoat={1}
+          clearcoatRoughness={0.06}
+          emissive="#ffffff"
+          emissiveIntensity={0.04}
+          side={THREE.FrontSide}
+        />
+        {labelTexture ? (
+          <Decal position={[0, 0, 0.031]} scale={[1.18, 0.36, 0.45]} rotation={[0, 0, 0]}>
+            <meshStandardMaterial
+              map={labelTexture}
+              transparent
+              depthWrite={false}
+              polygonOffset
+              polygonOffsetFactor={-2}
+              roughness={0.42}
+              metalness={0.08}
+              color="#171719"
+            />
+          </Decal>
+        ) : null}
+      </RoundedBox>
+
+      <mesh
+        position={[0, 0, 0.045]}
+        onPointerOver={(event) => {
+          event.stopPropagation();
+          onHoverFaceChange(face.id);
+        }}
+        onPointerOut={(event) => {
+          event.stopPropagation();
+          onHoverFaceChange(null);
+        }}
+        onClick={(event) => {
+          event.stopPropagation();
+          onSelectFace(face.id);
+        }}
+      >
+        <planeGeometry args={[1.58, 1.58]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
+    </group>
   );
 }
 
