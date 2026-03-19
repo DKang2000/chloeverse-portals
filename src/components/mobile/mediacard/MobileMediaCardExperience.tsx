@@ -232,6 +232,22 @@ void main() {
 }
 `;
 
+function resolveFaceIdFromLocalPoint(point: THREE.Vector3): FaceId | null {
+  const absX = Math.abs(point.x);
+  const absY = Math.abs(point.y);
+  const absZ = Math.abs(point.z);
+
+  if (absY > absX && absY > absZ) {
+    return null;
+  }
+
+  if (absZ >= absX) {
+    return point.z >= 0 ? "metrics" : "collabs";
+  }
+
+  return point.x >= 0 ? "markets" : "terms";
+}
+
 function createFaceLabelTexture(label: string) {
   if (typeof document === "undefined") return null;
 
@@ -639,6 +655,14 @@ function CrystalCubeStage({
         />
       </RoundedBox>
 
+      <CubeInteractionShell
+        activeFaceId={activeFaceId}
+        onDragStateChange={onDragStateChange}
+        onHoverFaceChange={onHoverFaceChange}
+        onRotateCube={onRotateCube}
+        onSelectFace={onSelectFace}
+      />
+
       {SIDE_FACES.map((face) => (
         <InteractiveFace
           key={face.id}
@@ -653,6 +677,142 @@ function CrystalCubeStage({
         />
       ))}
     </group>
+  );
+}
+
+function CubeInteractionShell({
+  activeFaceId,
+  onDragStateChange,
+  onHoverFaceChange,
+  onRotateCube,
+  onSelectFace,
+}: {
+  activeFaceId: FaceId | null;
+  onDragStateChange: (isDragging: boolean) => void;
+  onHoverFaceChange: (faceId: FaceId | null) => void;
+  onRotateCube: (deltaX: number, deltaY: number) => void;
+  onSelectFace: (faceId: FaceId) => void;
+}) {
+  const pointerStateRef = useRef<{
+    pointerId: number | null;
+    startX: number;
+    startY: number;
+    lastX: number;
+    lastY: number;
+    distance: number;
+  }>({
+    pointerId: null,
+    startX: 0,
+    startY: 0,
+    lastX: 0,
+    lastY: 0,
+    distance: 0,
+  });
+
+  const capturePointer = (event: ThreeEvent<PointerEvent>) => {
+    const target = event.nativeEvent.target;
+
+    if (target instanceof Element) {
+      target.setPointerCapture(event.pointerId);
+    }
+  };
+
+  const releasePointer = (event: ThreeEvent<PointerEvent>) => {
+    const target = event.nativeEvent.target;
+
+    if (target instanceof Element && target.hasPointerCapture(event.pointerId)) {
+      target.releasePointerCapture(event.pointerId);
+    }
+  };
+
+  const resolveFaceFromEvent = (event: ThreeEvent<PointerEvent>) => {
+    const localPoint = event.object.worldToLocal(event.point.clone());
+    return resolveFaceIdFromLocalPoint(localPoint);
+  };
+
+  const resetPointerState = () => {
+    pointerStateRef.current.pointerId = null;
+    pointerStateRef.current.distance = 0;
+    onDragStateChange(false);
+  };
+
+  const handlePointerDown = (event: ThreeEvent<PointerEvent>) => {
+    event.stopPropagation();
+
+    if (activeFaceId) return;
+
+    pointerStateRef.current.pointerId = event.pointerId;
+    pointerStateRef.current.startX = event.clientX;
+    pointerStateRef.current.startY = event.clientY;
+    pointerStateRef.current.lastX = event.clientX;
+    pointerStateRef.current.lastY = event.clientY;
+    pointerStateRef.current.distance = 0;
+    onHoverFaceChange(resolveFaceFromEvent(event));
+    capturePointer(event);
+  };
+
+  const handlePointerMove = (event: ThreeEvent<PointerEvent>) => {
+    if (pointerStateRef.current.pointerId !== event.pointerId || activeFaceId) return;
+
+    event.stopPropagation();
+
+    const deltaX = event.clientX - pointerStateRef.current.lastX;
+    const deltaY = event.clientY - pointerStateRef.current.lastY;
+    pointerStateRef.current.lastX = event.clientX;
+    pointerStateRef.current.lastY = event.clientY;
+    pointerStateRef.current.distance += Math.hypot(deltaX, deltaY);
+
+    if (pointerStateRef.current.distance > 2) {
+      onDragStateChange(true);
+      onRotateCube(deltaX, deltaY);
+    } else {
+      onHoverFaceChange(resolveFaceFromEvent(event));
+    }
+  };
+
+  const handlePointerUp = (event: ThreeEvent<PointerEvent>) => {
+    if (pointerStateRef.current.pointerId !== event.pointerId) return;
+
+    event.stopPropagation();
+    releasePointer(event);
+
+    const wasTap = pointerStateRef.current.distance < TAP_DISTANCE_THRESHOLD;
+    const tappedFace = resolveFaceFromEvent(event);
+    resetPointerState();
+    onHoverFaceChange(tappedFace);
+
+    if (wasTap && tappedFace) {
+      onSelectFace(tappedFace);
+    }
+  };
+
+  const handlePointerCancel = (event: ThreeEvent<PointerEvent>) => {
+    if (pointerStateRef.current.pointerId !== event.pointerId) return;
+
+    event.stopPropagation();
+    releasePointer(event);
+    resetPointerState();
+    onHoverFaceChange(null);
+  };
+
+  return (
+    <RoundedBox
+      args={[CUBE_UNIT * 1.12, CUBE_UNIT * 1.12, CUBE_UNIT * 1.12]}
+      radius={0.18}
+      smoothness={4}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerCancel}
+      onPointerOut={(event) => {
+        if (pointerStateRef.current.pointerId === null) {
+          event.stopPropagation();
+          onHoverFaceChange(null);
+        }
+      }}
+    >
+      <meshBasicMaterial transparent opacity={0} depthWrite={false} side={THREE.DoubleSide} />
+    </RoundedBox>
   );
 }
 
