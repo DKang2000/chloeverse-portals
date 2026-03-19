@@ -3,9 +3,10 @@
 import { motion, useReducedMotion } from "framer-motion";
 
 import { MobileRouteFrame } from "@/components/mobile/shared/MobileRouteFrame";
-import { WORK_ENTRIES, WORK_INTRO_COPY, WORK_ROLE_STACK } from "@/lib/mobile-content";
+import { WORK_ENTRIES, WORK_ROLE_STACK } from "@/lib/mobile-content";
 
 const ACCENT = "#72ffae";
+const TERMINAL_IDENTIFIERS = WORK_ROLE_STACK.join(" // ");
 
 const MATRIX_STREAMS = [
   { left: "6%", text: "resume://signal\ncurrent\narchive" },
@@ -155,7 +156,10 @@ export function MobileWorkExperience() {
       }
       contentClassName="pb-[calc(env(safe-area-inset-bottom,0px)+4rem)]"
     >
-      <section className="relative mt-8">
+      <section className="relative mt-8 [perspective:1600px]">
+        <div className="pointer-events-none absolute inset-x-3 top-6 bottom-[-1.4rem] rounded-[2.25rem] bg-[linear-gradient(180deg,rgba(10,26,16,0.82),rgba(3,8,5,0.24))] shadow-[0_48px_120px_rgba(0,0,0,0.44)]" />
+        <div className="pointer-events-none absolute inset-x-7 top-10 bottom-[-2.2rem] rounded-[2.35rem] border border-[#7cffb5]/8 bg-[linear-gradient(180deg,rgba(7,18,11,0.44),rgba(0,0,0,0.08))] opacity-90" />
+        <div className="pointer-events-none absolute bottom-[-2.8rem] left-1/2 h-24 w-[78%] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(114,255,174,0.22),rgba(114,255,174,0.06)_42%,transparent_76%)] blur-2xl" />
         <motion.div
           initial={reducedMotion ? false : { opacity: 0, y: 22 }}
           animate={reducedMotion ? undefined : { opacity: 1, y: 0 }}
@@ -192,23 +196,20 @@ export function MobileWorkExperience() {
               <section className="relative overflow-hidden rounded-[1.5rem] border border-[#7cffb5]/14 bg-[linear-gradient(180deg,rgba(10,20,13,0.64),rgba(2,8,5,0.84))] px-4 py-4 shadow-[inset_0_1px_0_rgba(153,255,198,0.06)]">
                 <div className="absolute inset-y-0 left-0 w-px bg-[linear-gradient(180deg,rgba(142,255,189,0),rgba(142,255,189,0.42),rgba(142,255,189,0))]" />
                 <div className="absolute inset-y-0 right-0 w-[28%] bg-[linear-gradient(270deg,rgba(124,255,181,0.08),rgba(124,255,181,0))]" />
+                <div className="absolute inset-0 bg-[linear-gradient(112deg,rgba(255,255,255,0.05)_0%,rgba(255,255,255,0.012)_12%,transparent_26%,transparent_80%,rgba(158,255,200,0.03)_100%)] opacity-80" />
                 <TerminalCommand
                   command="boot work --mobile --mode=premium-terminal"
                   reducedMotion={Boolean(reducedMotion)}
                 />
-                <div className="mt-4 grid gap-2 border-t border-[#7cffb5]/10 pt-4 text-[0.7rem] uppercase tracking-[0.18em] text-[#8fffbf]/52">
-                  <p className="chv-mobile-mono">subject......... Chloe Kang</p>
-                  <p className="chv-mobile-mono">status.......... online // reverse chronological</p>
+                <div className="mt-4 grid gap-2 border-t border-[#7cffb5]/10 pt-4 text-[0.69rem] uppercase tracking-[0.18em] text-[#8fffbf]/48">
+                  <p className="chv-mobile-mono">
+                    subject.........
+                    <span className="ml-2 text-[#f6fff9]" style={{ textShadow: glowText(0.1) }}>
+                      Chloe Kang
+                    </span>
+                  </p>
+                  <p className="chv-mobile-mono">identifiers..... {TERMINAL_IDENTIFIERS}</p>
                 </div>
-                <p
-                  className="mt-5 max-w-[16rem] text-[0.96rem] leading-[1.95] tracking-[0.01em] text-[#ebfff2]/78"
-                  style={{ textShadow: glowText(0.06) }}
-                >
-                  {WORK_INTRO_COPY}
-                </p>
-                <p className="mt-4 chv-mobile-mono text-[0.68rem] uppercase tracking-[0.2em] text-[#92ffc2]/46">
-                  {WORK_ROLE_STACK.join(" // ")}
-                </p>
               </section>
 
               <section className="space-y-5">
@@ -299,60 +300,66 @@ function TerminalExperience({
     <article className="relative">
       <TerminalCommand command={`cat /experience/${entryToken}.log`} reducedMotion={true} />
 
-      <div className="relative mt-3 overflow-hidden rounded-[1.45rem] border border-[#7cffb5]/14 bg-[linear-gradient(180deg,rgba(8,16,11,0.82),rgba(2,5,4,0.96))] px-4 py-4 shadow-[0_18px_40px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(146,255,193,0.04)]">
-        <div className="absolute inset-y-4 left-0 w-px bg-[linear-gradient(180deg,rgba(142,255,189,0),rgba(142,255,189,0.34),rgba(142,255,189,0))]" />
-        <div className="absolute inset-y-0 right-0 w-[22%] bg-[linear-gradient(270deg,rgba(124,255,181,0.06),rgba(124,255,181,0))]" />
-        <div className="absolute inset-0 bg-[linear-gradient(112deg,rgba(255,255,255,0.05)_0%,rgba(255,255,255,0.018)_10%,transparent_22%,transparent_78%,rgba(158,255,200,0.03)_100%)] opacity-80" />
-        <div className="absolute inset-0 shadow-[inset_0_1px_0_rgba(218,255,231,0.04),inset_0_0_24px_rgba(121,255,177,0.06)]" />
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <p className="chv-mobile-mono text-[0.62rem] uppercase tracking-[0.28em] text-[#8effbd]/52">
-              experience {String(index + 1).padStart(2, "0")}
-            </p>
-            <h2
-              className="mt-3 break-words chv-mobile-mono text-[1.01rem] font-medium uppercase tracking-[0.08em] leading-[1.55] text-[#f0fff5]"
-              style={{ textShadow: glowText(0.1) }}
-            >
-              {role}
-            </h2>
-            <p
-              className="mt-2 break-words chv-mobile-mono text-[0.8rem] uppercase tracking-[0.16em] leading-6 text-[#a4ffcb]/66"
-              style={{ textShadow: glowText(0.05) }}
-            >
-              {company}
-            </p>
+      <div className="relative mt-3">
+        <div className="pointer-events-none absolute inset-x-2 top-3 bottom-[-0.85rem] rounded-[1.55rem] bg-[linear-gradient(180deg,rgba(9,22,13,0.78),rgba(1,4,2,0.18))] shadow-[0_30px_70px_rgba(0,0,0,0.32)]" />
+        <div className="pointer-events-none absolute inset-x-5 top-6 bottom-[-1.2rem] rounded-[1.65rem] border border-[#7cffb5]/8 bg-[linear-gradient(180deg,rgba(7,18,11,0.32),rgba(0,0,0,0.04))]" />
+        <div className="pointer-events-none absolute bottom-[-1.4rem] left-1/2 h-10 w-[72%] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(114,255,174,0.14),rgba(114,255,174,0.04)_44%,transparent_78%)] blur-xl" />
+
+        <div className="relative overflow-hidden rounded-[1.45rem] border border-[#7cffb5]/14 bg-[linear-gradient(180deg,rgba(8,16,11,0.82),rgba(2,5,4,0.96))] px-4 py-4 shadow-[0_18px_40px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(146,255,193,0.04)]">
+          <div className="absolute inset-y-4 left-0 w-px bg-[linear-gradient(180deg,rgba(142,255,189,0),rgba(142,255,189,0.34),rgba(142,255,189,0))]" />
+          <div className="absolute inset-y-0 right-0 w-[22%] bg-[linear-gradient(270deg,rgba(124,255,181,0.06),rgba(124,255,181,0))]" />
+          <div className="absolute inset-0 bg-[linear-gradient(112deg,rgba(255,255,255,0.05)_0%,rgba(255,255,255,0.018)_10%,transparent_22%,transparent_78%,rgba(158,255,200,0.03)_100%)] opacity-80" />
+          <div className="absolute inset-0 shadow-[inset_0_1px_0_rgba(218,255,231,0.04),inset_0_0_24px_rgba(121,255,177,0.06)]" />
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p className="chv-mobile-mono text-[0.62rem] uppercase tracking-[0.28em] text-[#8effbd]/52">
+                experience {String(index + 1).padStart(2, "0")}
+              </p>
+              <h2
+                className="mt-3 break-words chv-mobile-mono text-[1.01rem] font-medium uppercase tracking-[0.08em] leading-[1.55] text-[#f0fff5]"
+                style={{ textShadow: glowText(0.1) }}
+              >
+                {role}
+              </h2>
+              <p
+                className="mt-2 break-words chv-mobile-mono text-[0.8rem] uppercase tracking-[0.16em] leading-6 text-[#a4ffcb]/66"
+                style={{ textShadow: glowText(0.05) }}
+              >
+                {company}
+              </p>
+            </div>
+
+            {isCurrentRole ? (
+              <span
+                className="chv-mobile-mono shrink-0 rounded-full border border-[#8dffc0]/20 bg-[rgba(114,255,174,0.08)] px-2.5 py-1 text-[0.56rem] uppercase tracking-[0.24em] text-[#b4ffd4]/76"
+                style={{ boxShadow: "0 0 18px rgba(114,255,174,0.08)" }}
+              >
+                current
+              </span>
+            ) : null}
           </div>
 
-          {isCurrentRole ? (
-            <span
-              className="chv-mobile-mono shrink-0 rounded-full border border-[#8dffc0]/20 bg-[rgba(114,255,174,0.08)] px-2.5 py-1 text-[0.56rem] uppercase tracking-[0.24em] text-[#b4ffd4]/76"
-              style={{ boxShadow: "0 0 18px rgba(114,255,174,0.08)" }}
-            >
-              current
-            </span>
-          ) : null}
-        </div>
+          <div className="mt-4 border-t border-[#7cffb5]/12 pt-4">
+            <TerminalRow label="dates" value={entry.date} />
+            <TerminalRow label="location" value={normalizeMeta(entry.location)} />
+            {entry.type ? <TerminalRow label="type" value={entry.type} /> : null}
+          </div>
 
-        <div className="mt-4 border-t border-[#7cffb5]/12 pt-4">
-          <TerminalRow label="dates" value={entry.date} />
-          <TerminalRow label="location" value={normalizeMeta(entry.location)} />
-          {entry.type ? <TerminalRow label="type" value={entry.type} /> : null}
-        </div>
-
-        <div className="mt-4 border-t border-[#7cffb5]/12 pt-4">
-          <p className="chv-mobile-mono text-[0.62rem] uppercase tracking-[0.24em] text-[#8effbd]/54">notes</p>
-          <div className="mt-3 space-y-2.5">
-            {entry.bullets.map((bullet) => (
-              <p key={bullet} className="flex gap-3 text-[0.9rem] leading-[1.9] tracking-[0.005em] text-[#e1ffea]/72">
-                <span
-                  className="chv-mobile-mono mt-[0.18rem] text-[#86ffb8]/72"
-                  style={{ textShadow: glowText(0.08) }}
-                >
-                  &gt;
-                </span>
-                <span>{bullet}</span>
-              </p>
-            ))}
+          <div className="mt-4 border-t border-[#7cffb5]/12 pt-4">
+            <p className="chv-mobile-mono text-[0.62rem] uppercase tracking-[0.24em] text-[#8effbd]/54">notes</p>
+            <div className="mt-3 space-y-2.5">
+              {entry.bullets.map((bullet) => (
+                <p key={bullet} className="flex gap-3 text-[0.9rem] leading-[1.9] tracking-[0.005em] text-[#e1ffea]/72">
+                  <span
+                    className="chv-mobile-mono mt-[0.18rem] text-[#86ffb8]/72"
+                    style={{ textShadow: glowText(0.08) }}
+                  >
+                    &gt;
+                  </span>
+                  <span>{bullet}</span>
+                </p>
+              ))}
+            </div>
           </div>
         </div>
       </div>
