@@ -21,6 +21,8 @@ const FACE_OFFSET = CUBE_UNIT / 2 + 0.02;
 const BASE_YAW = -Math.PI / 4;
 const BASE_PITCH = -0.48;
 const BASE_ROLL = 0.56;
+const MIN_PITCH = -0.72;
+const MAX_PITCH = -0.18;
 const DRAG_ROTATION_FACTOR = 0.0095;
 const TAP_DISTANCE_THRESHOLD = 10;
 
@@ -287,8 +289,9 @@ export function MobileMediaCardExperience() {
   const reducedMotion = useReducedMotion();
   const [activeFaceId, setActiveFaceId] = useState<FaceId | null>(null);
   const [hoveredFaceId, setHoveredFaceId] = useState<FaceId | null>(null);
-  const [manualRotation, setManualRotation] = useState({ pitch: 0, yaw: 0 });
+  const [manualRotation, setManualRotation] = useState({ pitch: BASE_PITCH, yaw: BASE_YAW });
   const [isDraggingCube, setIsDraggingCube] = useState(false);
+  const [hasPositionedCube, setHasPositionedCube] = useState(false);
 
   const activeFace = useMemo(
     () => SIDE_FACES.find((face) => face.id === activeFaceId) ?? null,
@@ -299,8 +302,9 @@ export function MobileMediaCardExperience() {
   const handleRotateCube = (deltaX: number, deltaY: number) => {
     if (activeFaceId) return;
 
+    setHasPositionedCube(true);
     setManualRotation((value) => ({
-      pitch: THREE.MathUtils.clamp(value.pitch - deltaY * DRAG_ROTATION_FACTOR, -0.95, 0.95),
+      pitch: THREE.MathUtils.clamp(value.pitch - deltaY * DRAG_ROTATION_FACTOR, MIN_PITCH, MAX_PITCH),
       yaw: value.yaw + deltaX * DRAG_ROTATION_FACTOR,
     }));
   };
@@ -339,6 +343,7 @@ export function MobileMediaCardExperience() {
             <CrystalCubeViewport
               activeFaceId={activeFaceId}
               highlightedFaceId={highlightedFaceId}
+              hasPositionedCube={hasPositionedCube}
               isDraggingCube={isDraggingCube}
               manualRotation={manualRotation}
               reducedMotion={Boolean(reducedMotion)}
@@ -409,6 +414,7 @@ export function MobileMediaCardExperience() {
 function CrystalCubeViewport({
   activeFaceId,
   highlightedFaceId,
+  hasPositionedCube,
   isDraggingCube,
   manualRotation,
   reducedMotion,
@@ -419,6 +425,7 @@ function CrystalCubeViewport({
 }: {
   activeFaceId: FaceId | null;
   highlightedFaceId: FaceId | null;
+  hasPositionedCube: boolean;
   isDraggingCube: boolean;
   manualRotation: { pitch: number; yaw: number };
   reducedMotion: boolean;
@@ -457,6 +464,7 @@ function CrystalCubeViewport({
       <CrystalCubeStage
         activeFaceId={activeFaceId}
         highlightedFaceId={highlightedFaceId}
+        hasPositionedCube={hasPositionedCube}
         isDraggingCube={isDraggingCube}
         manualRotation={manualRotation}
         reducedMotion={reducedMotion}
@@ -472,6 +480,7 @@ function CrystalCubeViewport({
 function CrystalCubeStage({
   activeFaceId,
   highlightedFaceId,
+  hasPositionedCube,
   isDraggingCube,
   manualRotation,
   reducedMotion,
@@ -482,6 +491,7 @@ function CrystalCubeStage({
 }: {
   activeFaceId: FaceId | null;
   highlightedFaceId: FaceId | null;
+  hasPositionedCube: boolean;
   isDraggingCube: boolean;
   manualRotation: { pitch: number; yaw: number };
   reducedMotion: boolean;
@@ -495,9 +505,8 @@ function CrystalCubeStage({
   const shellMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
   const auraMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
   const beamMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
-  const autoRotationRef = useRef(0);
-  const currentYawRef = useRef(BASE_YAW + manualRotation.yaw);
-  const currentPitchRef = useRef(BASE_PITCH + manualRotation.pitch);
+  const currentYawRef = useRef(manualRotation.yaw);
+  const currentPitchRef = useRef(manualRotation.pitch);
   const energyRef = useRef(0);
 
   useFrame((state, delta) => {
@@ -506,12 +515,8 @@ function CrystalCubeStage({
     const paused = Boolean(activeFaceId);
     const energized = highlightedFaceId !== null;
 
-    if (!reducedMotion && !paused) {
-      autoRotationRef.current += dt * 0.34;
-    }
-
-    const desiredYaw = BASE_YAW + manualRotation.yaw + (reducedMotion || paused || isDraggingCube ? 0 : autoRotationRef.current);
-    const desiredPitch = BASE_PITCH + manualRotation.pitch;
+    const desiredYaw = manualRotation.yaw;
+    const desiredPitch = manualRotation.pitch;
     currentYawRef.current = THREE.MathUtils.damp(currentYawRef.current, desiredYaw, paused ? 7 : isDraggingCube ? 12 : 2.4, dt);
     currentPitchRef.current = THREE.MathUtils.damp(currentPitchRef.current, desiredPitch, isDraggingCube ? 12 : 3.4, dt);
     energyRef.current = THREE.MathUtils.damp(energyRef.current, energized ? 1 : 0, 4.2, dt);
@@ -520,12 +525,12 @@ function CrystalCubeStage({
       groupRef.current.rotation.x = THREE.MathUtils.damp(groupRef.current.rotation.x, currentPitchRef.current, 3.6, dt);
       groupRef.current.rotation.z = THREE.MathUtils.damp(
         groupRef.current.rotation.z,
-        BASE_ROLL + (reducedMotion || isDraggingCube ? 0 : Math.cos(elapsed * 0.52) * 0.025),
+        BASE_ROLL,
         2.8,
         dt,
       );
       groupRef.current.rotation.y = currentYawRef.current;
-      groupRef.current.position.y = reducedMotion || isDraggingCube ? 0 : Math.sin(elapsed * 0.76) * 0.05;
+      groupRef.current.position.y = 0;
     }
 
     const shaderTime = elapsed;
@@ -659,14 +664,9 @@ function CrystalCubeStage({
       {SIDE_FACES.map((face) => (
         <InteractiveFace
           key={face.id}
-          activeFaceId={activeFaceId}
           face={face}
           highlighted={highlightedFaceId === face.id}
           isDraggingCube={isDraggingCube}
-          onHoverFaceChange={onHoverFaceChange}
-          onDragStateChange={onDragStateChange}
-          onRotateCube={onRotateCube}
-          onSelectFace={onSelectFace}
         />
       ))}
     </group>
@@ -810,42 +810,17 @@ function CubeInteractionShell({
 }
 
 function InteractiveFace({
-  activeFaceId,
   face,
   highlighted,
   isDraggingCube,
-  onHoverFaceChange,
-  onDragStateChange,
-  onRotateCube,
-  onSelectFace,
 }: {
-  activeFaceId: FaceId | null;
   face: CubeFace;
   highlighted: boolean;
   isDraggingCube: boolean;
-  onHoverFaceChange: (faceId: FaceId | null) => void;
-  onDragStateChange: (isDragging: boolean) => void;
-  onRotateCube: (deltaX: number, deltaY: number) => void;
-  onSelectFace: (faceId: FaceId) => void;
 }) {
   const groupRef = useRef<THREE.Group | null>(null);
   const plateMaterialRef = useRef<THREE.MeshPhysicalMaterial | null>(null);
   const glowMaterialRef = useRef<THREE.MeshBasicMaterial | null>(null);
-  const pointerStateRef = useRef<{
-    pointerId: number | null;
-    startX: number;
-    startY: number;
-    lastX: number;
-    lastY: number;
-    distance: number;
-  }>({
-    pointerId: null,
-    startX: 0,
-    startY: 0,
-    lastX: 0,
-    lastY: 0,
-    distance: 0,
-  });
   const labelTexture = useMemo(() => createFaceLabelTexture(face.label), [face.label]);
 
   useEffect(() => {
@@ -902,84 +877,6 @@ function InteractiveFace({
     }
   });
 
-  const resetPointerState = () => {
-    pointerStateRef.current.pointerId = null;
-    pointerStateRef.current.distance = 0;
-    onDragStateChange(false);
-  };
-
-  const capturePointer = (event: ThreeEvent<PointerEvent>) => {
-    const target = event.nativeEvent.target;
-
-    if (target instanceof Element) {
-      target.setPointerCapture(event.pointerId);
-    }
-  };
-
-  const releasePointer = (event: ThreeEvent<PointerEvent>) => {
-    const target = event.nativeEvent.target;
-
-    if (target instanceof Element && target.hasPointerCapture(event.pointerId)) {
-      target.releasePointerCapture(event.pointerId);
-    }
-  };
-
-  const handlePointerDown = (event: ThreeEvent<PointerEvent>) => {
-    event.stopPropagation();
-
-    if (activeFaceId) return;
-
-    pointerStateRef.current.pointerId = event.pointerId;
-    pointerStateRef.current.startX = event.clientX;
-    pointerStateRef.current.startY = event.clientY;
-    pointerStateRef.current.lastX = event.clientX;
-    pointerStateRef.current.lastY = event.clientY;
-    pointerStateRef.current.distance = 0;
-    onHoverFaceChange(face.id);
-    capturePointer(event);
-  };
-
-  const handlePointerMove = (event: ThreeEvent<PointerEvent>) => {
-    if (pointerStateRef.current.pointerId !== event.pointerId || activeFaceId) return;
-
-    event.stopPropagation();
-
-    const deltaX = event.clientX - pointerStateRef.current.lastX;
-    const deltaY = event.clientY - pointerStateRef.current.lastY;
-    pointerStateRef.current.lastX = event.clientX;
-    pointerStateRef.current.lastY = event.clientY;
-    pointerStateRef.current.distance += Math.hypot(deltaX, deltaY);
-
-    if (pointerStateRef.current.distance > 2) {
-      onDragStateChange(true);
-      onRotateCube(deltaX, deltaY);
-    }
-  };
-
-  const handlePointerUp = (event: ThreeEvent<PointerEvent>) => {
-    if (pointerStateRef.current.pointerId !== event.pointerId) return;
-
-    event.stopPropagation();
-    releasePointer(event);
-
-    const wasTap = pointerStateRef.current.distance < TAP_DISTANCE_THRESHOLD;
-    resetPointerState();
-    onHoverFaceChange(wasTap ? face.id : null);
-
-    if (wasTap && !activeFaceId) {
-      onSelectFace(face.id);
-    }
-  };
-
-  const handlePointerCancel = (event: ThreeEvent<PointerEvent>) => {
-    if (pointerStateRef.current.pointerId !== event.pointerId) return;
-
-    event.stopPropagation();
-    releasePointer(event);
-    resetPointerState();
-    onHoverFaceChange(null);
-  };
-
   return (
     <group ref={groupRef} position={face.position} rotation={face.rotation}>
       <mesh position={[0, 0, -0.04]} renderOrder={0}>
@@ -1026,25 +923,7 @@ function InteractiveFace({
         ) : null}
       </RoundedBox>
 
-      <mesh
-        position={[0, 0, 0.045]}
-        onPointerOver={(event) => {
-          event.stopPropagation();
-          if (pointerStateRef.current.pointerId === null) {
-            onHoverFaceChange(face.id);
-          }
-        }}
-        onPointerOut={(event) => {
-          event.stopPropagation();
-          if (pointerStateRef.current.pointerId === null) {
-            onHoverFaceChange(null);
-          }
-        }}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerCancel}
-      >
+      <mesh position={[0, 0, 0.045]}>
         <planeGeometry args={[1.58, 1.58]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
