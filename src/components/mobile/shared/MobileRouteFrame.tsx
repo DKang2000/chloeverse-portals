@@ -84,17 +84,17 @@ export function MobileReturnSigil({ accent }: { accent: string }) {
       accent={accent}
       label="Chloeverse"
       aria-label="Return to the Chloeverse"
-      className="fixed left-4 top-[calc(env(safe-area-inset-top,0px)+0.8rem)] z-30 inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/35 px-3 py-2 text-white/84 backdrop-blur-xl"
-      style={{ boxShadow: `0 0 0 1px color-mix(in srgb, ${accent} 18%, transparent), 0 14px 32px rgba(0,0,0,0.32)` }}
+      className="fixed left-4 top-[calc(env(safe-area-inset-top,0px)+0.8rem)] z-30 inline-flex items-center gap-3 rounded-[999px] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.12),rgba(255,255,255,0.04))] px-3.5 py-2 text-white/84 backdrop-blur-xl"
+      style={{ boxShadow: `0 0 0 1px color-mix(in srgb, ${accent} 18%, transparent), 0 18px 36px rgba(0,0,0,0.24)` }}
     >
-      <span className="inline-flex items-center gap-2">
+      <span className="inline-flex items-center gap-3">
         <span
-          className="relative block h-6 w-6 rounded-full border border-white/18"
-          style={{ boxShadow: `0 0 22px color-mix(in srgb, ${accent} 34%, transparent)` }}
+          className="relative block h-7 w-7 overflow-hidden rounded-full border border-white/18"
+          style={{ boxShadow: `0 0 22px color-mix(in srgb, ${accent} 30%, transparent)` }}
         >
-          <span className="absolute inset-[5px] rounded-full bg-white/86" />
+          <span className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.94),rgba(255,255,255,0.08)_62%,transparent_80%)]" />
         </span>
-        <span className="chv-mobile-mono text-[0.56rem] uppercase tracking-[0.28em]">home</span>
+        <span className="chv-mobile-body text-[0.7rem] italic tracking-[0.02em] text-white/84">back to chloeverse</span>
       </span>
     </MobileRouteLink>
   );

@@ -138,28 +138,28 @@ function ChromePlane({
   onReady?: () => void;
 }) {
   const readyRef = useRef(false);
-  const material = useMemo(() => {
-    return new THREE.ShaderMaterial({
-      uniforms: {
-        uTime: { value: 0 },
-        uResolution: { value: new THREE.Vector2(1, 1) },
-        uAccent: { value: new THREE.Color(accent) },
-        uMotion: { value: reducedMotion ? 0.28 : 1 },
-      },
-      vertexShader,
-      fragmentShader,
-    });
-  }, [accent, reducedMotion]);
+  const materialRef = useRef<THREE.ShaderMaterial | null>(null);
+  const uniforms = useMemo(
+    () => ({
+      uTime: { value: 0 },
+      uResolution: { value: new THREE.Vector2(1, 1) },
+      uAccent: { value: new THREE.Color(accent) },
+      uMotion: { value: reducedMotion ? 0.28 : 1 },
+    }),
+    [accent, reducedMotion],
+  );
 
   useEffect(() => {
-    return () => material.dispose();
-  }, [material]);
+    const material = materialRef.current;
+    return () => material?.dispose();
+  }, []);
 
   useFrame((state) => {
+    const material = materialRef.current;
+    if (!material) return;
+
     material.uniforms.uTime.value = state.clock.getElapsedTime();
     material.uniforms.uResolution.value.set(state.size.width, state.size.height);
-    material.uniforms.uAccent.value.set(accent);
-    material.uniforms.uMotion.value = reducedMotion ? 0.28 : 1;
 
     if (!readyRef.current) {
       readyRef.current = true;
@@ -170,7 +170,7 @@ function ChromePlane({
   return (
     <mesh>
       <planeGeometry args={[2, 2]} />
-      <primitive attach="material" object={material} />
+      <shaderMaterial ref={materialRef} uniforms={uniforms} vertexShader={vertexShader} fragmentShader={fragmentShader} />
     </mesh>
   );
 }
