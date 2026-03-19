@@ -26,9 +26,9 @@ export function MobileContactExperience() {
   return (
     <MobileRouteFrame
       currentPath="/contact"
-      eyebrow="Beacon Lock"
+      eyebrow="Open Channel"
       title="Contact"
-      description="A direct transmission artifact with the same live pathways as the desktop mission: email, copy, socials, and a clear route back into the world."
+      description="A softer contact page with the same live pathways as desktop: direct email, copy, and social channels gathered into one place."
       accent={ACCENT}
       ambient={
         <>
@@ -50,12 +50,12 @@ export function MobileContactExperience() {
                 </div>
               </div>
               <p className="mt-6 max-w-[17rem] text-sm leading-6 text-white/56">
-                Stabilize the beacon, then choose the channel that reaches Chloe directly.
+                Hold for a moment and the right ways to reach Chloe will rise to the surface.
               </p>
               <div className="mt-5">
                 <MobileHoldButton
-                  label="Lock the beacon"
-                  hint="hold to stabilize"
+                  label="Bring channels online"
+                  hint="hold to gather"
                   accent={ACCENT}
                   onComplete={() => ritual.trigger()}
                 />
@@ -81,13 +81,13 @@ export function MobileContactExperience() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-8"
+          className="mt-8 space-y-5"
         >
           <section className="relative overflow-hidden rounded-[2.15rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.025))] p-5 shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_16%,rgba(255,199,116,0.18),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0)_44%)]" />
             <div className="relative">
-              <p className="chv-mobile-mono text-[0.56rem] uppercase tracking-[0.28em] text-[#ffcf99]/72">
-                transmission active
+              <p className="chv-mobile-body text-[0.72rem] italic tracking-[0.02em] text-[#ffcf99]/76">
+                channel open
               </p>
               <h2 className="chv-mobile-display mt-3 text-[2.1rem] leading-[0.9] tracking-[-0.06em] text-[#fbf2e8]">
                 {CONTACT_DETAILS.name}
@@ -97,9 +97,9 @@ export function MobileContactExperience() {
               <div className="mt-6 grid gap-3">
                 <Link
                   href={`mailto:${CONTACT_DETAILS.email}`}
-                  className="chv-mobile-mono inline-flex items-center justify-between rounded-[1.5rem] border border-[#ffbf72]/20 bg-[#2b1b08]/52 px-4 py-4 text-[0.62rem] uppercase tracking-[0.28em] text-[#fff1dd]"
+                  className="chv-mobile-body inline-flex items-center justify-between rounded-[1.5rem] border border-[#ffbf72]/20 bg-[#2b1b08]/42 px-4 py-4 text-[0.78rem] italic tracking-[0.01em] text-[#fff1dd]"
                 >
-                  <span>Email Chloe</span>
+                  <span>write to Chloe</span>
                   <span>01</span>
                 </Link>
 
@@ -114,30 +114,36 @@ export function MobileContactExperience() {
                       window.location.href = `mailto:${CONTACT_DETAILS.email}`;
                     }
                   }}
-                  className="chv-mobile-mono inline-flex items-center justify-between rounded-[1.5rem] border border-white/10 bg-black/30 px-4 py-4 text-[0.62rem] uppercase tracking-[0.28em] text-white/82"
+                  className="chv-mobile-body inline-flex items-center justify-between rounded-[1.5rem] border border-white/10 bg-black/24 px-4 py-4 text-[0.78rem] italic tracking-[0.01em] text-white/82"
                 >
-                  <span>{copied ? "Email copied" : "Copy email"}</span>
+                  <span>{copied ? "email copied" : "copy address"}</span>
                   <span>02</span>
                 </button>
               </div>
 
-              <div className="mt-6 grid grid-cols-2 gap-3">
-                {actions.map((action, index) => (
-                  <Link
-                    key={action.label}
-                    href={action.href}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    className="rounded-[1.4rem] border border-white/10 bg-black/28 px-4 py-4"
-                  >
-                    <p className="chv-mobile-mono text-[0.5rem] uppercase tracking-[0.22em] text-[#ffcf99]/56">
-                      channel {String(index + 3).padStart(2, "0")}
-                    </p>
-                    <p className="mt-3 text-sm text-white/88">{action.label}</p>
-                  </Link>
-                ))}
-              </div>
             </div>
+          </section>
+
+          <section className="space-y-3">
+            <p className="chv-mobile-body text-[0.74rem] italic tracking-[0.01em] text-[#ffcf99]/62">other paths</p>
+            {actions.map((action, index) => (
+              <Link
+                key={action.label}
+                href={action.href}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="block rounded-[1.9rem] border border-white/10 bg-black/22 px-5 py-4 backdrop-blur-[14px]"
+                style={{
+                  width: index % 2 === 0 ? "88%" : "80%",
+                  transform: `translateX(${index % 2 === 0 ? "0px" : "24px"}) rotate(${index % 2 === 0 ? "-0.4deg" : "0.7deg"})`,
+                }}
+              >
+                <p className="chv-mobile-body text-[0.64rem] italic tracking-[0.01em] text-[#ffcf99]/56">
+                  channel {String(index + 3).padStart(2, "0")}
+                </p>
+                <p className="mt-2 text-[1rem] text-white/88">{action.label}</p>
+              </Link>
+            ))}
           </section>
         </motion.section>
       ) : null}

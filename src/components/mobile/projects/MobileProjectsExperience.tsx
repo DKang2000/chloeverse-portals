@@ -24,9 +24,9 @@ export function MobileProjectsExperience() {
   return (
     <MobileRouteFrame
       currentPath="/projects"
-      eyebrow="Creator Relic"
+      eyebrow="Studio Notes"
       title="Projects"
-      description="A handheld studio reel translated from the desktop portal into a filmic contact sheet. Every strip opens the original Instagram source."
+      description="A softer studio ledger of Chloe's edits, experiments, and published cuts. Each piece still opens its original Instagram source."
       accent={ACCENT}
       ambient={
         <>
@@ -44,10 +44,10 @@ export function MobileProjectsExperience() {
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="chv-mobile-mono text-[0.58rem] uppercase tracking-[0.3em] text-white/46">
-                    private device
+                    studio veil
                   </p>
                   <p className="mt-2 max-w-[16rem] text-sm leading-6 text-white/56">
-                    Press and hold to unseal Chloe&apos;s project strip.
+                    Hold here and the working cuts will surface one by one.
                   </p>
                 </div>
                 <div className="relative h-20 w-16 overflow-hidden rounded-[1.2rem] border border-white/10 bg-black/40">
@@ -59,7 +59,7 @@ export function MobileProjectsExperience() {
               <div className="mt-5">
                 <MobileHoldButton
                   label="Unseal the reel"
-                  hint="hold to unlock"
+                  hint="hold to gather"
                   accent={ACCENT}
                   onComplete={() => ritual.trigger()}
                 />
@@ -76,6 +76,7 @@ export function MobileProjectsExperience() {
             accent={ACCENT}
             label="Creator device opening"
             detail="Contacts, cuts, and source strips are sliding into alignment."
+            
           />
         ) : null}
       </AnimatePresence>
@@ -87,11 +88,15 @@ export function MobileProjectsExperience() {
           transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
           className="mt-8"
         >
-          <div className="flex flex-wrap gap-2">
+          <div>
+            <p className="chv-mobile-body text-[0.74rem] italic tracking-[0.01em] text-[#ffc29c]/62">published studies</p>
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
             {PROJECT_DEVICE_APPS.map((app) => (
               <span
                 key={app}
-                className="chv-mobile-mono rounded-none border-b border-white/12 px-0 pb-1 pr-3 text-[0.54rem] uppercase tracking-[0.22em] text-white/38"
+                className="chv-mobile-body border-b border-white/10 px-0 pb-1 pr-3 text-[0.66rem] italic tracking-[0.02em] text-white/42"
               >
                 {app}
               </span>
@@ -102,9 +107,14 @@ export function MobileProjectsExperience() {
             {PROJECT_REELS.map((reel, index) => (
               <article
                 key={reel.id}
-                className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-5"
+                className="relative overflow-hidden rounded-[2.2rem] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.025))] p-5 backdrop-blur-[20px]"
+                style={{
+                  width: index % 2 === 0 ? "92%" : "86%",
+                  transform: `translateX(${index % 2 === 0 ? "0px" : "22px"}) rotate(${index % 2 === 0 ? "-0.6deg" : "0.8deg"})`,
+                }}
               >
-                <div className="absolute inset-y-0 left-2 flex flex-col justify-around py-5">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_18%,rgba(255,255,255,0.08),transparent_34%),radial-gradient(circle_at_82%_72%,rgba(255,157,111,0.12),transparent_38%)]" />
+                <div className="absolute inset-y-0 left-2 flex flex-col justify-around py-5 opacity-60">
                   {Array.from({ length: 8 }).map((_, perforationIndex) => (
                     <span
                       key={perforationIndex}
@@ -112,7 +122,7 @@ export function MobileProjectsExperience() {
                     />
                   ))}
                 </div>
-                <div className="absolute inset-y-0 right-2 flex flex-col justify-around py-5">
+                <div className="absolute inset-y-0 right-2 flex flex-col justify-around py-5 opacity-60">
                   {Array.from({ length: 8 }).map((_, perforationIndex) => (
                     <span
                       key={perforationIndex}
@@ -130,17 +140,22 @@ export function MobileProjectsExperience() {
                   />
                 </div>
 
-                <div className="relative mt-5 flex items-center justify-between gap-4 px-4">
-                  <p className="max-w-[13rem] text-sm leading-6 text-white/54">
-                    @{reel.user} / {getProjectPathLabel(reel.permalink)} / cut {formatProjectIndex(index)}
-                  </p>
+                <div className="relative mt-5 flex items-end justify-between gap-4 px-4">
+                  <div className="max-w-[13rem]">
+                    <p className="chv-mobile-body text-[0.66rem] italic tracking-[0.02em] text-white/46">
+                      study {formatProjectIndex(index)}
+                    </p>
+                    <p className="mt-1 text-sm leading-6 text-white/58">
+                      @{reel.user} / {getProjectPathLabel(reel.permalink)}
+                    </p>
+                  </div>
                   <Link
                     href={reel.permalink}
                     target="_blank"
                     rel="noreferrer noopener"
-                    className="chv-mobile-mono inline-flex items-center rounded-full border border-white/10 bg-white/8 px-4 py-3 text-[0.6rem] uppercase tracking-[0.28em] text-white"
+                    className="chv-mobile-body inline-flex items-center rounded-full border border-white/10 bg-white/10 px-4 py-3 text-[0.72rem] italic tracking-[0.02em] text-white"
                   >
-                    Open source
+                    see original
                   </Link>
                 </div>
               </article>

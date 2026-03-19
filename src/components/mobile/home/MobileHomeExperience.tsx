@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 import { MobileRouteLink } from "@/components/mobile/shared/MobileRouteLink";
@@ -13,21 +13,19 @@ type MobileHomeExperienceProps = {
   monoFontClassName?: string;
 };
 
-const ITEM_HEIGHT = 132;
-
 function MobileSignalWord({
   text,
   accent,
   reducedMotion,
   delay = 0,
+  titleClassName,
 }: {
   text: string;
   accent: string;
   reducedMotion: boolean;
   delay?: number;
+  titleClassName?: string;
 }) {
-  const extrusionLayers = Array.from({ length: 4 }, (_, index) => index);
-
   return (
     <motion.span
       initial={reducedMotion ? false : { opacity: 0, y: 10, filter: "blur(6px)" }}
@@ -35,45 +33,26 @@ function MobileSignalWord({
         reducedMotion
           ? undefined
           : {
-              opacity: [1, 1, 0.18, 1, 0.08, 1],
-              y: [0, 0, 1.5, 0, 1, 0],
-              filter: [
-                "blur(0px)",
-                "blur(0px)",
-                "blur(1.2px)",
-                "blur(0px)",
-                "blur(1.6px)",
-                "blur(0px)",
-              ],
+              opacity: [0.92, 1, 0.94, 1],
+              y: [0, -1.5, 0.5, 0],
+              filter: ["blur(0px)", "blur(0px)", "blur(0.8px)", "blur(0px)"],
             }
       }
       transition={{
-        duration: 8.5,
-        times: [0, 0.18, 0.24, 0.62, 0.68, 1],
+        duration: 10,
+        times: [0, 0.26, 0.62, 1],
         delay,
         repeat: Number.POSITIVE_INFINITY,
         ease: "easeInOut",
       }}
       className="relative block pb-1"
     >
-      <span className="pointer-events-none absolute inset-0 [transform-style:preserve-3d]">
-        {extrusionLayers.map((layer) => (
-          <span
-            key={`${text}-${layer}`}
-            className="chv-mobile-signal-title absolute inset-0 text-[#11141b]"
-            style={{
-              transform: `translate3d(${layer * 1.2}px, ${layer * 1.6}px, 0)`,
-              opacity: Math.max(0.28, 0.86 - layer * 0.14),
-              textShadow:
-                layer === extrusionLayers.length - 1
-                  ? `0 10px 18px rgba(0,0,0,0.34), 0 0 14px ${accent}18`
-                  : undefined,
-            }}
-            aria-hidden="true"
-          >
-            {text}
-          </span>
-        ))}
+      <span
+        aria-hidden="true"
+        className={`absolute inset-0 text-white/22 blur-[10px] ${titleClassName ?? ""}`}
+        style={{ textShadow: `0 0 26px ${accent}20` }}
+      >
+        {text}
       </span>
 
       <motion.span
@@ -82,25 +61,26 @@ function MobileSignalWord({
           reducedMotion
             ? undefined
             : {
-                opacity: [0.08, 0.18, 0.1],
-                x: [-1.5, 1.5, -1.5],
+                opacity: [0.12, 0.2, 0.12],
+                x: [-2, 2, -2],
+                y: [1, -1, 1],
               }
         }
         transition={{
-          duration: 6.5,
+          duration: 9,
           delay,
           repeat: Number.POSITIVE_INFINITY,
           ease: "easeInOut",
         }}
-        className="chv-mobile-signal-title absolute inset-0 text-white/18 blur-[1px]"
+        className={`absolute inset-0 text-white/14 blur-[1.5px] ${titleClassName ?? ""}`}
       >
         {text}
       </motion.span>
 
       <span
-        className="chv-mobile-signal-title relative block bg-[linear-gradient(180deg,#fcfeff_0%,#f1f6fb_24%,#cad2de_56%,#7b8697_100%)] bg-clip-text text-transparent"
+        className={`relative block bg-[linear-gradient(180deg,#fffaf3_0%,#f6f0ea_26%,#d7d2d0_58%,#948d92_100%)] bg-clip-text text-transparent ${titleClassName ?? ""}`}
         style={{
-          textShadow: `0 1px 0 rgba(255,255,255,0.16), 0 12px 24px rgba(0,0,0,0.28), 0 0 12px ${accent}14`,
+          textShadow: `0 1px 0 rgba(255,255,255,0.2), 0 16px 36px rgba(0,0,0,0.18), 0 0 16px ${accent}14`,
         }}
       >
         {text}
@@ -204,38 +184,10 @@ export function MobileHomeExperience(_: MobileHomeExperienceProps) {
   void _.titleFontClassName;
   void _.monoFontClassName;
   const reducedMotion = useReducedMotion();
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const itemRefs = useRef<Array<HTMLElement | null>>([]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [assetsReady, setAssetsReady] = useState(false);
   const [shaderReady, setShaderReady] = useState(false);
   const [showLoader, setShowLoader] = useState(true);
-
-  useEffect(() => {
-    const root = containerRef.current;
-    if (!root) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-        if (!visible) return;
-        const nextIndex = Number(visible.target.getAttribute("data-index") ?? "0");
-        setActiveIndex(nextIndex);
-      },
-      {
-        root,
-        threshold: [0.42, 0.68, 0.9],
-      },
-    );
-
-    itemRefs.current.forEach((item) => {
-      if (item) observer.observe(item);
-    });
-
-    return () => observer.disconnect();
-  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -296,9 +248,8 @@ export function MobileHomeExperience(_: MobileHomeExperienceProps) {
       }
     >
       <div
-        className="relative flex min-h-0 flex-col overflow-hidden"
+        className="relative flex h-[100svh] flex-col overflow-hidden"
         style={{
-          height: "100svh",
           paddingTop: "env(safe-area-inset-top,0px)",
           paddingBottom: "env(safe-area-inset-bottom,0px)",
         }}
@@ -310,27 +261,29 @@ export function MobileHomeExperience(_: MobileHomeExperienceProps) {
           }}
         />
 
-        <section className="relative z-10 shrink-0 pt-5 text-center">
-          <div className="relative mx-auto max-w-[17.2rem]">
+        <section className="relative z-10 shrink-0 px-5 pt-5 text-center">
+          <div className="relative mx-auto max-w-[18rem]">
             <motion.div
               aria-hidden="true"
-              animate={reducedMotion ? undefined : { opacity: [0.18, 0.28, 0.18], scale: [1, 1.04, 1] }}
-              transition={{ duration: 9, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
-              className="absolute inset-x-6 top-3 h-20 rounded-full blur-3xl"
+              animate={reducedMotion ? undefined : { opacity: [0.16, 0.3, 0.18], scale: [1, 1.08, 1] }}
+              transition={{ duration: 11, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
+              className="absolute inset-x-3 top-6 h-24 rounded-full blur-3xl"
               style={{ background: `radial-gradient(circle, ${activePortal.accent}36 0%, rgba(255,255,255,0.08) 34%, transparent 72%)` }}
             />
-            <div className="relative [perspective:1200px]">
-              <h1 className="relative text-[2.48rem] leading-[0.86] tracking-[0.02em] sm:text-[2.94rem]">
+            <div className="relative">
+              <h1 className="relative text-[2.18rem] leading-[0.82] tracking-[0.01em] sm:text-[2.72rem]">
                 <MobileSignalWord
                   text="The"
                   accent={activePortal.accent}
                   reducedMotion={Boolean(reducedMotion)}
+                  titleClassName="chv-mobile-display text-[0.78em] italic tracking-[-0.045em]"
                 />
                 <MobileSignalWord
                   text="Chloeverse"
                   accent={activePortal.accent}
                   reducedMotion={Boolean(reducedMotion)}
                   delay={0.3}
+                  titleClassName="chv-mobile-display tracking-[-0.055em]"
                 />
               </h1>
             </div>
@@ -341,36 +294,28 @@ export function MobileHomeExperience(_: MobileHomeExperienceProps) {
               initial={reducedMotion ? false : { opacity: 0, y: 8 }}
               animate={reducedMotion ? undefined : { opacity: 1, y: 0 }}
               transition={{ duration: 0.55, delay: 0.85, ease: [0.22, 1, 0.36, 1] }}
-              className="chv-mobile-signal-title text-[0.8rem] leading-6 tracking-[0.08em] text-white/72"
+              className="chv-mobile-body text-[0.95rem] italic leading-7 tracking-[0.01em] text-white/74"
             >
               where storytelling meets tomorrow
-            </motion.p>
-            <motion.p
-              initial={reducedMotion ? false : { opacity: 0, y: 10 }}
-              animate={reducedMotion ? undefined : { opacity: 1, y: 0 }}
-              transition={{ duration: 0.48, delay: 1.2, ease: [0.22, 1, 0.36, 1] }}
-              className="chv-mobile-signal-title pt-1 text-[0.52rem] uppercase tracking-[0.18em] text-white/42"
-            >
-              scroll to enter
             </motion.p>
           </div>
         </section>
 
-        <section className="relative z-10 mt-4 min-h-0 flex-1">
-          <div
-            ref={containerRef}
-            className="chv-hide-scrollbar relative h-full snap-y snap-mandatory overflow-y-auto"
-            style={{
-              paddingTop: "0.4rem",
-              paddingBottom: "1.4rem",
-            }}
-            aria-label="Portal navigation"
-          >
-            <div className="mx-auto flex max-w-sm flex-col gap-4 pb-2">
+        <section className="relative z-10 flex min-h-0 flex-1 items-center px-4 pb-[calc(env(safe-area-inset-bottom,0px)+0.6rem)] pt-2">
+          <div className="mx-auto flex w-full max-w-sm flex-col gap-2.5" aria-label="Portal navigation">
             {HOME_PORTALS.map((item, index) => {
               const active = activeIndex === index;
+              const widths = ["84%", "78%", "80%", "83%", "76%"];
+              const offsets = [-10, 14, -4, 12, -8];
+              const radii = [
+                "44px 52px 38px 58px / 30px 42px 26px 40px",
+                "54px 36px 46px 34px / 28px 38px 30px 42px",
+                "38px 54px 34px 50px / 34px 28px 42px 30px",
+                "50px 38px 52px 34px / 30px 42px 28px 38px",
+                "40px 56px 36px 52px / 34px 26px 42px 30px",
+              ];
               const sharedClassName =
-                "chv-mobile-signal-card-wrap group relative snap-center px-6 py-3.5 transition-transform duration-300";
+                "chv-mobile-signal-card-wrap group relative px-2 py-1 transition-transform duration-300";
 
               const content = (
                 <motion.div
@@ -379,62 +324,54 @@ export function MobileHomeExperience(_: MobileHomeExperienceProps) {
                     reducedMotion
                       ? undefined
                       : {
-                          rotateX: active ? 16 : 4,
-                          rotateY: active ? 0 : index < activeIndex ? -8 : 8,
-                          y: active ? -12 : 4,
-                          z: active ? 18 : -4,
-                          scale: active ? 1.04 : 0.955,
-                          opacity: active ? 1 : 0.8,
+                          y: active ? -6 : 0,
+                          rotateZ: active ? 0 : index % 2 === 0 ? -1.2 : 1.1,
+                          scale: active ? 1.016 : 0.985,
+                          opacity: active ? 1 : 0.82,
                         }
                   }
-                  whileTap={reducedMotion ? undefined : { scale: 0.99, y: -6, rotateX: 10 }}
-                  transition={{ type: "spring", stiffness: 220, damping: 24, mass: 0.7 }}
-                  className="chv-mobile-signal-card relative mx-auto flex min-h-[94px] w-[84%] items-center gap-5 overflow-visible rounded-[1.7rem] border border-white/8 px-5"
+                  whileTap={reducedMotion ? undefined : { scale: 0.992, y: -3 }}
+                  transition={{ type: "spring", stiffness: 240, damping: 26, mass: 0.8 }}
+                  className="chv-mobile-signal-card relative mx-auto flex min-h-[76px] items-center overflow-visible px-0"
                   style={
                     {
                       "--signal-accent": item.accent,
+                      "--signal-radius": radii[index],
+                      "--signal-bloom-x": `${index % 2 === 0 ? 76 : 22}%`,
+                      width: widths[index],
                     } as CSSProperties
                   }
                 >
-                  <div
-                    className="absolute inset-x-8 top-0 h-px"
-                    style={{ background: `linear-gradient(90deg, transparent, ${item.accent}66, transparent)` }}
-                  />
-                  <div className="chv-mobile-signal-card__shine absolute inset-[1px] rounded-[calc(2rem-1px)]" />
-                  <div className="absolute inset-y-4 left-5 w-px bg-[linear-gradient(180deg,transparent,rgba(255,255,255,0.22),transparent)] [transform:translateZ(18px)]" />
-                  <span className="absolute right-5 top-4 chv-mobile-mono text-[0.52rem] uppercase tracking-[0.26em] text-white/28">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <div className="chv-mobile-signal-layer relative pl-4 pr-14">
-                    <p className="chv-mobile-mono text-[0.52rem] uppercase tracking-[0.3em] text-white/30">
-                      {item.sigil}
-                    </p>
-                    <h2 className="chv-mobile-display mt-2 text-[1.5rem] leading-[0.92] tracking-[-0.055em] text-[#f5efe8]">
-                      {item.label}
-                    </h2>
+                  <div className="chv-mobile-signal-card__core absolute inset-0" />
+                  <div className="chv-mobile-signal-card__wash absolute inset-0" />
+                  <div className="chv-mobile-signal-card__shine absolute inset-0" />
+                  <div className="chv-mobile-signal-layer relative flex min-h-[76px] flex-1 items-center justify-between px-5 py-3.5">
+                    <div className="max-w-[74%]">
+                      <p className="chv-mobile-body text-[0.53rem] uppercase tracking-[0.18em] text-white/42">
+                        {item.label}
+                      </p>
+                      <h2 className="chv-mobile-display mt-0.5 text-[1.16rem] leading-[0.94] tracking-[-0.03em] text-[#f7f1e9]">
+                        {item.displayTitle}
+                      </h2>
+                      <p className="chv-mobile-body mt-1 text-[0.58rem] italic tracking-[0.02em] text-white/42">
+                        {item.subtitle}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 flex-col items-end gap-2 self-stretch py-1">
+                      <span className="chv-mobile-body text-[0.54rem] italic tracking-[0.04em] text-white/36">
+                        {item.sigil}
+                      </span>
+                      <div className="flex items-center gap-2.5">
+                        <div
+                          className="h-px w-7"
+                          style={{ background: `linear-gradient(90deg, rgba(255,255,255,0.03), ${item.accent}55, transparent)` }}
+                        />
+                        <span className="chv-mobile-body text-[0.56rem] italic tracking-[0.04em] text-white/36">
+                          {String(index + 1).padStart(2, "0")}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="absolute right-[2.85rem] top-1/2 h-9 w-px -translate-y-1/2 bg-[linear-gradient(180deg,transparent,rgba(255,255,255,0.14),transparent)] [transform:translateY(-50%)_translateZ(18px)]" />
-                  <motion.span
-                    className="chv-mobile-signal-layer--deep absolute right-[-0.7rem] top-1/2 block h-10 w-10 -translate-y-1/2 rounded-full border border-white/10"
-                    animate={
-                      reducedMotion
-                        ? undefined
-                        : {
-                            scale: active ? [1, 1.08, 1] : 1,
-                            boxShadow: active
-                              ? [
-                                  `0 0 0px ${item.accent}00`,
-                                  `0 0 24px ${item.accent}55`,
-                                  `0 0 14px ${item.accent}30`,
-                                ]
-                              : `0 0 0px ${item.accent}00`,
-                          }
-                    }
-                    transition={{ duration: 1.8, repeat: active ? Number.POSITIVE_INFINITY : 0, ease: "easeInOut" }}
-                    style={{
-                      background: `radial-gradient(circle at 50% 50%, ${item.accent}dd 0%, ${item.accent}55 34%, rgba(8,10,14,0.88) 72%)`,
-                    }}
-                  />
                 </motion.div>
               );
 
@@ -444,22 +381,20 @@ export function MobileHomeExperience(_: MobileHomeExperienceProps) {
                   href={item.href}
                   accent={item.accent}
                   label={item.label}
-                  ref={(node) => {
-                    itemRefs.current[index] = node as HTMLElement | null;
-                  }}
-                  data-index={index}
                   aria-current={active ? "true" : undefined}
+                  onPointerEnter={() => setActiveIndex(index)}
                   onPointerDown={() => setActiveIndex(index)}
+                  onTouchStart={() => setActiveIndex(index)}
+                  onFocus={() => setActiveIndex(index)}
                   className={sharedClassName}
                   style={{
-                    transform: active ? "translateX(0px)" : `translateX(${index < activeIndex ? "-8px" : "8px"})`,
+                    transform: `translateX(${active ? offsets[index] * 0.55 : offsets[index]}px)`,
                   }}
                 >
                   {content}
                 </MobileRouteLink>
               );
             })}
-          </div>
           </div>
         </section>
       </div>

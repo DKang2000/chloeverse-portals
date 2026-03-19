@@ -4,7 +4,8 @@ export const HOME_PORTALS = [
   {
     href: "/projects",
     label: "PROJECTS",
-    subtitle: "creator relic / film strip",
+    displayTitle: "things i've made",
+    subtitle: "films, edits, experiments",
     sigil: "I",
     accent: "#ff8d5c",
     mobileEnabled: true,
@@ -12,7 +13,8 @@ export const HOME_PORTALS = [
   {
     href: "/collabs",
     label: "COLLABS",
-    subtitle: "threshold installation",
+    displayTitle: "things we've made",
+    subtitle: "brand work, invited rooms",
     sigil: "II",
     accent: "#80a9ff",
     mobileEnabled: true,
@@ -20,7 +22,8 @@ export const HOME_PORTALS = [
   {
     href: "/work",
     label: "WORK",
-    subtitle: "blackbook dossier",
+    displayTitle: "where i've been",
+    subtitle: "roles, timeline, wins",
     sigil: "III",
     accent: "#8de7ad",
     mobileEnabled: true,
@@ -28,7 +31,8 @@ export const HOME_PORTALS = [
   {
     href: "/contact",
     label: "CONTACT",
-    subtitle: "beacon transmission",
+    displayTitle: "where to find me",
+    subtitle: "notes, inquiries, hello",
     sigil: "IV",
     accent: "#ffbf72",
     mobileEnabled: true,
@@ -36,7 +40,8 @@ export const HOME_PORTALS = [
   {
     href: "/mediacard",
     label: "MEDIACARD",
-    subtitle: "orbital briefing instrument",
+    displayTitle: "what the numbers say",
+    subtitle: "audience, rates, partners",
     sigil: "V",
     accent: "#ead2a7",
     mobileEnabled: true,

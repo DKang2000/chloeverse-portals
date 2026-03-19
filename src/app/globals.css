@@ -300,17 +300,15 @@ body {
 
 .chv-mobile-signal-card {
   --signal-accent: rgba(255, 255, 255, 0.4);
+  --signal-radius: 44px 52px 38px 58px / 30px 42px 26px 40px;
+  --signal-bloom-x: 74%;
   position: relative;
   isolation: isolate;
   transform-style: preserve-3d;
-  background:
-    linear-gradient(180deg, rgba(18, 22, 30, 0.78), rgba(14, 18, 26, 0.58) 26%, rgba(10, 14, 20, 0.72) 100%);
+  border-radius: var(--signal-radius);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.03),
-    0 18px 26px rgba(0, 0, 0, 0.28),
-    0 34px 78px rgba(0, 0, 0, 0.46);
-  backdrop-filter: blur(14px) saturate(132%);
+    0 10px 34px rgba(0, 0, 0, 0.12),
+    0 24px 58px rgba(0, 0, 0, 0.14);
 }
 
 .chv-mobile-signal-card::before,
@@ -323,53 +321,70 @@ body {
 }
 
 .chv-mobile-signal-card::before {
-  inset: 1px;
   background:
-    linear-gradient(160deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.03) 34%, rgba(255, 255, 255, 0) 62%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0) 34%);
-  opacity: 0.82;
+    radial-gradient(circle at var(--signal-bloom-x) 50%, color-mix(in srgb, var(--signal-accent) 20%, rgba(255, 255, 255, 0.08)) 0%, transparent 52%),
+    radial-gradient(88% 120% at 18% 24%, rgba(255, 255, 255, 0.08), transparent 56%);
+  filter: blur(18px);
+  opacity: 0.88;
+  transform: scale(1.04);
 }
 
 .chv-mobile-signal-card::after {
-  inset: auto 8% -24px;
-  height: 28px;
-  border-radius: 9999px;
-  background: radial-gradient(circle, color-mix(in srgb, var(--signal-accent) 22%, rgba(255, 255, 255, 0.08)) 0%, transparent 72%);
-  filter: blur(18px);
-  opacity: 0.54;
-  transform: translateZ(-26px);
+  inset: 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  opacity: 0.64;
 }
 
 .chv-mobile-signal-card[data-active="true"] {
   box-shadow:
+    0 12px 36px rgba(0, 0, 0, 0.16),
+    0 28px 72px rgba(0, 0, 0, 0.18);
+}
+
+.chv-mobile-signal-card__core {
+  border-radius: inherit;
+  background:
+    linear-gradient(135deg, rgba(12, 15, 20, 0.14) 0%, rgba(255, 255, 255, 0.03) 18%, rgba(12, 16, 22, 0.2) 52%, rgba(8, 10, 14, 0.12) 100%),
+    radial-gradient(100% 120% at var(--signal-bloom-x) 50%, color-mix(in srgb, var(--signal-accent) 10%, rgba(255, 255, 255, 0.04)) 0%, transparent 56%);
+  box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.16),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.04),
-    0 22px 30px rgba(0, 0, 0, 0.24),
-    0 50px 110px rgba(0, 0, 0, 0.54),
-    0 0 0 1px color-mix(in srgb, var(--signal-accent) 18%, rgba(255, 255, 255, 0.08));
+    inset 0 -1px 0 rgba(255, 255, 255, 0.03),
+    0 6px 24px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(24px) saturate(140%);
 }
 
 .chv-mobile-signal-card__shine {
   pointer-events: none;
   background:
     linear-gradient(
-      132deg,
-      rgba(255, 255, 255, 0.12) 0%,
-      rgba(255, 255, 255, 0.03) 28%,
+      126deg,
+      rgba(255, 255, 255, 0.14) 0%,
+      rgba(255, 255, 255, 0.02) 24%,
       rgba(255, 255, 255, 0) 42%,
-      rgba(255, 255, 255, 0.05) 58%,
-      rgba(255, 255, 255, 0) 78%
+      rgba(255, 255, 255, 0.06) 62%,
+      rgba(255, 255, 255, 0.01) 78%,
+      rgba(255, 255, 255, 0) 100%
     );
-  opacity: 0.68;
+  opacity: 0.78;
   mix-blend-mode: screen;
+  border-radius: inherit;
 }
 
 .chv-mobile-signal-layer {
-  transform: translateZ(28px);
+  transform: translateZ(18px);
 }
 
 .chv-mobile-signal-layer--deep {
-  transform: translateZ(40px);
+  transform: translateZ(26px);
+}
+
+.chv-mobile-signal-card__wash {
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0) 26%, rgba(255, 255, 255, 0) 76%, rgba(255, 255, 255, 0.04)),
+    radial-gradient(60% 90% at var(--signal-bloom-x) 50%, color-mix(in srgb, var(--signal-accent) 14%, rgba(255, 255, 255, 0.06)) 0%, transparent 62%);
+  opacity: 0.76;
 }
 
 @media (prefers-reduced-motion: reduce) {

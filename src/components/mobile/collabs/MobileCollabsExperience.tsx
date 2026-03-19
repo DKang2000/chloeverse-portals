@@ -18,9 +18,9 @@ export function MobileCollabsExperience({ skipIntro = false }: { skipIntro?: boo
   return (
     <MobileRouteFrame
       currentPath={skipIntro ? "/collabs/reels" : "/collabs"}
-      eyebrow="Threshold Archive"
+      eyebrow="Shared Rooms"
       title={skipIntro ? "Collabs Reels" : "Collabs"}
-      description="A curated installation of collaboration portals. Each plate opens the original destination without the desktop free-look world."
+      description="A softer wall of shared work: invited rooms, brand commissions, and collaboration pieces, each linked to its original source."
       accent={ACCENT}
       ambient={
         <>
@@ -43,12 +43,12 @@ export function MobileCollabsExperience({ skipIntro = false }: { skipIntro?: boo
               </div>
 
               <p className="mt-6 max-w-[18rem] text-sm leading-6 text-white/56">
-                Hold the seam until it blooms, then step into the collaboration installation.
+                Hold the seam until it gives, then the shared work comes into view.
               </p>
               <div className="mt-5">
                 <MobileHoldButton
-                  label="Cross the threshold"
-                  hint="hold at the seam"
+                  label="Part the seam"
+                  hint="hold gently"
                   accent={ACCENT}
                   onComplete={() => ritual.trigger()}
                 />
@@ -76,12 +76,19 @@ export function MobileCollabsExperience({ skipIntro = false }: { skipIntro?: boo
           transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
           className="mt-8 space-y-5"
         >
+          <div>
+            <p className="chv-mobile-body text-[0.74rem] italic tracking-[0.01em] text-[#b6c8ff]/62">shared work</p>
+          </div>
           {REELS.map((item, index) => (
             <article
               key={item.id}
-              className="relative overflow-hidden rounded-[2.15rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-4"
+              className="relative overflow-hidden rounded-[2.3rem] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02))] p-4 backdrop-blur-[18px]"
+              style={{
+                width: index % 2 === 0 ? "90%" : "84%",
+                transform: `translateX(${index % 2 === 0 ? "16px" : "0px"}) rotate(${index % 2 === 0 ? "0.8deg" : "-0.7deg"})`,
+              }}
             >
-              <div className="absolute inset-0 bg-[linear-gradient(160deg,rgba(255,255,255,0.08),rgba(255,255,255,0)_34%,rgba(120,149,255,0.1)_100%)]" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_16%_18%,rgba(255,255,255,0.08),transparent_34%),linear-gradient(160deg,rgba(255,255,255,0.08),rgba(255,255,255,0)_34%,rgba(120,149,255,0.08)_100%)]" />
               <div className="relative">
                 <CollabPosterVisual
                   title={item.title}
@@ -90,17 +97,22 @@ export function MobileCollabsExperience({ skipIntro = false }: { skipIntro?: boo
                 />
               </div>
 
-              <div className="relative mt-4 flex items-center justify-between gap-4 px-2">
-                <p className="chv-mobile-mono text-[0.52rem] uppercase tracking-[0.24em] text-white/36">
-                  portal {String(index + 1).padStart(2, "0")}
-                </p>
+              <div className="relative mt-4 flex items-end justify-between gap-4 px-2">
+                <div>
+                  <p className="chv-mobile-body text-[0.64rem] italic tracking-[0.02em] text-white/42">
+                    shared piece {String(index + 1).padStart(2, "0")}
+                  </p>
+                  <p className="mt-1 chv-mobile-body text-[0.68rem] italic tracking-[0.01em] text-white/36">
+                    {getCollabMediumLabel(item.url)}
+                  </p>
+                </div>
                 <Link
                   href={item.url}
                   target="_blank"
                   rel="noreferrer noopener"
-                  className="chv-mobile-mono inline-flex rounded-full border border-white/10 bg-white/8 px-4 py-3 text-[0.6rem] uppercase tracking-[0.28em] text-white"
+                  className="chv-mobile-body inline-flex rounded-full border border-white/10 bg-white/10 px-4 py-3 text-[0.72rem] italic tracking-[0.01em] text-white"
                 >
-                  Enter source
+                  open original
                 </Link>
               </div>
             </article>
