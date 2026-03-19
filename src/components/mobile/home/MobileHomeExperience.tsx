@@ -269,23 +269,24 @@ export function MobileHomeExperience(_: MobileHomeExperienceProps) {
         <section className="relative z-10 shrink-0 px-5 pt-5 text-center">
           <div className="relative mx-auto max-w-[18rem]">
             <motion.div
-              initial={reducedMotion ? false : { opacity: 0, scale: 0.96, y: 4 }}
-              animate={reducedMotion ? undefined : { opacity: 1, scale: 1, y: 0 }}
-              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-              className="pointer-events-none absolute inset-x-0 top-[1.45rem] z-0 mx-auto h-[8.35rem] max-w-[14.3rem] rounded-[999px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.14),rgba(255,255,255,0.04))] shadow-[0_24px_70px_rgba(0,0,0,0.16)] backdrop-blur-[20px]"
-              style={{
-                boxShadow: `inset 0 1px 0 rgba(255,255,255,0.12), 0 24px 70px rgba(0,0,0,0.14), 0 0 40px ${activePortal.accent}0f`,
-              }}
-            />
-            <motion.div
               aria-hidden="true"
               animate={reducedMotion ? undefined : { opacity: [0.16, 0.3, 0.18], scale: [1, 1.08, 1] }}
               transition={{ duration: 11, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
               className="absolute inset-x-3 top-6 h-24 rounded-full blur-3xl"
               style={{ background: `radial-gradient(circle, ${activePortal.accent}36 0%, rgba(255,255,255,0.08) 34%, transparent 72%)` }}
             />
-            <div className="relative px-2 pt-3">
-              <h1 className="relative text-[2.18rem] leading-[0.82] tracking-[0.01em] sm:text-[2.72rem]">
+            <div className="relative pt-3">
+              <div className="relative inline-flex flex-col items-center px-4 pb-3 pt-4">
+                <motion.div
+                  initial={reducedMotion ? false : { opacity: 0, scale: 0.96, y: 4 }}
+                  animate={reducedMotion ? undefined : { opacity: 1, scale: 1, y: 0 }}
+                  transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                  className="pointer-events-none absolute inset-0 z-0 rounded-[999px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.14),rgba(255,255,255,0.035))] shadow-[0_24px_70px_rgba(0,0,0,0.16)] backdrop-blur-[20px]"
+                  style={{
+                    boxShadow: `inset 0 1px 0 rgba(255,255,255,0.12), 0 24px 70px rgba(0,0,0,0.14), 0 0 40px ${activePortal.accent}0f`,
+                  }}
+                />
+                <h1 className="relative z-10 text-[2.18rem] leading-[0.82] tracking-[0.01em] sm:text-[2.72rem]">
                 <MobileSignalWord
                   text="The"
                   accent={activePortal.accent}
@@ -300,15 +301,16 @@ export function MobileHomeExperience(_: MobileHomeExperienceProps) {
                   titleClassName="chv-mobile-display tracking-[-0.055em]"
                   crisp
                 />
-              </h1>
-              <motion.p
-                initial={reducedMotion ? false : { opacity: 0, y: 8 }}
-                animate={reducedMotion ? undefined : { opacity: 1, y: 0 }}
-                transition={{ duration: 0.55, delay: 0.85, ease: [0.22, 1, 0.36, 1] }}
-                className="chv-mobile-body mx-auto mt-2.5 max-w-[13.4rem] text-[0.95rem] italic leading-7 tracking-[0.01em] text-white/74"
-              >
-                where storytelling meets tomorrow
-              </motion.p>
+                </h1>
+                <motion.p
+                  initial={reducedMotion ? false : { opacity: 0, y: 8 }}
+                  animate={reducedMotion ? undefined : { opacity: 1, y: 0 }}
+                  transition={{ duration: 0.55, delay: 0.85, ease: [0.22, 1, 0.36, 1] }}
+                  className="chv-mobile-body relative z-10 mt-1.5 max-w-[12.2rem] text-[0.95rem] italic leading-7 tracking-[0.01em] text-white/74"
+                >
+                  where storytelling meets tomorrow
+                </motion.p>
+              </div>
             </div>
           </div>
         </section>
