@@ -319,24 +319,17 @@ export function MobileMediaCardExperience() {
         <div className="chv-vignette absolute inset-0 opacity-85" />
       </div>
 
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-30 px-4" style={{ paddingTop: pagePadding.paddingTop }}>
-        <div className="flex items-start justify-start">
-          <MobileRouteLink
-            href="/"
-            accent={ACCENT}
-            label="Chloeverse"
-            aria-label="Return to the Chloeverse"
-            className="pointer-events-auto inline-flex items-center gap-3 rounded-full border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.14),rgba(255,255,255,0.04))] px-3.5 py-2 text-white/84 backdrop-blur-xl"
-          >
-            <span className="inline-flex items-center gap-3">
-              <span className="relative block h-7 w-7 overflow-hidden rounded-full border border-white/18">
-                <span className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.96),rgba(255,255,255,0.14)_54%,transparent_76%)]" />
-              </span>
-              <span className="chv-mobile-body text-[0.7rem] italic tracking-[0.02em] text-white/84">back to chloeverse</span>
-            </span>
-          </MobileRouteLink>
-        </div>
-      </div>
+      <MobileRouteLink
+        href="/"
+        accent={ACCENT}
+        label="Chloeverse"
+        aria-label="Return to the Chloeverse"
+        className="fixed left-4 top-[calc(env(safe-area-inset-top,0px)+0.9rem)] z-40 flex h-11 w-11 items-center justify-center rounded-full border border-white/12 bg-[rgba(10,10,12,0.84)] text-white/84 backdrop-blur-xl"
+      >
+        <span aria-hidden="true" className="text-[1.25rem] leading-none">
+          &#x2039;
+        </span>
+      </MobileRouteLink>
 
       <section className="relative z-10 flex min-h-[100svh] items-center justify-center px-4" style={pagePadding}>
         <motion.div
