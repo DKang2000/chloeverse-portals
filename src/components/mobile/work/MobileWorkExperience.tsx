@@ -210,13 +210,9 @@ function makeRadialShardShape(seed: number) {
   return shape;
 }
 
-function useInfiniteSmoothScroll({
-  loopLength,
-  viewportHeight,
+function useSmoothSceneScroll({
   reducedMotion,
 }: {
-  loopLength: number;
-  viewportHeight: number;
   reducedMotion: boolean;
 }) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -224,35 +220,20 @@ function useInfiniteSmoothScroll({
     target: 0,
     current: 0,
     velocity: 0,
-    virtualOffset: 0,
   });
   const [frame, setFrame] = useState<ScrollSnapshot>({ position: 0, velocity: 0 });
 
   useEffect(() => {
     const element = scrollRef.current;
-    if (!element || loopLength <= 0) return;
+    if (!element) return;
 
-    const initial = loopLength;
-    element.scrollTop = initial;
+    element.scrollTop = 0;
     stateRef.current.target = 0;
     stateRef.current.current = 0;
     stateRef.current.velocity = 0;
-    stateRef.current.virtualOffset = 0;
 
     const handleScroll = () => {
-      let top = element.scrollTop;
-
-      if (top < loopLength * 0.55) {
-        top += loopLength;
-        element.scrollTop = top;
-        stateRef.current.virtualOffset -= loopLength;
-      } else if (top > loopLength * 1.45) {
-        top -= loopLength;
-        element.scrollTop = top;
-        stateRef.current.virtualOffset += loopLength;
-      }
-
-      stateRef.current.target = stateRef.current.virtualOffset + (top - loopLength);
+      stateRef.current.target = element.scrollTop;
     };
 
     let frameId = 0;
@@ -269,7 +250,7 @@ function useInfiniteSmoothScroll({
       state.velocity = (state.current - before) / Math.max(delta / 16.67, 0.001);
 
       setFrame({
-        position: modulo(state.current, loopLength),
+        position: state.current,
         velocity: state.velocity,
       });
 
@@ -283,7 +264,7 @@ function useInfiniteSmoothScroll({
       element.removeEventListener("scroll", handleScroll);
       window.cancelAnimationFrame(frameId);
     };
-  }, [loopLength, reducedMotion, viewportHeight]);
+  }, [reducedMotion]);
 
   return { frame, scrollRef };
 }
@@ -350,12 +331,12 @@ function GlassShard({
       radius,
       x: Math.cos(angle) * radius * (0.86 + seededNoise(seed * 8.1) * 0.34),
       y: Math.sin(angle) * radius * (1.1 + seededNoise(seed * 5.7) * 0.48),
-      z: -0.6 - seededNoise(seed * 6.3) * 9.4,
-      scale: 0.8 + seededNoise(seed * 7.9) * 2.2,
+      z: -1.2 - seededNoise(seed * 6.3) * 7.4,
+      scale: 1.1 + seededNoise(seed * 7.9) * 2.6,
       rotX: -0.9 + seededNoise(seed * 9.4) * 1.8,
       rotY: -1.0 + seededNoise(seed * 10.3) * 2.0,
       rotZ: seededNoise(seed * 11.8) * Math.PI * 2,
-      opacity: 0.14 + seededNoise(seed * 12.9) * 0.16,
+      opacity: 0.18 + seededNoise(seed * 12.9) * 0.18,
     };
   }, [seed]);
 
@@ -382,7 +363,7 @@ function GlassShard({
     group.rotation.z = config.rotZ + loopPhase * 0.14 + Math.sin(time * 0.05 + seed) * 0.03;
 
     const material = edge.material as THREE.LineBasicMaterial;
-    material.opacity = clamp(0.12 + (10 - Math.abs(config.z)) * 0.018, 0.12, 0.28);
+    material.opacity = clamp(0.08 + (10 - Math.abs(config.z)) * 0.012, 0.08, 0.18);
   });
 
   return (
@@ -390,22 +371,22 @@ function GlassShard({
       <mesh>
         <shapeGeometry args={[shape]} />
         <meshPhysicalMaterial
-          color="#eefcff"
+          color="#f3fbff"
           transparent
           opacity={config.opacity}
           transmission={0.96}
-          roughness={0.05}
+          roughness={0.03}
           metalness={0.03}
           ior={1.09}
-          thickness={1.35}
+          thickness={1.6}
           clearcoat={1}
-          clearcoatRoughness={0.04}
+          clearcoatRoughness={0.02}
           side={THREE.DoubleSide}
           depthWrite={false}
         />
       </mesh>
       <lineSegments ref={edgeRef} geometry={edgeGeometry}>
-        <lineBasicMaterial color="#f8feff" transparent opacity={0.22} />
+        <lineBasicMaterial color="#f8feff" transparent opacity={0.12} />
       </lineSegments>
     </group>
   );
@@ -432,10 +413,10 @@ function RadialGlassShard({
       radius,
       x: Math.cos(angle) * radius * 0.7,
       y: Math.sin(angle) * radius * 0.96,
-      z: -0.4 - seededNoise(seed * 6.4) * 4.8,
-      scale: 1.6 + seededNoise(seed * 8.2) * 2.2,
+      z: -0.3 - seededNoise(seed * 6.4) * 3.6,
+      scale: 2.2 + seededNoise(seed * 8.2) * 2.6,
       tilt: -0.28 + seededNoise(seed * 9.7) * 0.56,
-      opacity: 0.18 + seededNoise(seed * 10.3) * 0.16,
+      opacity: 0.26 + seededNoise(seed * 10.3) * 0.18,
     };
   }, [seed]);
 
@@ -461,7 +442,7 @@ function RadialGlassShard({
     group.position.y = config.y + Math.sin(time * 0.05 + seed * 0.2) * 0.05;
 
     const material = edge.material as THREE.LineBasicMaterial;
-    material.opacity = clamp(0.5 - Math.abs(drift) * 0.12, 0.34, 0.56);
+    material.opacity = clamp(0.34 - Math.abs(drift) * 0.08, 0.22, 0.4);
   });
 
   return (
@@ -469,22 +450,22 @@ function RadialGlassShard({
       <mesh>
         <shapeGeometry args={[shape]} />
         <meshPhysicalMaterial
-          color="#eafcff"
+          color="#fbfeff"
           transparent
           opacity={config.opacity}
           transmission={0.94}
-          roughness={0.04}
+          roughness={0.025}
           metalness={0.02}
           ior={1.09}
-          thickness={1.15}
+          thickness={1.8}
           clearcoat={1}
-          clearcoatRoughness={0.03}
+          clearcoatRoughness={0.02}
           side={THREE.DoubleSide}
           depthWrite={false}
         />
       </mesh>
       <lineSegments ref={edgeRef} geometry={edgeGeometry}>
-        <lineBasicMaterial color="#ffffff" transparent opacity={0.52} />
+        <lineBasicMaterial color="#ffffff" transparent opacity={0.3} />
       </lineSegments>
     </group>
   );
@@ -497,8 +478,8 @@ function RiftScene({
   reducedMotion: boolean;
   scrollRef: React.MutableRefObject<ScrollSnapshot>;
 }) {
-  const floatingShards = useMemo(() => Array.from({ length: 18 }, (_, index) => index + 1), []);
-  const radialShards = useMemo(() => Array.from({ length: 10 }, (_, index) => index + 101), []);
+  const floatingShards = useMemo(() => Array.from({ length: 14 }, (_, index) => index + 1), []);
+  const radialShards = useMemo(() => Array.from({ length: 8 }, (_, index) => index + 101), []);
   const rigRef = useRef<THREE.Group | null>(null);
 
   function SceneRig() {
@@ -593,30 +574,24 @@ function ShatteredGlassOverlay({
   ] as const;
 
   const nearShards = [
-    { top: "-6%", left: "-8%", width: "34%", height: "26%", rotate: "-16deg", clip: "polygon(0% 10%, 88% 0%, 100% 78%, 10% 100%)", drift: 0.06 },
-    { top: "12%", left: "78%", width: "26%", height: "24%", rotate: "18deg", clip: "polygon(6% 0%, 100% 18%, 88% 100%, 0% 72%)", drift: 0.06 },
-    { top: "76%", left: "-10%", width: "32%", height: "22%", rotate: "-12deg", clip: "polygon(0% 14%, 90% 0%, 100% 80%, 8% 100%)", drift: 0.05 },
-    { top: "72%", left: "74%", width: "30%", height: "24%", rotate: "16deg", clip: "polygon(8% 0%, 100% 14%, 92% 100%, 0% 78%)", drift: 0.05 },
+    { top: "-6%", left: "-8%", width: "34%", height: "26%", rotate: "-16deg", clip: "polygon(0% 10%, 88% 0%, 100% 78%, 10% 100%)", drift: 0.04 },
+    { top: "12%", left: "78%", width: "26%", height: "24%", rotate: "18deg", clip: "polygon(6% 0%, 100% 18%, 88% 100%, 0% 72%)", drift: 0.04 },
+    { top: "76%", left: "-10%", width: "32%", height: "22%", rotate: "-12deg", clip: "polygon(0% 14%, 90% 0%, 100% 80%, 8% 100%)", drift: 0.04 },
+    { top: "72%", left: "74%", width: "30%", height: "24%", rotate: "16deg", clip: "polygon(8% 0%, 100% 14%, 92% 100%, 0% 78%)", drift: 0.04 },
   ] as const;
 
   const fragments = [
-    { top: "12%", left: "18%", width: "8%", height: "10%", rotate: "-12deg", clip: "polygon(24% 0%, 100% 24%, 60% 100%, 0% 70%)", drift: 0.14 },
-    { top: "16%", left: "80%", width: "7%", height: "9%", rotate: "18deg", clip: "polygon(16% 0%, 100% 28%, 74% 100%, 0% 62%)", drift: 0.1 },
-    { top: "34%", left: "12%", width: "6%", height: "8%", rotate: "-26deg", clip: "polygon(42% 0%, 100% 18%, 62% 100%, 0% 78%)", drift: 0.14 },
-    { top: "38%", left: "84%", width: "8%", height: "9%", rotate: "22deg", clip: "polygon(18% 0%, 100% 26%, 58% 100%, 0% 62%)", drift: 0.12 },
-    { top: "64%", left: "20%", width: "7%", height: "10%", rotate: "-16deg", clip: "polygon(34% 0%, 100% 22%, 66% 100%, 0% 70%)", drift: 0.12 },
-    { top: "74%", left: "78%", width: "8%", height: "10%", rotate: "14deg", clip: "polygon(22% 0%, 100% 18%, 74% 100%, 0% 72%)", drift: 0.1 },
-    { top: "48%", left: "30%", width: "6%", height: "8%", rotate: "-10deg", clip: "polygon(20% 0%, 100% 20%, 70% 100%, 0% 68%)", drift: 0.16 },
-    { top: "50%", left: "68%", width: "6%", height: "8%", rotate: "18deg", clip: "polygon(20% 0%, 100% 20%, 70% 100%, 0% 68%)", drift: 0.16 },
+    { top: "16%", left: "80%", width: "7%", height: "9%", rotate: "18deg", clip: "polygon(16% 0%, 100% 28%, 74% 100%, 0% 62%)", drift: 0.08 },
+    { top: "38%", left: "84%", width: "8%", height: "9%", rotate: "22deg", clip: "polygon(18% 0%, 100% 26%, 58% 100%, 0% 62%)", drift: 0.08 },
+    { top: "64%", left: "20%", width: "7%", height: "10%", rotate: "-16deg", clip: "polygon(34% 0%, 100% 22%, 66% 100%, 0% 70%)", drift: 0.08 },
+    { top: "74%", left: "78%", width: "8%", height: "10%", rotate: "14deg", clip: "polygon(22% 0%, 100% 18%, 74% 100%, 0% 72%)", drift: 0.08 },
   ] as const;
 
   const spokes = [
-    { top: "6%", left: "50%", width: "0.22rem", height: "33%", rotate: "0deg", glow: 0.74 },
-    { top: "10%", left: "61%", width: "0.18rem", height: "28%", rotate: "18deg", glow: 0.66 },
-    { top: "10%", left: "39%", width: "0.18rem", height: "28%", rotate: "-18deg", glow: 0.66 },
-    { top: "26%", left: "74%", width: "0.16rem", height: "24%", rotate: "34deg", glow: 0.58 },
-    { top: "26%", left: "26%", width: "0.16rem", height: "24%", rotate: "-34deg", glow: 0.58 },
-    { top: "56%", left: "50%", width: "0.18rem", height: "26%", rotate: "2deg", glow: 0.62 },
+    { top: "7%", left: "50%", width: "0.18rem", height: "28%", rotate: "0deg", glow: 0.52 },
+    { top: "11%", left: "61%", width: "0.15rem", height: "24%", rotate: "18deg", glow: 0.44 },
+    { top: "11%", left: "39%", width: "0.15rem", height: "24%", rotate: "-18deg", glow: 0.44 },
+    { top: "57%", left: "50%", width: "0.16rem", height: "20%", rotate: "2deg", glow: 0.46 },
   ] as const;
 
   const sparks = [
@@ -664,10 +639,10 @@ function ShatteredGlassOverlay({
           }}
         >
           <div
-            className="absolute inset-0 border border-white/12 bg-[linear-gradient(150deg,rgba(240,252,255,0.06)_0%,rgba(0,0,0,0.24)_34%,rgba(0,0,0,0.56)_100%)]"
+            className="absolute inset-0 border border-white/12 bg-[linear-gradient(150deg,rgba(240,252,255,0.08)_0%,rgba(16,22,28,0.36)_30%,rgba(0,0,0,0.72)_100%)]"
             style={{
               clipPath: panel.clip,
-              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.18), 0 24px 80px rgba(0,0,0,0.52)",
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.14), 0 24px 80px rgba(0,0,0,0.58)",
             }}
           />
         </div>
@@ -676,17 +651,17 @@ function ShatteredGlassOverlay({
       {spokes.map((line) => (
         <div
           key={`${line.top}-${line.left}`}
-          className="absolute rounded-full bg-[linear-gradient(180deg,rgba(255,255,255,0.0),rgba(244,252,255,1),rgba(255,255,255,0.0))] blur-[0.4px]"
-          style={{
-            top: line.top,
-            left: line.left,
-            width: line.width,
-            height: line.height,
-            transform: `translate3d(calc(var(--rift-drift) * 0.18), 0, 0) rotate(${line.rotate})`,
-            opacity: line.glow,
-            boxShadow: "0 0 18px rgba(214,246,255,0.36)",
-          }}
-        />
+            className="absolute rounded-full bg-[linear-gradient(180deg,rgba(255,255,255,0.0),rgba(244,252,255,1),rgba(255,255,255,0.0))] blur-[0.2px]"
+            style={{
+              top: line.top,
+              left: line.left,
+              width: line.width,
+              height: line.height,
+              transform: `translate3d(calc(var(--rift-drift) * 0.18), 0, 0) rotate(${line.rotate})`,
+              opacity: line.glow,
+            boxShadow: "0 0 12px rgba(214,246,255,0.22)",
+            }}
+          />
       ))}
 
       {majorShards.map((shard) => (
@@ -792,7 +767,7 @@ function IntroCard({
         </p>
         <h1 className="mt-4 text-[1.52rem] leading-[0.92] tracking-[-0.06em] text-white">Chloe Kang</h1>
         <p className="mt-3 max-w-[16rem] text-[0.9rem] leading-6 text-[rgba(228,241,244,0.76)]">
-          A continuous reverse-chronological resume loop drifting through fractured glass.
+          A reverse-chronological resume field drifting through fractured glass.
         </p>
         <div className="mt-5 grid grid-cols-2 gap-2.5">
           {WORK_ROLE_STACK.map((role) => (
@@ -954,11 +929,9 @@ export function MobileWorkExperience() {
     [sortedEntries],
   );
 
-  const itemSpan = Math.max(316, viewportHeight * 0.54);
-  const loopLength = items.length * itemSpan;
-  const { frame, scrollRef } = useInfiniteSmoothScroll({
-    loopLength,
-    viewportHeight,
+  const itemSpan = Math.max(330, viewportHeight * 0.58);
+  const contentLength = items.length * itemSpan;
+  const { frame, scrollRef } = useSmoothSceneScroll({
     reducedMotion,
   });
 
@@ -966,21 +939,19 @@ export function MobileWorkExperience() {
     sceneScrollRef.current = frame;
   }, [frame]);
 
-  const repeatedItems = useMemo(
+  const sceneItems = useMemo(
     () =>
-      [-1, 0, 1].flatMap((copy) =>
-        items.map((item, index) => ({
-          item,
-          index,
-          key: `${copy}-${item.id}`,
-          y: viewportHeight * 0.26 + (copy * items.length + index) * itemSpan - frame.position,
-        })),
-      ),
+      items.map((item, index) => ({
+        item,
+        index,
+        key: item.id,
+        y: viewportHeight * 0.28 + index * itemSpan - frame.position,
+      })),
     [frame.position, itemSpan, items, viewportHeight],
   );
 
   const scrollGhostStyle = {
-    height: `${loopLength * 3 + viewportHeight}px`,
+    height: `${contentLength + viewportHeight * 1.2}px`,
   } satisfies CSSProperties;
 
   return (
@@ -1015,7 +986,7 @@ export function MobileWorkExperience() {
           className="pointer-events-none absolute inset-0 z-30"
           style={{ perspective: "2200px", transformStyle: "preserve-3d" }}
         >
-          {repeatedItems.map(({ item, index, key, y }) => (
+          {sceneItems.map(({ item, index, key, y }) => (
             <div key={key}>
               {renderSceneItem({
                 item,
