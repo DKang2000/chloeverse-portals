@@ -272,7 +272,7 @@ export function MobileHomeExperience(_: MobileHomeExperienceProps) {
               initial={reducedMotion ? false : { opacity: 0, scale: 0.96, y: 4 }}
               animate={reducedMotion ? undefined : { opacity: 1, scale: 1, y: 0 }}
               transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-              className="pointer-events-none absolute inset-x-0 top-2 z-0 mx-auto h-[12.6rem] max-w-[17.4rem] rounded-[999px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.13),rgba(255,255,255,0.03))] shadow-[0_24px_70px_rgba(0,0,0,0.16)] backdrop-blur-[20px]"
+              className="pointer-events-none absolute inset-x-0 top-3 z-0 mx-auto h-[10.35rem] max-w-[16rem] rounded-[999px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.14),rgba(255,255,255,0.04))] shadow-[0_24px_70px_rgba(0,0,0,0.16)] backdrop-blur-[20px]"
               style={{
                 boxShadow: `inset 0 1px 0 rgba(255,255,255,0.12), 0 24px 70px rgba(0,0,0,0.14), 0 0 40px ${activePortal.accent}0f`,
               }}
@@ -284,7 +284,7 @@ export function MobileHomeExperience(_: MobileHomeExperienceProps) {
               className="absolute inset-x-3 top-6 h-24 rounded-full blur-3xl"
               style={{ background: `radial-gradient(circle, ${activePortal.accent}36 0%, rgba(255,255,255,0.08) 34%, transparent 72%)` }}
             />
-            <div className="relative">
+            <div className="relative px-2 pt-3">
               <h1 className="relative text-[2.18rem] leading-[0.82] tracking-[0.01em] sm:text-[2.72rem]">
                 <MobileSignalWord
                   text="The"
@@ -301,18 +301,15 @@ export function MobileHomeExperience(_: MobileHomeExperienceProps) {
                   crisp
                 />
               </h1>
+              <motion.p
+                initial={reducedMotion ? false : { opacity: 0, y: 8 }}
+                animate={reducedMotion ? undefined : { opacity: 1, y: 0 }}
+                transition={{ duration: 0.55, delay: 0.85, ease: [0.22, 1, 0.36, 1] }}
+                className="chv-mobile-body mx-auto mt-3 max-w-[14.5rem] text-[0.95rem] italic leading-7 tracking-[0.01em] text-white/74"
+              >
+                where storytelling meets tomorrow
+              </motion.p>
             </div>
-          </div>
-
-          <div className="mx-auto mt-4 max-w-[18rem] space-y-2">
-            <motion.p
-              initial={reducedMotion ? false : { opacity: 0, y: 8 }}
-              animate={reducedMotion ? undefined : { opacity: 1, y: 0 }}
-              transition={{ duration: 0.55, delay: 0.85, ease: [0.22, 1, 0.36, 1] }}
-              className="chv-mobile-body text-[0.95rem] italic leading-7 tracking-[0.01em] text-white/74"
-            >
-              where storytelling meets tomorrow
-            </motion.p>
           </div>
         </section>
 
