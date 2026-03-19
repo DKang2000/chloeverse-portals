@@ -6,8 +6,6 @@ import { MobileRouteFrame } from "@/components/mobile/shared/MobileRouteFrame";
 import { WORK_ENTRIES, WORK_ROLE_STACK } from "@/lib/mobile-content";
 
 const ACCENT = "#72ffae";
-const TERMINAL_IDENTIFIERS = WORK_ROLE_STACK.join(" // ");
-
 const MATRIX_STREAMS = [
   { left: "6%", text: "resume://signal\ncurrent\narchive" },
   { left: "18%", text: "0101\nrole\nrole\nsignal" },
@@ -208,7 +206,11 @@ export function MobileWorkExperience() {
                       Chloe Kang
                     </span>
                   </p>
-                  <p className="chv-mobile-mono">identifiers..... {TERMINAL_IDENTIFIERS}</p>
+                  {WORK_ROLE_STACK.map((role) => (
+                    <p key={role} className="chv-mobile-mono">
+                      {role}
+                    </p>
+                  ))}
                 </div>
               </section>
 
