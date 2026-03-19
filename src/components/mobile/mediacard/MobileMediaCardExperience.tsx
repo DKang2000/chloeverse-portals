@@ -325,7 +325,7 @@ export function MobileMediaCardExperience() {
     if (activeFaceId) return;
 
     setManualRotation((value) => ({
-      pitch: THREE.MathUtils.clamp(value.pitch - deltaY * DRAG_ROTATION_FACTOR, MIN_PITCH, MAX_PITCH),
+      pitch: THREE.MathUtils.clamp(value.pitch + deltaY * DRAG_ROTATION_FACTOR, MIN_PITCH, MAX_PITCH),
       yaw: value.yaw + deltaX * DRAG_ROTATION_FACTOR,
     }));
   };
