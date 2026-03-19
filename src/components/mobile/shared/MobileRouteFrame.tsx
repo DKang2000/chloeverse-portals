@@ -16,6 +16,7 @@ type MobileRouteFrameProps = {
   titleSlot?: ReactNode;
   contentClassName?: string;
   showHeader?: boolean;
+  showReturnSigil?: boolean;
 };
 
 export function MobileRouteFrame({
@@ -30,6 +31,7 @@ export function MobileRouteFrame({
   titleSlot,
   contentClassName = "",
   showHeader = true,
+  showReturnSigil = true,
 }: MobileRouteFrameProps) {
   const reducedMotion = useReducedMotion();
   const frameStyle = {
@@ -48,7 +50,7 @@ export function MobileRouteFrame({
         {chrome}
       </div>
 
-      {currentPath !== "/" ? <MobileReturnSigil accent={accent} /> : null}
+      {currentPath !== "/" && showReturnSigil ? <MobileReturnSigil accent={accent} /> : null}
 
       <motion.div
         initial={reducedMotion ? false : { opacity: 0, y: 18 }}

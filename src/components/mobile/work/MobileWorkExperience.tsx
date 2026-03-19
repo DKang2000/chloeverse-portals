@@ -5,6 +5,7 @@ import { useReducedMotion } from "framer-motion";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import * as THREE from "three";
 
+import { MobileRouteLink } from "@/components/mobile/shared/MobileRouteLink";
 import { MobileRouteFrame } from "@/components/mobile/shared/MobileRouteFrame";
 import { WORK_ENTRIES, WORK_ROLE_STACK, type WorkEntry } from "@/lib/mobile-content";
 
@@ -178,6 +179,19 @@ function makeRadialShardShape(seed: number) {
   return shape;
 }
 
+function makeGlassGeometry(shape: THREE.Shape, depth: number, bevelSize: number) {
+  const geometry = new THREE.ExtrudeGeometry(shape, {
+    depth,
+    steps: 1,
+    bevelEnabled: true,
+    bevelSegments: 2,
+    bevelSize,
+    bevelThickness: depth * 0.72,
+  });
+  geometry.center();
+  return geometry;
+}
+
 function useSmoothSceneScroll({
   reducedMotion,
 }: {
@@ -289,7 +303,10 @@ function GlassShard({
   const edgeRef = useRef<THREE.LineSegments | null>(null);
 
   const shape = useMemo(() => makeShardShape(seed), [seed]);
-  const geometry = useMemo(() => new THREE.ShapeGeometry(shape), [shape]);
+  const geometry = useMemo(
+    () => makeGlassGeometry(shape, 0.08 + seededNoise(seed * 13.2) * 0.12, 0.03 + seededNoise(seed * 7.7) * 0.02),
+    [seed, shape],
+  );
   const edgeGeometry = useMemo(() => new THREE.EdgesGeometry(geometry, 14), [geometry]);
   const config = useMemo(() => {
     const angle = seededNoise(seed * 2.3) * Math.PI * 2;
@@ -300,11 +317,11 @@ function GlassShard({
       x: Math.cos(angle) * radius * (0.86 + seededNoise(seed * 8.1) * 0.34),
       y: Math.sin(angle) * radius * (1.1 + seededNoise(seed * 5.7) * 0.48),
       z: -1.2 - seededNoise(seed * 6.3) * 7.4,
-      scale: 1.1 + seededNoise(seed * 7.9) * 2.6,
+      scale: 0.95 + seededNoise(seed * 7.9) * 2.9,
       rotX: -0.9 + seededNoise(seed * 9.4) * 1.8,
       rotY: -1.0 + seededNoise(seed * 10.3) * 2.0,
       rotZ: seededNoise(seed * 11.8) * Math.PI * 2,
-      opacity: 0.18 + seededNoise(seed * 12.9) * 0.18,
+      opacity: 0.14 + seededNoise(seed * 12.9) * 0.12,
     };
   }, [seed]);
 
@@ -331,30 +348,29 @@ function GlassShard({
     group.rotation.z = config.rotZ + loopPhase * 0.14 + Math.sin(time * 0.05 + seed) * 0.03;
 
     const material = edge.material as THREE.LineBasicMaterial;
-    material.opacity = clamp(0.08 + (10 - Math.abs(config.z)) * 0.012, 0.08, 0.18);
+    material.opacity = clamp(0.16 + (10 - Math.abs(config.z)) * 0.015, 0.16, 0.34);
   });
 
   return (
     <group ref={groupRef} position={[config.x, config.y, config.z]} scale={config.scale}>
-      <mesh>
-        <shapeGeometry args={[shape]} />
+      <mesh geometry={geometry}>
         <meshPhysicalMaterial
-          color="#f3fbff"
+          color="#eaf8ff"
           transparent
           opacity={config.opacity}
-          transmission={0.96}
-          roughness={0.03}
-          metalness={0.03}
-          ior={1.09}
-          thickness={1.6}
+          transmission={0.98}
+          roughness={0.02}
+          metalness={0.02}
+          ior={1.16}
+          thickness={2.4}
           clearcoat={1}
-          clearcoatRoughness={0.02}
+          clearcoatRoughness={0.015}
           side={THREE.DoubleSide}
           depthWrite={false}
         />
       </mesh>
       <lineSegments ref={edgeRef} geometry={edgeGeometry}>
-        <lineBasicMaterial color="#f8feff" transparent opacity={0.12} />
+        <lineBasicMaterial color="#f9fdff" transparent opacity={0.22} />
       </lineSegments>
     </group>
   );
@@ -371,7 +387,10 @@ function RadialGlassShard({
   const edgeRef = useRef<THREE.LineSegments | null>(null);
 
   const shape = useMemo(() => makeRadialShardShape(seed), [seed]);
-  const geometry = useMemo(() => new THREE.ShapeGeometry(shape), [shape]);
+  const geometry = useMemo(
+    () => makeGlassGeometry(shape, 0.1 + seededNoise(seed * 2.9) * 0.14, 0.02 + seededNoise(seed * 8.1) * 0.03),
+    [seed, shape],
+  );
   const edgeGeometry = useMemo(() => new THREE.EdgesGeometry(geometry, 8), [geometry]);
   const config = useMemo(() => {
     const angle = seededNoise(seed * 3.2) * Math.PI * 2;
@@ -382,9 +401,9 @@ function RadialGlassShard({
       x: Math.cos(angle) * radius * 0.7,
       y: Math.sin(angle) * radius * 0.96,
       z: -0.3 - seededNoise(seed * 6.4) * 3.6,
-      scale: 2.2 + seededNoise(seed * 8.2) * 2.6,
+      scale: 2.4 + seededNoise(seed * 8.2) * 3.2,
       tilt: -0.28 + seededNoise(seed * 9.7) * 0.56,
-      opacity: 0.26 + seededNoise(seed * 10.3) * 0.18,
+      opacity: 0.16 + seededNoise(seed * 10.3) * 0.14,
     };
   }, [seed]);
 
@@ -410,22 +429,21 @@ function RadialGlassShard({
     group.position.y = config.y + Math.sin(time * 0.05 + seed * 0.2) * 0.05;
 
     const material = edge.material as THREE.LineBasicMaterial;
-    material.opacity = clamp(0.34 - Math.abs(drift) * 0.08, 0.22, 0.4);
+    material.opacity = clamp(0.3 - Math.abs(drift) * 0.06, 0.22, 0.38);
   });
 
   return (
     <group ref={groupRef} position={[config.x, config.y, config.z]} scale={config.scale}>
-      <mesh>
-        <shapeGeometry args={[shape]} />
+      <mesh geometry={geometry}>
         <meshPhysicalMaterial
           color="#fbfeff"
           transparent
           opacity={config.opacity}
-          transmission={0.94}
-          roughness={0.025}
+          transmission={0.99}
+          roughness={0.018}
           metalness={0.02}
-          ior={1.09}
-          thickness={1.8}
+          ior={1.14}
+          thickness={3.4}
           clearcoat={1}
           clearcoatRoughness={0.02}
           side={THREE.DoubleSide}
@@ -446,8 +464,8 @@ function RiftScene({
   reducedMotion: boolean;
   scrollRef: React.MutableRefObject<ScrollSnapshot>;
 }) {
-  const floatingShards = useMemo(() => Array.from({ length: 14 }, (_, index) => index + 1), []);
-  const radialShards = useMemo(() => Array.from({ length: 8 }, (_, index) => index + 101), []);
+  const floatingShards = useMemo(() => Array.from({ length: 12 }, (_, index) => index + 1), []);
+  const radialShards = useMemo(() => Array.from({ length: 12 }, (_, index) => index + 101), []);
   const rigRef = useRef<THREE.Group | null>(null);
 
   function SceneRig() {
@@ -467,13 +485,30 @@ function RiftScene({
     return (
       <group ref={rigRef}>
         <SmokePlane scrollRef={scrollRef} reducedMotion={reducedMotion} />
-        <mesh position={[0, 0.2, -12]} scale={[3.5, 5.1, 1]}>
-          <circleGeometry args={[1, 72]} />
-          <meshBasicMaterial color="#020406" transparent opacity={0.98} depthWrite={false} />
+        <mesh position={[0, 0.18, -12.4]} scale={[3.1, 4.2, 1]}>
+          <circleGeometry args={[1, 7]} />
+          <meshBasicMaterial color="#010204" transparent opacity={0.98} depthWrite={false} />
         </mesh>
-        <mesh position={[0, 0.2, -11.8]} scale={[4.5, 6.2, 1]}>
+        <mesh position={[0, 0.18, -12.1]} scale={[4.3, 5.9, 1]}>
           <circleGeometry args={[1, 72]} />
-          <meshBasicMaterial color="#071017" transparent opacity={0.12} depthWrite={false} />
+          <meshBasicMaterial color="#d7f7ff" transparent opacity={0.1} depthWrite={false} />
+        </mesh>
+        <mesh position={[0, 0.18, -10.9]} scale={[6.6, 8.5, 1]}>
+          <circleGeometry args={[1, 72]} />
+          <meshBasicMaterial color="#020406" transparent opacity={0.16} depthWrite={false} />
+        </mesh>
+        <mesh position={[0, -3.4, -9.5]} rotation={[-1.25, 0, 0]} scale={[18, 18, 1]}>
+          <planeGeometry args={[1, 1]} />
+          <meshPhysicalMaterial
+            color="#04080c"
+            transparent
+            opacity={0.52}
+            roughness={0.08}
+            transmission={0.22}
+            metalness={0.06}
+            clearcoat={1}
+            clearcoatRoughness={0.06}
+          />
         </mesh>
         {radialShards.map((seed) => (
           <RadialGlassShard key={seed} seed={seed} scrollRef={scrollRef} />
@@ -494,17 +529,17 @@ function RiftScene({
         className="absolute inset-0 h-full w-full"
       >
         <color attach="background" args={["#020406"]} />
-        <fog attach="fog" args={["#020406", 8, 19]} />
-        <ambientLight intensity={0.28} color="#dff9ff" />
-        <directionalLight position={[2.8, 4.2, 6]} intensity={1.15} color="#f7ffff" />
-        <pointLight position={[-4, 1, 3]} intensity={1.05} color="#c1f5ff" />
-        <pointLight position={[4, -3, 4]} intensity={0.82} color="#f5ffff" />
-        <pointLight position={[0, 0, 6]} intensity={0.6} color="#ffffff" />
+        <fog attach="fog" args={["#020406", 7, 18]} />
+        <ambientLight intensity={0.2} color="#dff9ff" />
+        <directionalLight position={[2.2, 4.8, 6]} intensity={1.25} color="#f7ffff" />
+        <pointLight position={[-4, 1, 3]} intensity={0.92} color="#d5f7ff" />
+        <pointLight position={[4, -3, 4]} intensity={0.74} color="#f5ffff" />
+        <pointLight position={[0, 0.4, 5.5]} intensity={0.8} color="#ffffff" />
         <SceneRig />
       </Canvas>
 
       <ShatteredGlassOverlay scrollRef={scrollRef} />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_46%,rgba(0,0,0,0.86)_0%,rgba(0,0,0,0.24)_12%,rgba(0,0,0,0.0)_24%),radial-gradient(circle_at_50%_10%,rgba(224,255,250,0.08),transparent_28%),linear-gradient(180deg,rgba(1,4,8,0.12)_0%,rgba(1,4,8,0.02)_26%,rgba(1,4,8,0.62)_74%,rgba(1,4,8,0.92)_100%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_46%,rgba(0,0,0,0.92)_0%,rgba(0,0,0,0.38)_14%,rgba(0,0,0,0.0)_28%),radial-gradient(circle_at_50%_10%,rgba(224,255,250,0.06),transparent_24%),linear-gradient(180deg,rgba(1,4,8,0.18)_0%,rgba(1,4,8,0.04)_28%,rgba(1,4,8,0.68)_76%,rgba(1,4,8,0.94)_100%)]" />
       <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.03)_0%,transparent_18%,transparent_82%,rgba(255,255,255,0.02)_100%)] mix-blend-screen opacity-45" />
     </div>
   );
@@ -531,14 +566,13 @@ function ShatteredGlassOverlay({
   }, [scrollRef]);
 
   const majorShards = [
-    { top: "1%", left: "40%", width: "20%", height: "36%", rotate: "-10deg", clip: "polygon(26% 0%, 62% 6%, 100% 92%, 40% 100%, 0% 70%)", drift: 0.28 },
-    { top: "5%", left: "60%", width: "18%", height: "30%", rotate: "18deg", clip: "polygon(12% 0%, 100% 20%, 74% 100%, 0% 72%)", drift: 0.22 },
-    { top: "8%", left: "18%", width: "16%", height: "26%", rotate: "-22deg", clip: "polygon(34% 0%, 100% 18%, 62% 100%, 0% 76%)", drift: 0.18 },
-    { top: "20%", left: "68%", width: "22%", height: "32%", rotate: "28deg", clip: "polygon(10% 0%, 100% 24%, 74% 100%, 0% 66%)", drift: 0.26 },
-    { top: "24%", left: "8%", width: "20%", height: "34%", rotate: "-30deg", clip: "polygon(32% 0%, 100% 16%, 68% 100%, 0% 74%)", drift: 0.24 },
-    { top: "50%", left: "72%", width: "18%", height: "32%", rotate: "22deg", clip: "polygon(16% 0%, 100% 22%, 72% 100%, 0% 72%)", drift: 0.22 },
-    { top: "54%", left: "10%", width: "20%", height: "32%", rotate: "-20deg", clip: "polygon(28% 0%, 100% 20%, 70% 100%, 0% 72%)", drift: 0.22 },
-    { top: "64%", left: "42%", width: "24%", height: "32%", rotate: "4deg", clip: "polygon(18% 0%, 82% 8%, 96% 100%, 0% 84%)", drift: 0.18 },
+    { top: "-1%", left: "40%", width: "20%", height: "38%", rotate: "-9deg", clip: "polygon(28% 0%, 58% 4%, 100% 96%, 38% 100%, 0% 64%)", drift: 0.16 },
+    { top: "8%", left: "61%", width: "18%", height: "28%", rotate: "18deg", clip: "polygon(12% 0%, 100% 18%, 74% 100%, 0% 74%)", drift: 0.14 },
+    { top: "9%", left: "19%", width: "16%", height: "28%", rotate: "-18deg", clip: "polygon(34% 0%, 100% 18%, 62% 100%, 0% 76%)", drift: 0.14 },
+    { top: "23%", left: "70%", width: "18%", height: "26%", rotate: "24deg", clip: "polygon(8% 0%, 100% 22%, 70% 100%, 0% 68%)", drift: 0.12 },
+    { top: "24%", left: "13%", width: "18%", height: "28%", rotate: "-22deg", clip: "polygon(28% 0%, 100% 14%, 68% 100%, 0% 72%)", drift: 0.12 },
+    { top: "56%", left: "72%", width: "18%", height: "28%", rotate: "18deg", clip: "polygon(18% 0%, 100% 22%, 72% 100%, 0% 72%)", drift: 0.1 },
+    { top: "60%", left: "11%", width: "18%", height: "28%", rotate: "-14deg", clip: "polygon(30% 0%, 100% 18%, 70% 100%, 0% 74%)", drift: 0.1 },
   ] as const;
 
   const nearShards = [
@@ -549,25 +583,31 @@ function ShatteredGlassOverlay({
   ] as const;
 
   const fragments = [
-    { top: "16%", left: "80%", width: "7%", height: "9%", rotate: "18deg", clip: "polygon(16% 0%, 100% 28%, 74% 100%, 0% 62%)", drift: 0.08 },
-    { top: "38%", left: "84%", width: "8%", height: "9%", rotate: "22deg", clip: "polygon(18% 0%, 100% 26%, 58% 100%, 0% 62%)", drift: 0.08 },
-    { top: "64%", left: "20%", width: "7%", height: "10%", rotate: "-16deg", clip: "polygon(34% 0%, 100% 22%, 66% 100%, 0% 70%)", drift: 0.08 },
-    { top: "74%", left: "78%", width: "8%", height: "10%", rotate: "14deg", clip: "polygon(22% 0%, 100% 18%, 74% 100%, 0% 72%)", drift: 0.08 },
+    { top: "15%", left: "81%", width: "6%", height: "9%", rotate: "18deg", clip: "polygon(16% 0%, 100% 28%, 74% 100%, 0% 62%)", drift: 0.05 },
+    { top: "40%", left: "83%", width: "7%", height: "9%", rotate: "22deg", clip: "polygon(18% 0%, 100% 26%, 58% 100%, 0% 62%)", drift: 0.05 },
+    { top: "68%", left: "20%", width: "6%", height: "10%", rotate: "-16deg", clip: "polygon(34% 0%, 100% 22%, 66% 100%, 0% 70%)", drift: 0.05 },
+    { top: "74%", left: "78%", width: "7%", height: "10%", rotate: "14deg", clip: "polygon(22% 0%, 100% 18%, 74% 100%, 0% 72%)", drift: 0.05 },
   ] as const;
 
-  const spokes = [
-    { top: "7%", left: "50%", width: "0.18rem", height: "28%", rotate: "0deg", glow: 0.52 },
-    { top: "11%", left: "61%", width: "0.15rem", height: "24%", rotate: "18deg", glow: 0.44 },
-    { top: "11%", left: "39%", width: "0.15rem", height: "24%", rotate: "-18deg", glow: 0.44 },
-    { top: "57%", left: "50%", width: "0.16rem", height: "20%", rotate: "2deg", glow: 0.46 },
+  const cracks = [
+    { angle: "-72deg", height: "38%", glow: 0.48, width: "0.14rem" },
+    { angle: "-42deg", height: "34%", glow: 0.36, width: "0.12rem" },
+    { angle: "-16deg", height: "30%", glow: 0.28, width: "0.11rem" },
+    { angle: "18deg", height: "32%", glow: 0.32, width: "0.12rem" },
+    { angle: "44deg", height: "38%", glow: 0.42, width: "0.14rem" },
+    { angle: "72deg", height: "34%", glow: 0.46, width: "0.12rem" },
+    { angle: "168deg", height: "28%", glow: 0.26, width: "0.1rem" },
+    { angle: "202deg", height: "30%", glow: 0.26, width: "0.1rem" },
+    { angle: "226deg", height: "34%", glow: 0.34, width: "0.12rem" },
+    { angle: "246deg", height: "36%", glow: 0.4, width: "0.14rem" },
   ] as const;
 
-  const sparks = [
-    { top: "18%", left: "58%" },
-    { top: "28%", left: "32%" },
-    { top: "42%", left: "68%" },
-    { top: "58%", left: "36%" },
-    { top: "70%", left: "62%" },
+  const glints = [
+    { top: "22%", left: "59%" },
+    { top: "28%", left: "34%" },
+    { top: "45%", left: "69%" },
+    { top: "59%", left: "37%" },
+    { top: "72%", left: "62%" },
   ] as const;
 
   return (
@@ -575,15 +615,15 @@ function ShatteredGlassOverlay({
       <div
         className="absolute left-1/2 top-[47%] h-[42%] w-[52%] -translate-x-1/2 -translate-y-1/2 bg-black"
         style={{
-          clipPath: "polygon(26% 0%, 56% 6%, 86% 18%, 100% 46%, 84% 82%, 58% 100%, 18% 92%, 0% 56%, 8% 22%)",
-          boxShadow: "0 0 0 1px rgba(255,255,255,0.16), 0 0 140px rgba(0,0,0,0.98)",
+          clipPath: "polygon(24% 0%, 54% 6%, 80% 18%, 100% 44%, 82% 82%, 56% 100%, 20% 94%, 0% 58%, 8% 20%)",
+          boxShadow: "0 0 0 1px rgba(255,255,255,0.24), 0 0 180px rgba(0,0,0,0.98)",
         }}
       />
       <div
         className="absolute left-1/2 top-[47%] h-[50%] w-[58%] -translate-x-1/2 -translate-y-1/2 opacity-90"
         style={{
-          background: "radial-gradient(circle at 50% 50%, rgba(255,255,255,0.22), rgba(255,255,255,0.0) 34%)",
-          filter: "blur(20px)",
+          background: "radial-gradient(circle at 50% 50%, rgba(255,255,255,0.16), rgba(255,255,255,0.0) 32%)",
+          filter: "blur(18px)",
         }}
       />
       <div
@@ -616,20 +656,19 @@ function ShatteredGlassOverlay({
         </div>
       ))}
 
-      {spokes.map((line) => (
+      {cracks.map((line) => (
         <div
-          key={`${line.top}-${line.left}`}
-            className="absolute rounded-full bg-[linear-gradient(180deg,rgba(255,255,255,0.0),rgba(244,252,255,1),rgba(255,255,255,0.0))] blur-[0.2px]"
-            style={{
-              top: line.top,
-              left: line.left,
-              width: line.width,
-              height: line.height,
-              transform: `translate3d(calc(var(--rift-drift) * 0.18), 0, 0) rotate(${line.rotate})`,
-              opacity: line.glow,
-            boxShadow: "0 0 12px rgba(214,246,255,0.22)",
-            }}
-          />
+          key={line.angle}
+          className="absolute left-1/2 top-[47%] rounded-full bg-[linear-gradient(180deg,rgba(255,255,255,0.0),rgba(246,252,255,1),rgba(255,255,255,0.0))] blur-[0.15px]"
+          style={{
+            width: line.width,
+            height: line.height,
+            transform: `translate3d(calc(-50% + var(--rift-drift) * 0.08), 0, 0) rotate(${line.angle})`,
+            transformOrigin: "50% 0%",
+            opacity: line.glow,
+            boxShadow: "0 0 10px rgba(214,246,255,0.22)",
+          }}
+        />
       ))}
 
       {majorShards.map((shard) => (
@@ -688,19 +727,19 @@ function ShatteredGlassOverlay({
         </div>
       ))}
 
-      {sparks.map((spark) => (
+      {glints.map((spark) => (
         <div
           key={`${spark.top}-${spark.left}`}
-          className="absolute h-2 w-2 rounded-full bg-white"
+          className="absolute h-1.5 w-1.5 rounded-full bg-white"
           style={{
             top: spark.top,
             left: spark.left,
-            boxShadow: "0 0 18px rgba(255,255,255,0.92), 0 0 36px rgba(210,244,255,0.42)",
+            boxShadow: "0 0 14px rgba(255,255,255,0.92), 0 0 28px rgba(210,244,255,0.36)",
           }}
         />
       ))}
 
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_47%,rgba(255,255,255,0.24),transparent_10%),radial-gradient(circle_at_50%_47%,rgba(255,255,255,0.06),transparent_22%)] opacity-80" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_47%,rgba(255,255,255,0.2),transparent_9%),radial-gradient(circle_at_50%_47%,rgba(255,255,255,0.04),transparent_20%)] opacity-70" />
     </div>
   );
 }
@@ -929,10 +968,23 @@ export function MobileWorkExperience() {
       description="Scroll the work timeline."
       accent={WORK_ACCENT}
       showHeader={false}
+      showReturnSigil={false}
       ambient={<RiftScene reducedMotion={reducedMotion} scrollRef={sceneScrollRef} />}
       contentClassName="h-[100svh] !px-0 !pb-0 !pt-0"
     >
       <section className="relative h-[100svh] overflow-hidden">
+        <MobileRouteLink
+          href="/"
+          accent={WORK_ACCENT}
+          label="Chloeverse"
+          aria-label="Return to the Chloeverse"
+          className="fixed left-4 top-[calc(env(safe-area-inset-top,0px)+0.9rem)] z-40 flex h-11 w-11 items-center justify-center rounded-full border border-white/12 bg-[rgba(10,10,12,0.82)] text-white/84 backdrop-blur-xl"
+        >
+          <span aria-hidden="true" className="text-[1.25rem] leading-none">
+            &#x2039;
+          </span>
+        </MobileRouteLink>
+
         <div
           ref={scrollRef}
           className="absolute inset-0 z-40 overflow-y-auto overscroll-none"
