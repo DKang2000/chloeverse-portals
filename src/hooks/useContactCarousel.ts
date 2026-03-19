@@ -1,20 +1,23 @@
 "use client";
 
 import { animate, type AnimationPlaybackControls } from "framer-motion";
-import { useCallback, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 
 const STEP_DEGREES = 72;
 const DRAG_SENSITIVITY = 0.34;
+const AUTO_ADVANCE_MS = 3200;
+const INTERACTION_PAUSE_MS = 2400;
 
 function getActiveIndex(rotation: number, count: number) {
   const rawIndex = Math.round(-rotation / STEP_DEGREES);
   return ((rawIndex % count) + count) % count;
 }
 
-export function useContactCarousel(count: number) {
+export function useContactCarousel(count: number, options?: { autoPlayEnabled?: boolean }) {
   const [rotation, setRotation] = useState(0);
   const [activeIndex, setActiveIndex] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const autoPlayEnabled = options?.autoPlayEnabled ?? true;
 
   const controlsRef = useRef<AnimationPlaybackControls | null>(null);
   const pointerIdRef = useRef<number | null>(null);
@@ -24,7 +27,7 @@ export function useContactCarousel(count: number) {
   const lastTimeRef = useRef(0);
   const velocityRef = useRef(0);
   const dragDistanceRef = useRef(0);
-  const ignoreClickUntilRef = useRef(0);
+  const interactionUntilRef = useRef(0);
 
   const syncRotation = useCallback(
     (nextRotation: number) => {
@@ -56,6 +59,7 @@ export function useContactCarousel(count: number) {
 
   const onPointerDown = useCallback(
     (event: ReactPointerEvent<HTMLElement>) => {
+      interactionUntilRef.current = performance.now() + INTERACTION_PAUSE_MS;
       pointerIdRef.current = event.pointerId;
       event.currentTarget.setPointerCapture(event.pointerId);
       controlsRef.current?.stop();
@@ -91,13 +95,22 @@ export function useContactCarousel(count: number) {
     (event: ReactPointerEvent<HTMLElement>) => {
       if (pointerIdRef.current !== event.pointerId) return;
       pointerIdRef.current = null;
-      if (dragDistanceRef.current > 8) {
-        ignoreClickUntilRef.current = performance.now() + 220;
-      }
+      interactionUntilRef.current = performance.now() + INTERACTION_PAUSE_MS;
       finishDrag();
     },
     [finishDrag],
   );
+
+  useEffect(() => {
+    if (!autoPlayEnabled || isDragging) return;
+
+    const waitForInteractionPause = Math.max(interactionUntilRef.current - performance.now(), 0);
+    const timeoutId = window.setTimeout(() => {
+      snapToIndex((activeIndex + 1) % count);
+    }, waitForInteractionPause + AUTO_ADVANCE_MS);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [activeIndex, autoPlayEnabled, count, isDragging, snapToIndex]);
 
   return {
     activeIndex,
@@ -108,7 +121,6 @@ export function useContactCarousel(count: number) {
     },
     isDragging,
     rotation,
-    shouldIgnoreClick: () => performance.now() < ignoreClickUntilRef.current,
     snapToIndex,
   };
 }

@@ -14,7 +14,9 @@ const CAROUSEL_RADIUS = 118;
 export function MobileContactExperience() {
   const [copied, setCopied] = useState(false);
   const [contactPanelOpen, setContactPanelOpen] = useState(false);
-  const { activeIndex, bind, rotation, snapToIndex } = useContactCarousel(CONTACT_CAROUSEL_ITEMS.length);
+  const { activeIndex, bind, rotation, snapToIndex } = useContactCarousel(CONTACT_CAROUSEL_ITEMS.length, {
+    autoPlayEnabled: !contactPanelOpen,
+  });
 
   const activeItem = CONTACT_CAROUSEL_ITEMS[activeIndex] ?? CONTACT_CAROUSEL_ITEMS[0];
 
