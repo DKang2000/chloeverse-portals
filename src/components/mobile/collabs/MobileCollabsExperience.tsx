@@ -189,28 +189,15 @@ export function MobileCollabsExperience(_: { skipIntro?: boolean }) {
 
               <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1.15rem)]">
                 <div className="flex items-end justify-between gap-4">
-                  <div className="max-w-[74%]">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="h-8 w-8 rounded-full border border-white/16"
-                        style={{
-                          background: `radial-gradient(circle_at_32%_28%,rgba(255,255,255,0.9),${reel.accent} 34%,rgba(0,0,0,0.1)_72%)`,
-                        }}
-                      />
-                      <p className="text-[0.95rem] font-semibold tracking-[-0.02em] text-white">{reel.title}</p>
-                    </div>
-                    <p className="mt-3 text-[0.94rem] leading-6 text-white/92">{reel.caption}</p>
-                    <p className="mt-3 text-[0.82rem] font-medium text-white/74">{reel.audioLabel}</p>
-                    <div className="pointer-events-auto mt-4 flex items-center gap-3">
-                      <Link
-                        href={reel.url}
-                        target="_blank"
-                        rel="noreferrer noopener"
-                        className="inline-flex rounded-full border border-white/14 bg-white/9 px-3.5 py-2 text-[0.76rem] font-medium text-white backdrop-blur-md"
-                      >
-                        open original
-                      </Link>
-                    </div>
+                  <div className="pointer-events-auto">
+                    <Link
+                      href={reel.url}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="inline-flex rounded-full border border-white/14 bg-white/9 px-3.5 py-2 text-[0.76rem] font-medium text-white backdrop-blur-md"
+                    >
+                      open original
+                    </Link>
                   </div>
 
                   <div
