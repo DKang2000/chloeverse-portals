@@ -51,9 +51,6 @@ export const HOME_PORTALS = [
 export type MobileProjectReel = {
   id: string;
   instagramUrl: string;
-  username: string;
-  caption: string;
-  audioLabel: string;
   coverImage: string;
   videoSrc: string;
   posterAlt: string;
@@ -69,9 +66,6 @@ export const PROJECT_REELS: MobileProjectReel[] = [
   {
     id: "r3",
     instagramUrl: "https://www.instagram.com/reel/DTZ2XtNkeNC/",
-    username: "imchloekang",
-    caption: "Original reel, now watchable directly inside Chloeverse.",
-    audioLabel: "Original audio",
     coverImage: "/projects/reels/r3/cover.jpg",
     videoSrc: "/projects/reels/r3/video.mp4",
     posterAlt: "Instagram reel cover for Chloe Kang reel DTZ2XtNkeNC.",
@@ -85,9 +79,6 @@ export const PROJECT_REELS: MobileProjectReel[] = [
   {
     id: "r4",
     instagramUrl: "https://www.instagram.com/reel/DR_GW1BkQci/",
-    username: "imchloekang",
-    caption: "A vertical cut presented in a full-screen reel viewer instead of a generic route list.",
-    audioLabel: "Original audio",
     coverImage: "/projects/reels/r4/cover.jpg",
     videoSrc: "/projects/reels/r4/video.mp4",
     posterAlt: "Instagram reel cover for Chloe Kang reel DR_GW1BkQci.",
@@ -101,9 +92,6 @@ export const PROJECT_REELS: MobileProjectReel[] = [
   {
     id: "r5",
     instagramUrl: "https://www.instagram.com/reel/DSitVRLkjEf/",
-    username: "imchloekang",
-    caption: "A published reel, kept native to the mobile projects experience.",
-    audioLabel: "Original audio",
     coverImage: "/projects/reels/r5/cover.jpg",
     videoSrc: "/projects/reels/r5/video.mp4",
     posterAlt: "Instagram reel cover for Chloe Kang reel DSitVRLkjEf.",
@@ -117,9 +105,6 @@ export const PROJECT_REELS: MobileProjectReel[] = [
   {
     id: "r6",
     instagramUrl: "https://www.instagram.com/reel/DOH8x_gk2Ew/",
-    username: "imchloekang",
-    caption: "Another creator reel surfaced as part of a swipeable in-site feed.",
-    audioLabel: "Original audio",
     coverImage: "/projects/reels/r6/cover.jpg",
     videoSrc: "/projects/reels/r6/video.mp4",
     posterAlt: "Instagram reel cover for Chloe Kang reel DOH8x_gk2Ew.",
@@ -133,9 +118,6 @@ export const PROJECT_REELS: MobileProjectReel[] = [
   {
     id: "r7",
     instagramUrl: "https://www.instagram.com/reel/DOQ-ZxuEzan/",
-    username: "imchloekang",
-    caption: "A reel-first project presentation with local playback and original source preserved.",
-    audioLabel: "Original audio",
     coverImage: "/projects/reels/r7/cover.jpg",
     videoSrc: "/projects/reels/r7/video.mp4",
     posterAlt: "Instagram reel cover for Chloe Kang reel DOQ-ZxuEzan.",
@@ -149,9 +131,6 @@ export const PROJECT_REELS: MobileProjectReel[] = [
   {
     id: "r8",
     instagramUrl: "https://www.instagram.com/reel/DObX6ceE-di/",
-    username: "imchloekang",
-    caption: "The projects route now behaves like a real viewer instead of a card stack.",
-    audioLabel: "Original audio",
     coverImage: "/projects/reels/r8/cover.jpg",
     videoSrc: "/projects/reels/r8/video.mp4",
     posterAlt: "Instagram reel cover for Chloe Kang reel DObX6ceE-di.",
@@ -165,9 +144,6 @@ export const PROJECT_REELS: MobileProjectReel[] = [
   {
     id: "r9",
     instagramUrl: "https://www.instagram.com/reel/DOsvvxCkUxJ/",
-    username: "imchloekang",
-    caption: "Published reel playback with a local poster, local video, and a direct source link.",
-    audioLabel: "Original audio",
     coverImage: "/projects/reels/r9/cover.jpg",
     videoSrc: "/projects/reels/r9/video.mp4",
     posterAlt: "Instagram reel cover for Chloe Kang reel DOsvvxCkUxJ.",
@@ -181,9 +157,6 @@ export const PROJECT_REELS: MobileProjectReel[] = [
   {
     id: "r10",
     instagramUrl: "https://www.instagram.com/reel/DMLYWLOhTfg/",
-    username: "imchloekang",
-    caption: "A local reel slide with the same poster frame and in-site playback flow.",
-    audioLabel: "Original audio",
     coverImage: "/projects/reels/r10/cover.jpg",
     videoSrc: "/projects/reels/r10/video.mp4",
     posterAlt: "Instagram reel cover for Chloe Kang reel DMLYWLOhTfg.",
@@ -197,9 +170,6 @@ export const PROJECT_REELS: MobileProjectReel[] = [
   {
     id: "r11",
     instagramUrl: "https://www.instagram.com/reel/DMxxlTEp98D/",
-    username: "imchloekang",
-    caption: "A reel viewer entry that keeps the mobile projects page focused and full-screen.",
-    audioLabel: "Original audio",
     coverImage: "/projects/reels/r11/cover.jpg",
     videoSrc: "/projects/reels/r11/video.mp4",
     posterAlt: "Instagram reel cover for Chloe Kang reel DMxxlTEp98D.",

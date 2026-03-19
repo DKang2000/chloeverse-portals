@@ -79,7 +79,7 @@ export function MobileProjectsExperience() {
                   muted
                   preload={Math.abs(index - activeIndex) <= 1 ? "metadata" : "none"}
                   className="chv-mobile-reel-video absolute inset-0 h-full w-full object-cover"
-                  aria-label={`${reel.username} reel playback`}
+                  aria-label={`Project reel ${index + 1} playback`}
                 />
               </div>
 
@@ -93,9 +93,7 @@ export function MobileProjectsExperience() {
               <div className="chv-mobile-reel-gradient absolute inset-0 z-10" />
 
               <div className="pointer-events-none absolute inset-x-0 top-[calc(env(safe-area-inset-top,0px)+3.75rem)] z-20 px-4">
-                <div className="inline-flex items-center gap-2 rounded-full bg-black/20 px-3 py-1 text-[0.72rem] font-medium text-white/88 backdrop-blur-md">
-                  <span>@{reel.username}</span>
-                  <span className="text-white/34">&bull;</span>
+                <div className="inline-flex items-center rounded-full bg-black/20 px-3 py-1 text-[0.72rem] font-medium text-white/88 backdrop-blur-md">
                   <span>{reel.durationLabel}</span>
                 </div>
               </div>
@@ -124,12 +122,6 @@ export function MobileProjectsExperience() {
               <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1.15rem)]">
                 <div className="flex items-end justify-between gap-4">
                   <div className="max-w-[74%]">
-                    <div className="flex items-center gap-2">
-                      <span className="h-8 w-8 rounded-full border border-white/16 bg-[radial-gradient(circle_at_32%_28%,rgba(255,255,255,0.9),rgba(255,255,255,0.2)_34%,rgba(0,0,0,0.1)_72%)]" />
-                      <p className="text-[0.95rem] font-semibold tracking-[-0.02em] text-white">@{reel.username}</p>
-                    </div>
-                    <p className="mt-3 text-[0.94rem] leading-6 text-white/92">{reel.caption}</p>
-                    <p className="mt-3 text-[0.82rem] font-medium text-white/74">{reel.audioLabel}</p>
                     <div className="pointer-events-auto mt-4 flex items-center gap-3">
                       <Link
                         href={reel.instagramUrl}
