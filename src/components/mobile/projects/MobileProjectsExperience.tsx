@@ -99,13 +99,10 @@ export function MobileProjectsExperience() {
               </div>
 
               <aside className="pointer-events-auto absolute bottom-[calc(env(safe-area-inset-bottom,0px)+5rem)] right-3 z-30 flex flex-col items-center gap-4">
-                <ReelAction icon={<Heart size={30} strokeWidth={1.85} />} label={reel.metrics?.likes ?? "watch"} />
-                <ReelAction
-                  icon={<MessageCircle size={30} strokeWidth={1.85} />}
-                  label={reel.metrics?.comments ?? "swipe"}
-                />
-                <ReelAction icon={<Send size={30} strokeWidth={1.85} />} label={reel.metrics?.shares ?? "source"} />
-                <ReelAction icon={<Bookmark size={30} strokeWidth={1.85} />} label="save" />
+                <ReelAction icon={<Heart size={30} strokeWidth={1.85} />} />
+                <ReelAction icon={<MessageCircle size={30} strokeWidth={1.85} />} />
+                <ReelAction icon={<Send size={30} strokeWidth={1.85} />} />
+                <ReelAction icon={<Bookmark size={30} strokeWidth={1.85} />} />
                 <button
                   type="button"
                   onClick={toggleMuted}
@@ -153,15 +150,12 @@ export function MobileProjectsExperience() {
 
 function ReelAction({
   icon,
-  label,
 }: {
   icon: ReactNode;
-  label: string;
 }) {
   return (
-    <div className="flex flex-col items-center gap-1.5 text-white">
+    <div className="flex items-center justify-center text-white">
       <span className="flex h-12 w-12 items-center justify-center rounded-full bg-black/34 backdrop-blur-md">{icon}</span>
-      <span className="text-[0.66rem] font-medium text-white/84">{label}</span>
     </div>
   );
 }
