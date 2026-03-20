@@ -818,9 +818,6 @@ function IntroCard() {
           Work dossier
         </p>
         <h1 className="mt-4 text-[1.52rem] leading-[0.92] tracking-[-0.06em] text-white">Chloe Kang</h1>
-        <p className="mt-3 max-w-[16rem] text-[0.9rem] leading-6 text-[rgba(228,241,244,0.76)]">
-          A reverse-chronological resume field drifting through fractured glass.
-        </p>
         <div className="mt-5 grid grid-cols-2 gap-2.5">
           {WORK_ROLE_STACK.map((role) => (
             <span
