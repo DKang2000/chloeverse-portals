@@ -218,6 +218,30 @@
   line-height: 1.45;
   color: rgba(88, 107, 143, 0.74);
   letter-spacing: 0.01em;
+  opacity: 0;
+  pointer-events: none;
+  user-select: none;
+}
+
+.archiveHintTop {
+  position: fixed;
+  left: 50%;
+  top: clamp(1rem, 3vh, 2.4rem);
+  z-index: 30;
+  margin: 0;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100vw - 8rem);
+  text-align: center;
+  font-size: clamp(0.78rem, 1.6vw, 0.96rem);
+  line-height: 1.45;
+  color: rgba(88, 107, 143, 0.74);
+  letter-spacing: 0.01em;
+  pointer-events: none;
+  transition:
+    opacity 220ms ease,
+    filter 220ms ease,
+    transform 220ms ease;
 }
 
 .audioToggle {
@@ -633,6 +657,10 @@
     max-width: 22rem;
   }
 
+  .archiveHintTop {
+    max-width: calc(100% - 10rem);
+  }
+
   .topRightLink {
     right: 1rem;
   }
@@ -666,6 +694,13 @@
 
   .archiveHint {
     margin-top: 0.62rem;
+    font-size: 0.74rem;
+    line-height: 1.34;
+  }
+
+  .archiveHintTop {
+    top: 0.82rem;
+    max-width: calc(100% - 7rem);
     font-size: 0.74rem;
     line-height: 1.34;
   }

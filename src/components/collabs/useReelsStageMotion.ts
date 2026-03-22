@@ -11,6 +11,8 @@ const TARGET_SNAP_STRENGTH = 9.5;
 const POINTER_SMOOTHING = 8.5;
 const DRAG_ACTIVATE_DISTANCE = 12;
 const DRAG_CLICK_SUPPRESS_DISTANCE = 22;
+const IDLE_ROTATION_DELAY_MS = 1800;
+const IDLE_ROTATION_SPEED = 0.135;
 
 function wrapIndex(value: number, modulo: number): number {
   if (modulo <= 0) return 0;
@@ -26,6 +28,7 @@ function shortestWrappedDelta(index: number, position: number, count: number): n
 
 type Options = {
   cardCount: number;
+  paused?: boolean;
 };
 
 type CardHandlers = {
@@ -36,7 +39,7 @@ type CardHandlers = {
   onBlur: () => void;
 };
 
-export function useReelsStageMotion({ cardCount }: Options) {
+export function useReelsStageMotion({ cardCount, paused = false }: Options) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
@@ -121,7 +124,20 @@ export function useReelsStageMotion({ cardCount }: Options) {
         (pointerTargetRef.current.y - pointerCurrentRef.current.y) * (1 - Math.exp(-POINTER_SMOOTHING * dt));
 
       const now = performance.now();
-      const idleSnap = !dragRef.current.active && now - lastInputTimeRef.current > 90;
+      const idleRotate =
+        !paused &&
+        !reducedMotion &&
+        !dragRef.current.active &&
+        hoverRef.current === null &&
+        now - lastInputTimeRef.current > IDLE_ROTATION_DELAY_MS;
+
+      if (idleRotate) {
+        const idleStep = IDLE_ROTATION_SPEED * dt;
+        targetScrollRef.current += idleStep;
+        currentScrollRef.current += idleStep;
+      }
+
+      const idleSnap = !dragRef.current.active && !idleRotate && now - lastInputTimeRef.current > 90;
       if (idleSnap) {
         const nearest = Math.round(targetScrollRef.current);
         targetScrollRef.current +=
@@ -219,7 +235,7 @@ export function useReelsStageMotion({ cardCount }: Options) {
       content.style.transform = "";
       setDragging(false);
     };
-  }, [cardCount, motionEnabled, reducedMotion]);
+  }, [cardCount, motionEnabled, paused, reducedMotion]);
 
   const setCardRef = useCallback(
     (index: number) => (element: HTMLElement | null) => {
@@ -254,6 +270,7 @@ export function useReelsStageMotion({ cardCount }: Options) {
       onPointerLeave: () => {
         pointerTargetRef.current.x = 0;
         pointerTargetRef.current.y = 0;
+        lastInputTimeRef.current = performance.now();
       },
       onPointerDown: (event: React.PointerEvent<HTMLDivElement>) => {
         if (event.pointerType === "mouse" && event.button !== 0) return;
@@ -269,6 +286,7 @@ export function useReelsStageMotion({ cardCount }: Options) {
         dragRef.current.pointerId = event.pointerId;
         dragRef.current.lastY = event.clientY;
         dragRef.current.movedDistance = 0;
+        lastInputTimeRef.current = performance.now();
         setDragging(false);
         event.currentTarget.setPointerCapture(event.pointerId);
       },
@@ -281,6 +299,7 @@ export function useReelsStageMotion({ cardCount }: Options) {
           suppressClickUntilRef.current = performance.now() + 220;
         }
         dragRef.current.movedDistance = 0;
+        lastInputTimeRef.current = performance.now();
         setDragging(false);
         if (event.currentTarget.hasPointerCapture(event.pointerId)) {
           event.currentTarget.releasePointerCapture(event.pointerId);
@@ -292,6 +311,7 @@ export function useReelsStageMotion({ cardCount }: Options) {
         dragRef.current.pointerId = -1;
         dragRef.current.lastY = 0;
         dragRef.current.movedDistance = 0;
+        lastInputTimeRef.current = performance.now();
         setDragging(false);
       },
     }),
@@ -302,11 +322,13 @@ export function useReelsStageMotion({ cardCount }: Options) {
     (index: number): CardHandlers => ({
       onPointerEnter: () => {
         hoverRef.current = index;
+        lastInputTimeRef.current = performance.now();
         setHoveredIndex(index);
       },
       onPointerLeave: () => {
         if (hoverRef.current === index) {
           hoverRef.current = null;
+          lastInputTimeRef.current = performance.now();
           setHoveredIndex(null);
         }
       },
@@ -320,11 +342,13 @@ export function useReelsStageMotion({ cardCount }: Options) {
       },
       onFocus: () => {
         hoverRef.current = index;
+        lastInputTimeRef.current = performance.now();
         setHoveredIndex(index);
       },
       onBlur: () => {
         if (hoverRef.current === index) {
           hoverRef.current = null;
+          lastInputTimeRef.current = performance.now();
           setHoveredIndex(null);
         }
       },

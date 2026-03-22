@@ -80,7 +80,10 @@ export default function CollabsShell({
     reducedMotion,
     dragging,
     scrollEnergy,
-  } = useReelsStageMotion({ cardCount: REELS.length });
+  } = useReelsStageMotion({
+    cardCount: REELS.length,
+    paused: selectedFrameIndex !== null || openingIndex !== null,
+  });
   const modalItem = selectedFrameIndex === null ? null : (REELS[selectedFrameIndex] ?? null);
   const modalOpen = Boolean(modalItem);
 
@@ -312,7 +315,9 @@ export default function CollabsShell({
         >
           Candy Castle
         </a>
-        <p className={styles.archiveHint}>Scroll to drift through Reels.</p>
+        <p className={styles.archiveHint} aria-hidden="true">
+          Scroll to drift through Reels
+        </p>
         <button
           type="button"
           className={styles.audioToggle}
@@ -325,6 +330,10 @@ export default function CollabsShell({
           {audio.muted ? "Audio Off" : "Audio On"}
         </button>
       </header>
+
+      <p className={[styles.archiveHintTop, modalOpen ? styles.hudHidden : ""].filter(Boolean).join(" ")}>
+        Scroll to drift through Reels
+      </p>
 
       <a
         href="/"
