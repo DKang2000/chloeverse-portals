@@ -28,6 +28,22 @@ type GlyphRefCollection = MutableRefObject<Array<HTMLSpanElement | null>>;
 type MenuCardRefCollection = MutableRefObject<Array<HTMLAnchorElement | null>>;
 type MaskPointRef = MutableRefObject<{ x: number; y: number }>;
 type BlockMotionState = { tiltX: number; tiltY: number; shiftX: number; shiftY: number };
+type BoundsRect = { left: number; top: number; right: number; bottom: number };
+type LandingStar = {
+  id: number;
+  x: number;
+  y: number;
+  size: number;
+  rotation: number;
+  opacity: number;
+  haloOpacity: number;
+  visible: boolean;
+  blinkIntervalMs: number;
+  blinkOutMs: number;
+  blinkDelayMs: number;
+  fillX: number;
+  fillY: number;
+};
 type RippleState = {
   active: boolean;
   x: number;
@@ -122,6 +138,8 @@ const RAINBOW_COLORS = ["#ff4ea8", "#ff8a3d", "#ffd646", "#8aff5c", "#4ce4ff", "
 const GREEN_HEX = "#8aff5c";
 const GREEN_SWAP_RATE = 0.2;
 const GREEN_REPLACEMENTS = ["#ff5478", "#ffb24b", "#52b2ff", "#c77dff"] as const;
+const LANDING_STAR_MIN = 4;
+const LANDING_STAR_MAX = 5;
 
 function mulberry32(a: number) {
   return function rand() {
@@ -335,6 +353,145 @@ function typingDelay(char: string): number {
     ms += 220;
   }
   return ms;
+}
+
+function expandRect(rect: DOMRect, padding: number): BoundsRect {
+  return {
+    left: rect.left - padding,
+    top: rect.top - padding,
+    right: rect.right + padding,
+    bottom: rect.bottom + padding,
+  };
+}
+
+function rectIntersectsSquare(rect: BoundsRect, x: number, y: number, halfSize: number): boolean {
+  return !(
+    x + halfSize < rect.left ||
+    x - halfSize > rect.right ||
+    y + halfSize < rect.top ||
+    y - halfSize > rect.bottom
+  );
+}
+
+function createLandingStarBounds(viewportWidth: number, x: number, y: number, size: number): BoundsRect {
+  const halfSize = (size * 0.5) + (viewportWidth < 640 ? 12 : 18);
+  return {
+    left: x - halfSize,
+    top: y - halfSize,
+    right: x + halfSize,
+    bottom: y + halfSize,
+  };
+}
+
+function sampleLandingStarPlacement(
+  viewportWidth: number,
+  viewportHeight: number,
+  size: number,
+  exclusionRects: BoundsRect[],
+  occupied: BoundsRect[],
+  rnd: () => number,
+): { x: number; y: number } | null {
+  const edgePadding = viewportWidth < 640 ? 22 : 40;
+
+  const canPlace = (x: number, y: number, size: number) => {
+    const bounds = createLandingStarBounds(viewportWidth, x, y, size);
+    const halfSize = (bounds.right - bounds.left) * 0.5;
+    if (
+      bounds.left < edgePadding ||
+      bounds.right > viewportWidth - edgePadding ||
+      bounds.top < edgePadding ||
+      bounds.bottom > viewportHeight - edgePadding
+    ) {
+      return false;
+    }
+
+    for (const rect of exclusionRects) {
+      if (rectIntersectsSquare(rect, x, y, halfSize)) {
+        return false;
+      }
+    }
+
+    for (const rect of occupied) {
+      if (rectIntersectsSquare(rect, x, y, halfSize)) {
+        return false;
+      }
+    }
+
+    occupied.push(bounds);
+    return true;
+  };
+
+  for (let attempt = 0; attempt < 320; attempt += 1) {
+    const band = rnd();
+    const x = band < 0.28
+      ? edgePadding + rnd() * Math.max(32, viewportWidth * 0.24)
+      : band < 0.56
+        ? viewportWidth - edgePadding - (rnd() * Math.max(32, viewportWidth * 0.24))
+        : edgePadding + rnd() * Math.max(48, viewportWidth - (edgePadding * 2));
+    const y = edgePadding + rnd() * Math.max(80, viewportHeight - (edgePadding * 2));
+
+    if (!canPlace(x, y, size)) {
+      continue;
+    }
+
+    return { x, y };
+  }
+
+  const fallbackPoints = [
+    [0.12, 0.18],
+    [0.88, 0.2],
+    [0.1, 0.52],
+    [0.9, 0.56],
+    [0.18, 0.82],
+    [0.82, 0.8],
+    [0.5, 0.88],
+  ].sort(() => rnd() - 0.5);
+
+  for (const [nx, ny] of fallbackPoints) {
+    const x = nx * viewportWidth;
+    const y = ny * viewportHeight;
+    if (!canPlace(x, y, size)) {
+      continue;
+    }
+    return { x, y };
+  }
+
+  return null;
+}
+
+function sampleLandingStars(viewportWidth: number, viewportHeight: number, exclusionRects: BoundsRect[]): LandingStar[] {
+  const seed = Math.floor(Math.random() * 0xffffffff) >>> 0;
+  const rnd = mulberry32(seed);
+  const stars: LandingStar[] = [];
+  const occupied: BoundsRect[] = [];
+  const targetCount = LANDING_STAR_MIN + Math.floor(rnd() * (LANDING_STAR_MAX - LANDING_STAR_MIN + 1));
+  const starSize = viewportWidth < 640 ? Math.round(CURSOR_LARGE_SIZE * 0.82) : CURSOR_LARGE_SIZE;
+
+  const createStar = (index: number, x: number, y: number, size: number): LandingStar => ({
+    id: index,
+    x,
+    y,
+    size,
+    rotation: -18 + rnd() * 36,
+    opacity: 0.74 + rnd() * 0.2,
+    haloOpacity: 0.22 + rnd() * 0.16,
+    visible: true,
+    blinkIntervalMs: 2400 + rnd() * 2800,
+    blinkOutMs: 140 + rnd() * 180,
+    blinkDelayMs: 180 + rnd() * 2800,
+    fillX: 10 + rnd() * 80,
+    fillY: 10 + rnd() * 80,
+  });
+
+  for (let index = 0; index < targetCount; index += 1) {
+    const placement = sampleLandingStarPlacement(viewportWidth, viewportHeight, starSize, exclusionRects, occupied, rnd);
+    if (!placement) {
+      break;
+    }
+    stars.push(createStar(index, placement.x, placement.y, starSize));
+  }
+
+  return stars;
 }
 
 function setMaskPosition(element: HTMLElement | null, x: number, y: number, radiusPx = SPOTLIGHT_RADIUS): void {
@@ -768,6 +925,8 @@ export default function ChloeverseMainLanding({
   const [cursorMode, setCursorMode] = useState<CursorMode>("idle");
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuRevealNonce, setMenuRevealNonce] = useState(0);
+  const [landingStars, setLandingStars] = useState<LandingStar[]>([]);
+  const [landingStarsCycle, setLandingStarsCycle] = useState(0);
 
   const backdropPaint = useMemo(() => paintBackdropStyle(1337), []);
   const cursorBgPaint = useMemo(() => paintCursorFillStyle(1337), []);
@@ -949,6 +1108,156 @@ export default function ChloeverseMainLanding({
   useEffect(() => {
     stopCollabsBgm({ clearGestureListeners: true });
   }, []);
+
+  useEffect(() => {
+    if (!prefersReducedMotion && !typingDone) {
+      return;
+    }
+
+    let frame = 0;
+
+    const refreshStars = () => {
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const exclusionRects: BoundsRect[] = [];
+
+      const pushRect = (element: HTMLElement | null, padding: number) => {
+        const rect = element?.getBoundingClientRect();
+        if (!rect || rect.width <= 0 || rect.height <= 0) {
+          return;
+        }
+        exclusionRects.push(expandRect(rect, padding));
+      };
+
+      pushRect(titleHitRef.current, viewportWidth < 640 ? 24 : 38);
+      pushRect(taglineHitRef.current, viewportWidth < 640 ? 20 : 30);
+      pushRect(scrollHintRef.current, viewportWidth < 640 ? 16 : 22);
+      pushRect(menuHitRef.current, viewportWidth < 640 ? 16 : 20);
+
+      setLandingStars(sampleLandingStars(viewportWidth, viewportHeight, exclusionRects));
+      setLandingStarsCycle((value) => value + 1);
+    };
+
+    const scheduleRefresh = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(refreshStars);
+    };
+
+    scheduleRefresh();
+    window.addEventListener("resize", scheduleRefresh);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("resize", scheduleRefresh);
+    };
+  }, [prefersReducedMotion, typingDone]);
+
+  useEffect(() => {
+    if (!prefersReducedMotion && !typingDone) {
+      return;
+    }
+
+    if (prefersReducedMotion) {
+      return;
+    }
+
+    const timers = new Set<number>();
+    let cancelled = false;
+
+    const readExclusions = () => {
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const exclusionRects: BoundsRect[] = [];
+
+      const pushRect = (element: HTMLElement | null, padding: number) => {
+        const rect = element?.getBoundingClientRect();
+        if (!rect || rect.width <= 0 || rect.height <= 0) {
+          return;
+        }
+        exclusionRects.push(expandRect(rect, padding));
+      };
+
+      pushRect(titleHitRef.current, viewportWidth < 640 ? 24 : 38);
+      pushRect(taglineHitRef.current, viewportWidth < 640 ? 20 : 30);
+      pushRect(scrollHintRef.current, viewportWidth < 640 ? 16 : 22);
+      pushRect(menuHitRef.current, viewportWidth < 640 ? 16 : 20);
+
+      return { viewportWidth, viewportHeight, exclusionRects };
+    };
+
+    const scheduleBlink = (star: LandingStar, delayMs: number) => {
+      const blinkTimer = window.setTimeout(() => {
+        if (cancelled) {
+          return;
+        }
+
+        setLandingStars((previous) => previous.map((entry) => (
+          entry.id === star.id ? { ...entry, visible: false } : entry
+        )));
+
+        const restoreTimer = window.setTimeout(() => {
+          if (cancelled) {
+            return;
+          }
+
+          setLandingStars((previous) => {
+            const current = previous.find((entry) => entry.id === star.id);
+            if (!current) {
+              return previous;
+            }
+
+            const { viewportWidth, viewportHeight, exclusionRects } = readExclusions();
+            const occupied = previous
+              .filter((entry) => entry.id !== star.id)
+              .map((entry) => createLandingStarBounds(viewportWidth, entry.x, entry.y, entry.size));
+            const reseed = Math.floor((performance.now() * 1000) + ((star.id + 1) * 2654435761)) >>> 0;
+            const rnd = mulberry32(reseed);
+            const placement = sampleLandingStarPlacement(
+              viewportWidth,
+              viewportHeight,
+              current.size,
+              exclusionRects,
+              occupied,
+              rnd,
+            );
+
+            return previous.map((entry) => (
+              entry.id === star.id
+                ? {
+                    ...entry,
+                    x: placement?.x ?? entry.x,
+                    y: placement?.y ?? entry.y,
+                    rotation: -18 + rnd() * 36,
+                    opacity: 0.74 + rnd() * 0.2,
+                    haloOpacity: 0.22 + rnd() * 0.16,
+                    visible: true,
+                    fillX: 10 + rnd() * 80,
+                    fillY: 10 + rnd() * 80,
+                  }
+                : entry
+            ));
+          });
+
+          scheduleBlink(star, star.blinkIntervalMs);
+        }, star.blinkOutMs);
+
+        timers.add(restoreTimer);
+      }, delayMs);
+
+      timers.add(blinkTimer);
+    };
+
+    for (const star of landingStars) {
+      scheduleBlink(star, star.blinkDelayMs);
+    }
+
+    return () => {
+      cancelled = true;
+      for (const timer of timers) {
+        window.clearTimeout(timer);
+      }
+      timers.clear();
+    };
+  }, [landingStarsCycle, prefersReducedMotion, typingDone]);
 
   useEffect(() => {
     let frame = 0;
@@ -1257,6 +1566,37 @@ export default function ChloeverseMainLanding({
       <div aria-hidden className="pointer-events-none fixed inset-0 z-10">
         <div ref={bgRainbowRef} className="absolute inset-0" style={bgMaskStyle} />
       </div>
+
+      {landingStars.length > 0 ? (
+        <div aria-hidden className="pointer-events-none fixed inset-0 z-[15]">
+          {landingStars.map((star) => (
+            <div
+              key={star.id}
+              className="chv-home-star absolute"
+              style={{
+                left: `${star.x}px`,
+                top: `${star.y}px`,
+                width: `${star.size}px`,
+                height: `${star.size}px`,
+                "--star-rotation": `${star.rotation.toFixed(3)}deg`,
+                "--star-opacity": star.opacity.toFixed(3),
+                "--star-halo-opacity": star.haloOpacity.toFixed(3),
+                opacity: star.visible ? 1 : 0,
+              } as CssVars}
+            >
+              <span className="chv-home-star__halo absolute inset-0" />
+              <span
+                className="chv-home-star__shape chv-home-star__fill absolute inset-0"
+                style={{
+                  ...cursorBgPaint,
+                  backgroundPosition: `${star.fillX.toFixed(2)}% ${star.fillY.toFixed(2)}%`,
+                }}
+              />
+              <span className="chv-home-star__shape chv-home-star__glint absolute inset-0" />
+            </div>
+          ))}
+        </div>
+      ) : null}
 
       <div aria-hidden className="pointer-events-none absolute inset-0 z-20 chv-vignette" />
       <div aria-hidden className="pointer-events-none absolute inset-0 z-20 chv-filmgrain" />

@@ -1386,11 +1386,57 @@ body {
   will-change: transform, background-position;
 }
 
+.chv-home-star {
+  transform: translate(-50%, -50%) rotate(var(--star-rotation, 0deg));
+  transform-origin: center;
+  transition: opacity 140ms ease;
+  will-change: transform, opacity;
+}
+
+.chv-home-star__shape {
+  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><polygon points='50,7 61,36 92,36 67,54 76,84 50,66 24,84 33,54 8,36 39,36' fill='black' stroke='black' stroke-width='5' stroke-linejoin='round' stroke-linecap='round'/></svg>");
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><polygon points='50,7 61,36 92,36 67,54 76,84 50,66 24,84 33,54 8,36 39,36' fill='black' stroke='black' stroke-width='5' stroke-linejoin='round' stroke-linecap='round'/></svg>");
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.chv-home-star__halo {
+  border-radius: 9999px;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.26) 0%, rgba(255, 255, 255, 0.08) 42%, rgba(255, 255, 255, 0) 74%);
+  opacity: var(--star-halo-opacity, 0.28);
+  filter: blur(10px);
+  transform: scale(1.92);
+}
+
+.chv-home-star__fill {
+  mix-blend-mode: screen;
+  filter:
+    saturate(1.18)
+    contrast(1.1)
+    drop-shadow(0 0 10px rgba(255, 255, 255, 0.18))
+    drop-shadow(0 0 22px rgba(255, 255, 255, 0.1));
+}
+
+.chv-home-star__glint {
+  background:
+    radial-gradient(circle at 36% 28%, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.24) 18%, rgba(255, 255, 255, 0) 42%),
+    linear-gradient(148deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.1) 28%, rgba(255, 255, 255, 0) 56%),
+    radial-gradient(circle at 64% 68%, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 44%);
+  mix-blend-mode: screen;
+  opacity: 0.68;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .chv-depth-plane,
   .chv-glyph-stack,
   .chv-glyph-pulse,
   .chv-menu-card,
+  .chv-home-star,
   .chv-cursor-shadow,
   .chv-cursor-lens,
   .chv-cursor-spec,
