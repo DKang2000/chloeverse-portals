@@ -85,7 +85,8 @@ export function MobileCollabsExperience(_: { skipIntro?: boolean }) {
       <div className="pointer-events-none absolute inset-0 z-20 bg-[linear-gradient(180deg,rgba(0,0,0,0.2),transparent_18%,transparent_76%,rgba(0,0,0,0.48)_100%)]" />
 
       <header
-        className="pointer-events-none fixed inset-x-0 top-0 z-40 flex items-center justify-between px-4 pt-[calc(env(safe-area-inset-top,0px)+0.55rem)]"
+        className="pointer-events-none fixed inset-x-0 top-0 z-40 flex items-center justify-between px-4"
+        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.55rem)" }}
         aria-label="Collabs reel controls"
       >
         <MobileRouteLink
@@ -161,7 +162,10 @@ export function MobileCollabsExperience(_: { skipIntro?: boolean }) {
 
               <div className="chv-mobile-reel-gradient absolute inset-0 z-10" />
 
-              <div className="pointer-events-none absolute inset-x-0 top-[calc(env(safe-area-inset-top,0px)+3.75rem)] z-20 px-4">
+              <div
+                className="pointer-events-none absolute inset-x-0 z-20 px-4"
+                style={{ top: "calc(env(safe-area-inset-top, 0px) + 3.75rem)" }}
+              >
                 <div className="inline-flex items-center gap-2 rounded-full bg-black/20 px-3 py-1 text-[0.72rem] font-medium text-white/88 backdrop-blur-md">
                   <span>{reel.title}</span>
                   <span className="text-white/34">&bull;</span>
@@ -169,7 +173,10 @@ export function MobileCollabsExperience(_: { skipIntro?: boolean }) {
                 </div>
               </div>
 
-              <aside className="pointer-events-auto absolute bottom-[calc(env(safe-area-inset-bottom,0px)+5rem)] right-3 z-30 flex flex-col items-center gap-4">
+              <aside
+                className="pointer-events-auto absolute right-3 z-30 flex flex-col items-center gap-4"
+                style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 5rem)" }}
+              >
                 <ReelAction icon={<Heart size={30} strokeWidth={1.85} />} label={reel.metrics.likes} />
                 <ReelAction icon={<MessageCircle size={30} strokeWidth={1.85} />} label={reel.metrics.comments} />
                 <ReelAction icon={<Send size={30} strokeWidth={1.85} />} label={reel.metrics.shares} />
@@ -187,7 +194,10 @@ export function MobileCollabsExperience(_: { skipIntro?: boolean }) {
                 </button>
               </aside>
 
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1.15rem)]">
+              <div
+                className="pointer-events-none absolute inset-x-0 bottom-0 z-20 px-4"
+                style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1.15rem)" }}
+              >
                 <div className="flex items-end justify-between gap-4">
                   <div className="pointer-events-auto">
                     <Link

@@ -45,7 +45,8 @@ export function MobileContactExperience() {
         accent={ACCENT}
         label="Chloeverse"
         aria-label="Return to the Chloeverse"
-        className="fixed left-4 top-[calc(env(safe-area-inset-top,0px)+0.9rem)] z-40 flex h-11 w-11 items-center justify-center rounded-full border border-white/12 bg-[rgba(10,10,12,0.84)] text-white/84 backdrop-blur-xl"
+        className="fixed left-4 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-white/12 bg-[rgba(10,10,12,0.84)] text-white/84 backdrop-blur-xl"
+        style={{ top: "calc(env(safe-area-inset-top, 0px) + 0.9rem)" }}
       >
         <span aria-hidden="true" className="text-[1.25rem] leading-none">
           &#x2039;
@@ -100,7 +101,8 @@ export function MobileContactExperience() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute inset-x-4 bottom-[calc(env(safe-area-inset-bottom,0px)+1rem)] z-50"
+            className="absolute inset-x-4 z-50"
+            style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)" }}
           >
             <div className="chv-contact-overlay-card relative overflow-hidden rounded-[2rem] border border-white/12 px-5 py-5 shadow-[0_30px_90px_rgba(0,0,0,0.36)] backdrop-blur-2xl">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_18%,rgba(255,210,176,0.22),transparent_24%),radial-gradient(circle_at_16%_84%,rgba(145,201,255,0.18),transparent_28%)]" />

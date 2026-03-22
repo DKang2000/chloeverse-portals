@@ -37,6 +37,14 @@ export function MobileRouteFrame({
   const frameStyle = {
     "--route-accent": accent,
   } as CSSProperties;
+  const contentStyle = {
+    ...(contentClassName.includes("!pt-0")
+      ? {}
+      : { paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.2rem)" }),
+    ...(contentClassName.includes("!pb-0")
+      ? {}
+      : { paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 2rem)" }),
+  } as CSSProperties;
 
   return (
     <main
@@ -56,7 +64,8 @@ export function MobileRouteFrame({
         initial={reducedMotion ? false : { opacity: 0, y: 18 }}
         animate={reducedMotion ? undefined : { opacity: 1, y: 0 }}
         transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-        className={`relative z-10 px-5 pb-[calc(env(safe-area-inset-bottom,0px)+2rem)] pt-[calc(env(safe-area-inset-top,0px)+1.2rem)] ${contentClassName}`}
+        className={`relative z-10 px-5 ${contentClassName}`}
+        style={contentStyle}
       >
         {showHeader ? (
           <header className="max-w-md">
@@ -86,8 +95,11 @@ export function MobileReturnSigil({ accent }: { accent: string }) {
       accent={accent}
       label="Chloeverse"
       aria-label="Return to the Chloeverse"
-      className="fixed left-4 top-[calc(env(safe-area-inset-top,0px)+0.8rem)] z-30 inline-flex items-center gap-3 rounded-[999px] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.12),rgba(255,255,255,0.04))] px-3.5 py-2 text-white/84 backdrop-blur-xl"
-      style={{ boxShadow: `0 0 0 1px color-mix(in srgb, ${accent} 18%, transparent), 0 18px 36px rgba(0,0,0,0.24)` }}
+      className="fixed left-4 z-30 inline-flex items-center gap-3 rounded-[999px] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.12),rgba(255,255,255,0.04))] px-3.5 py-2 text-white/84 backdrop-blur-xl"
+      style={{
+        top: "calc(env(safe-area-inset-top, 0px) + 0.8rem)",
+        boxShadow: `0 0 0 1px color-mix(in srgb, ${accent} 18%, transparent), 0 18px 36px rgba(0,0,0,0.24)`,
+      }}
     >
       <span className="inline-flex items-center gap-3">
         <span

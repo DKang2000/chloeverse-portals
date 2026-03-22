@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint src",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "generate:contact-assets": "node scripts/generate-contact-game-assets.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.6",

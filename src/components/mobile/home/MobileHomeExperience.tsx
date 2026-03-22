@@ -353,7 +353,10 @@ export function MobileHomeExperience(_: MobileHomeExperienceProps) {
           </div>
         </section>
 
-        <section className="relative z-10 flex min-h-0 flex-1 items-center px-4 pb-[calc(env(safe-area-inset-bottom,0px)+0.6rem)] pt-2">
+        <section
+          className="relative z-10 flex min-h-0 flex-1 items-center px-4 pt-2"
+          style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.6rem)" }}
+        >
           <div className="mx-auto flex w-full max-w-sm flex-col gap-2.5" aria-label="Portal navigation">
             {HOME_PORTALS.map((item, index) => {
               const active = activeIndex === index;

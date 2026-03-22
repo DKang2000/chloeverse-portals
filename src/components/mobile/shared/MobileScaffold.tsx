@@ -7,7 +7,8 @@ function MobileHomeControl({ currentPath }: { currentPath?: string }) {
   return (
     <Link
       href="/"
-      className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+1.1rem)] left-1/2 z-40 inline-flex -translate-x-1/2 items-center gap-2 rounded-full border border-white/12 bg-black/45 px-4 py-2 text-[0.68rem] uppercase tracking-[0.28em] text-white/82 backdrop-blur-xl"
+      className="fixed left-1/2 z-40 inline-flex -translate-x-1/2 items-center gap-2 rounded-full border border-white/12 bg-black/45 px-4 py-2 text-[0.68rem] uppercase tracking-[0.28em] text-white/82 backdrop-blur-xl"
+      style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 1.1rem)" }}
     >
       <span className="h-2.5 w-2.5 rounded-full bg-cyan-200 shadow-[0_0_18px_rgba(178,241,255,0.8)]" />
       Return to the Chloeverse
@@ -36,7 +37,10 @@ export function MobileScaffold({
         <div className="chv-filmgrain absolute inset-0 opacity-25" />
       </div>
 
-      <div className="relative z-10 px-5 pb-28 pt-[calc(env(safe-area-inset-top,0px)+1rem)]">
+      <div
+        className="relative z-10 px-5 pb-28"
+        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1rem)" }}
+      >
         {(eyebrow || title || description) ? (
           <header className="mb-6">
             {eyebrow ? (

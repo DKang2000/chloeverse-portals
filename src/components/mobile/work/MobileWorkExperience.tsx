@@ -1089,7 +1089,8 @@ export function MobileWorkExperience() {
           accent={WORK_ACCENT}
           label="Chloeverse"
           aria-label="Return to the Chloeverse"
-          className="fixed left-4 top-[calc(env(safe-area-inset-top,0px)+0.9rem)] z-50 flex h-11 w-11 items-center justify-center rounded-full border border-white/12 bg-[rgba(10,10,12,0.82)] text-white/84 backdrop-blur-xl"
+          className="fixed left-4 z-50 flex h-11 w-11 items-center justify-center rounded-full border border-white/12 bg-[rgba(10,10,12,0.82)] text-white/84 backdrop-blur-xl"
+          style={{ top: "calc(env(safe-area-inset-top, 0px) + 0.9rem)" }}
         >
           <span aria-hidden="true" className="text-[1.25rem] leading-none">
             &#x2039;
