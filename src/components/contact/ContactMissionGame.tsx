@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Silkscreen } from "next/font/google";
 import { useRouter } from "next/navigation";
 
 import { useAudioGate } from "@/hooks/useAudioGate";
@@ -11,11 +12,12 @@ import styles from "./ContactMissionGame.module.css";
 const GAME_WIDTH = 480;
 const GAME_HEIGHT = 270;
 const SHIP_RADIUS = 9;
-const FLIGHT_DURATION = 28;
+const FLIGHT_DURATION = 13;
 const CRASH_DURATION = 4.4;
 const MAX_INTEGRITY = 100;
 const DAMAGE_PER_HIT = 24;
 const MAX_DT = 1 / 30;
+const RECENT_KIND_MEMORY = 4;
 
 type ContactGamePhase = "boot" | "launch" | "flight" | "crash" | "card";
 type PlanetKind =
@@ -117,6 +119,7 @@ type GameState = {
   particles: Particle[];
   obstacles: Obstacle[];
   obstacleId: number;
+  recentKinds: PlanetKind[];
   spawnTimer: number;
   collisionCooldown: number;
   integrity: number;
@@ -228,10 +231,10 @@ const SOCIAL_LINKS = [
   { label: "X", href: CONTACT_DETAILS.x },
 ] as const;
 
-const CONTACT_CARD_ART = {
-  shell: "/contact/planet-dodge/contact-card-shell.png",
-  signal: "/contact/planet-dodge/contact-card-signal.png",
-} as const;
+const pixelFont = Silkscreen({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+});
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -289,6 +292,7 @@ function createInitialState(phase: ContactGamePhase = "boot"): GameState {
     particles: [],
     obstacles: [],
     obstacleId: 0,
+    recentKinds: [],
     spawnTimer: 0.9,
     collisionCooldown: 0,
     integrity: MAX_INTEGRITY,
@@ -349,11 +353,22 @@ function spawnExhaust(game: GameState) {
   });
 }
 
-function choosePlanet(intensity: number): PlanetKind {
-  if (intensity > 0.72 && Math.random() > 0.7) {
-    return Math.random() > 0.5 ? "saturn" : "jupiter";
+function choosePlanet(intensity: number, recentKinds: PlanetKind[], usedKinds: PlanetKind[]): PlanetKind {
+  const giantPool: PlanetKind[] = intensity > 0.72 ? ["jupiter", "saturn"] : [];
+  const weightedPool = [...PLANET_ORDER, ...giantPool];
+  const uniquePool = Array.from(new Set(weightedPool));
+
+  const notRecentlySeen = uniquePool.filter((kind) => !recentKinds.includes(kind) && !usedKinds.includes(kind));
+  if (notRecentlySeen.length > 0) {
+    return notRecentlySeen[Math.floor(Math.random() * notRecentlySeen.length)] ?? "mars";
   }
-  return PLANET_ORDER[Math.floor(Math.random() * PLANET_ORDER.length)] ?? "mars";
+
+  const notUsedThisWave = uniquePool.filter((kind) => !usedKinds.includes(kind));
+  if (notUsedThisWave.length > 0) {
+    return notUsedThisWave[Math.floor(Math.random() * notUsedThisWave.length)] ?? "mars";
+  }
+
+  return uniquePool[Math.floor(Math.random() * uniquePool.length)] ?? "mars";
 }
 
 function spawnObstacle(game: GameState) {
@@ -362,17 +377,19 @@ function spawnObstacle(game: GameState) {
   const laneWidth = GAME_WIDTH - 110;
   const radiusBase = 13 + intensity * 12;
   const positions: number[] = [];
+  const usedKinds: PlanetKind[] = [];
 
   for (let index = 0; index < count; index += 1) {
     let x = 55 + Math.random() * laneWidth;
     let attempts = 0;
-    while (positions.some((existing) => Math.abs(existing - x) < 62) && attempts < 8) {
+    while (positions.some((existing) => Math.abs(existing - x) < 86) && attempts < 8) {
       x = 55 + Math.random() * laneWidth;
       attempts += 1;
     }
     positions.push(x);
 
-    const kind = choosePlanet(intensity);
+    const kind = choosePlanet(intensity, game.recentKinds, usedKinds);
+    usedKinds.push(kind);
     const radius = radiusBase + Math.random() * 11 + (kind === "jupiter" ? 10 : 0) + (kind === "saturn" ? 8 : 0);
     game.obstacles.push({
       id: game.obstacleId,
@@ -388,6 +405,10 @@ function spawnObstacle(game: GameState) {
       hitFlash: 0,
     });
     game.obstacleId += 1;
+    game.recentKinds.push(kind);
+    if (game.recentKinds.length > RECENT_KIND_MEMORY) {
+      game.recentKinds = game.recentKinds.slice(-RECENT_KIND_MEMORY);
+    }
   }
 }
 
@@ -487,6 +508,54 @@ function drawShip(ctx: CanvasRenderingContext2D, ship: ShipState, flightBoost: n
   ctx.restore();
 }
 
+function drawPlanetMotionOverlay(
+  ctx: CanvasRenderingContext2D,
+  kind: PlanetKind,
+  radius: number,
+  rotation: number,
+) {
+  ctx.save();
+  ctx.rotate(rotation * 0.45);
+
+  if (kind === "venus" || kind === "jupiter" || kind === "saturn" || kind === "uranus" || kind === "neptune") {
+    ctx.lineWidth = Math.max(1, radius * 0.08);
+    ctx.strokeStyle = "rgba(255, 248, 236, 0.22)";
+    ctx.globalAlpha = 0.8;
+
+    for (let band = -2; band <= 2; band += 1) {
+      const y = band * radius * 0.22;
+      ctx.beginPath();
+      ctx.moveTo(-radius * 0.72, y);
+      ctx.bezierCurveTo(-radius * 0.22, y - radius * 0.1, radius * 0.18, y + radius * 0.12, radius * 0.7, y);
+      ctx.stroke();
+    }
+  } else {
+    ctx.fillStyle = "rgba(255, 244, 232, 0.18)";
+    ctx.globalAlpha = 0.9;
+
+    for (let index = 0; index < 4; index += 1) {
+      const angle = rotation + index * 1.4;
+      const craterRadius = Math.max(2, radius * 0.09);
+      drawCircle(
+        ctx,
+        Math.cos(angle) * radius * 0.32,
+        Math.sin(angle * 1.12) * radius * 0.25,
+        craterRadius,
+        "rgba(255, 244, 232, 0.14)",
+      );
+    }
+
+    if (kind === "pluto") {
+      ctx.fillStyle = "rgba(255, 232, 245, 0.26)";
+      ctx.beginPath();
+      ctx.ellipse(-radius * 0.12, -radius * 0.08, radius * 0.18, radius * 0.13, rotation * 0.18, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  ctx.restore();
+}
+
 function drawPlanetVisual(
   ctx: CanvasRenderingContext2D,
   art: ContactArtMap,
@@ -504,24 +573,22 @@ function drawPlanetVisual(
   }
 
   const palette = PLANET_PALETTES[kind];
-  const scale = kind === "saturn" ? 3.2 : kind === "jupiter" ? 2.95 : 2.7;
+  const scale = kind === "saturn" ? 3.05 : kind === "jupiter" ? 2.85 : kind === "pluto" ? 2.9 : 2.65;
   const size = radius * scale;
-  const clipRadius = kind === "saturn" ? size * 0.44 : size * 0.38;
 
   ctx.save();
   ctx.translate(x, y);
-  ctx.rotate(rotation * 0.25);
-  ctx.beginPath();
-  if (kind === "saturn") {
-    ctx.ellipse(0, 0, clipRadius * 1.08, clipRadius * 0.72, rotation * 0.08, 0, Math.PI * 2);
-  } else {
-    ctx.arc(0, 0, clipRadius, 0, Math.PI * 2);
-  }
-  ctx.clip();
+
+  const auraRadius = kind === "saturn" ? size * 0.28 : size * 0.24;
+  ctx.globalAlpha = 0.3 + glowBoost * 0.2;
+  drawCircle(ctx, 0, 0, auraRadius, palette.glow);
+  ctx.globalAlpha = 1;
+
   ctx.shadowColor = palette.glow;
   ctx.shadowBlur = 16 + glowBoost * 18;
   ctx.drawImage(sprite, -size / 2, -size / 2, size, size);
   ctx.shadowBlur = 0;
+  drawPlanetMotionOverlay(ctx, kind, radius * 0.92, rotation);
   if (glowBoost > 0) {
     ctx.globalAlpha = Math.min(0.46, glowBoost * 0.32);
     ctx.drawImage(sprite, -size / 2, -size / 2, size, size);
@@ -556,11 +623,11 @@ function drawShipVisual(
 
 function drawHud(ctx: CanvasRenderingContext2D, game: GameState) {
   ctx.save();
-  ctx.font = "10px monospace";
+  ctx.font = '10px "Silkscreen", monospace';
   ctx.textBaseline = "top";
 
   ctx.fillStyle = "rgba(255,255,255,0.86)";
-  ctx.fillText("PLUTO CONTACT APPROACH", 16, 14);
+  ctx.fillText("PLUTO VECTOR", 16, 14);
 
   ctx.fillStyle = "rgba(255,222,196,0.8)";
   const integrityLabel = `HULL ${Math.max(0, Math.round(game.integrity)).toString().padStart(3, "0")}%`;
@@ -572,9 +639,9 @@ function drawHud(ctx: CanvasRenderingContext2D, game: GameState) {
   ctx.fillRect(16, 46, 116 * clamp(game.integrity / MAX_INTEGRITY, 0, 1), 6);
 
   ctx.fillStyle = "rgba(255,255,255,0.72)";
-  ctx.fillText(`DODGES ${game.dodgeCount.toString().padStart(2, "0")}`, 16, 60);
-  ctx.fillText(`NEAR MISSES ${game.nearMissCount.toString().padStart(2, "0")}`, 16, 74);
-  ctx.fillText(`ETA ${(Math.max(0, FLIGHT_DURATION - game.flightElapsed)).toFixed(1)}s`, GAME_WIDTH - 76, 14);
+  ctx.fillText(`THREADS ${game.dodgeCount.toString().padStart(2, "0")}`, 16, 60);
+  ctx.fillText(`CLOSE ${game.nearMissCount.toString().padStart(2, "0")}`, 16, 74);
+  ctx.fillText(`T-PLUTO ${(Math.max(0, FLIGHT_DURATION - game.flightElapsed)).toFixed(1)}s`, GAME_WIDTH - 118, 14);
 
   const progress = clamp(game.flightElapsed / FLIGHT_DURATION, 0, 1);
   ctx.fillStyle = "rgba(255,255,255,0.16)";
@@ -685,14 +752,6 @@ export default function ContactMissionGame() {
     phaseStateRef.current = nextPhase;
     setPhase(nextPhase);
   }, []);
-
-  const missionLabel = useMemo(() => {
-    if (phase === "boot") return "A small playable signal instead of a passive reel.";
-    if (phase === "launch") return "Engines warming. Hands on the keys.";
-    if (phase === "flight") return "WASD to dodge the planets. Pluto is already deciding the ending.";
-    if (phase === "crash") return "No more steering. Pluto has the approach.";
-    return "Impact complete. Contact card recovered from the crater.";
-  }, [phase]);
 
   const startAudio = useCallback(() => {
     if (startedAudioRef.current) return;
@@ -1005,10 +1064,10 @@ export default function ContactMissionGame() {
       if (game.phase === "boot") {
         context.save();
         context.fillStyle = "rgba(255,255,255,0.85)";
-        context.font = "11px monospace";
-        context.fillText("CONTACT MISSION // PLAYABLE APPROACH", 16, 18);
+        context.font = '11px "Silkscreen", monospace';
+        context.fillText("CONTACT MISSION", 16, 18);
         context.fillStyle = "rgba(255,214,184,0.72)";
-        context.fillText("PRESS START OR TAP A KEY TO BEGIN", 16, 34);
+        context.fillText("PRESS ANY KEY TO START", 16, 34);
         context.restore();
       }
 
@@ -1051,9 +1110,9 @@ export default function ContactMissionGame() {
   }, []);
 
   return (
-    <section className={styles.shell}>
+    <section className={`${styles.shell} ${pixelFont.className}`}>
       <div
-        className="absolute inset-x-0 top-0 z-20 flex items-center justify-between px-5 text-[0.65rem] uppercase tracking-[0.28em] text-white/72 sm:px-8"
+        className={styles.topBar}
         style={{ paddingTop: "max(1rem, env(safe-area-inset-top, 0px))" }}
       >
         <button
@@ -1063,9 +1122,9 @@ export default function ContactMissionGame() {
             router.push("/");
           }}
           onMouseEnter={playHoverChime}
-          className={`${styles.pillButton} rounded-full px-4 py-2 transition hover:text-white`}
+          className={styles.topButton}
         >
-          back to chloeverse
+          return to chloeverse
         </button>
         <button
           type="button"
@@ -1074,13 +1133,13 @@ export default function ContactMissionGame() {
             toggleMuted();
           }}
           onMouseEnter={playHoverChime}
-          className={`${styles.pillButton} rounded-full px-4 py-2 transition hover:text-white`}
+          className={styles.topButton}
         >
-          {muted ? "sound off" : "sound on"}
+          {muted ? "audio:off" : "audio:on"}
         </button>
       </div>
 
-      <div className="relative z-10 flex min-h-[100svh] items-center justify-center px-4 py-20 sm:px-8">
+      <div className={styles.stageWrap}>
         <div className={styles.viewport}>
           <div className={styles.screen}>
             <canvas
@@ -1091,103 +1150,79 @@ export default function ContactMissionGame() {
               aria-label="Playable contact page where you steer through planets and arrive at Pluto."
             />
 
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 p-5">
-              <div className="flex items-end justify-between gap-6 text-[0.64rem] uppercase tracking-[0.24em] text-white/58">
-                <div className="max-w-[16rem] leading-5 text-white/58">{missionLabel}</div>
-                {phase !== "card" ? (
-                  <div className="text-right leading-5 text-[#ffe1c8]/72">
-                    <div>WASD / arrow keys</div>
-                    <div>thread the warm planets</div>
+            <div className={styles.bottomStrip}>
+              {phase === "boot" ? (
+                <div className={styles.bottomRow}>
+                  <a
+                    href={CONTACT_DETAILS.candy}
+                    target="_blank"
+                    rel="noreferrer"
+                    onMouseEnter={playHoverChime}
+                    className={styles.bottomUtilityLink}
+                  >
+                    return to candy castle
+                  </a>
+                </div>
+              ) : phase !== "card" ? (
+                <div className={styles.bottomRow}>
+                  <div className={styles.bottomSpacer} />
+                  <div className={styles.controlsCopy}>
+                    <div>wasd / arrows</div>
+                    <div>dodge planets</div>
                   </div>
-                ) : null}
-              </div>
+                </div>
+              ) : null}
             </div>
 
             {phase === "boot" ? (
-              <div className="absolute inset-0 flex items-center justify-center p-5">
-                <div className="pointer-events-auto max-w-[28rem] rounded-[1.9rem] border border-white/12 bg-[linear-gradient(180deg,rgba(18,22,34,0.84),rgba(8,10,18,0.9))] px-7 py-7 text-left shadow-[0_28px_80px_rgba(0,0,0,0.36)] backdrop-blur-xl">
-                  <p className="text-[0.68rem] uppercase tracking-[0.32em] text-[#ffe0c2]/62">Desktop contact mission</p>
-                  <h1 className="mt-3 text-[clamp(2rem,4vw,3.3rem)] leading-[0.9] tracking-[-0.06em] text-[#fff3e8]">
-                    Dodge the planets.
-                    <br />
-                    Crash into Pluto.
+              <div className={styles.bootOverlay}>
+                <div className={styles.bootPanel}>
+                  <h1 className={styles.bootTitle}>
+                    <span>Dodge planets to make it to Pluto.</span>
+                    <span>Reward: Chloe&apos;s contact info!</span>
                   </h1>
-                  <p className="mt-4 max-w-[22rem] text-[0.98rem] leading-7 text-white/70">
-                    A short playable approach instead of the old cutscene. Steer with WASD, slip between the planets,
-                    and let Pluto deliver the contact card at the end.
-                  </p>
-                  <div className="mt-6 flex flex-wrap items-center gap-3">
+                  <p className={styles.bootBody}>WASD/arrow keys to move</p>
+                  <div className={styles.bootActions}>
                     <button
                       type="button"
                       onClick={restartGame}
                       onMouseEnter={playHoverChime}
-                      className="rounded-full border border-[#ffd3ad]/28 bg-[#ffe7d0]/12 px-5 py-3 text-[0.72rem] uppercase tracking-[0.28em] text-[#fff3e2] transition hover:bg-[#ffe7d0]/18"
+                      className={styles.bootButton}
                     >
-                      start approach
+                      begin mission
                     </button>
-                    <p className="text-[0.72rem] uppercase tracking-[0.24em] text-white/46">WASD or arrow keys</p>
-                    <p className="text-[0.68rem] uppercase tracking-[0.22em] text-[#ffe0c2]/48">
-                      {artReady ? "sprite pack wired" : "loading sprite pack"}
-                    </p>
                   </div>
                 </div>
               </div>
             ) : null}
 
             {phase === "launch" ? (
-              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                <div className="rounded-full border border-white/12 bg-black/36 px-5 py-3 text-[0.7rem] uppercase tracking-[0.32em] text-[#ffe3c9]/78 backdrop-blur-md">
-                  engines warming
+              <div className={styles.launchOverlay}>
+                <div className={styles.launchChip}>
+                  thrusters warming
                 </div>
               </div>
             ) : null}
 
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center p-5">
+            <div className={styles.cardDock}>
               <div
-                className={`${styles.cardPanel} w-full max-w-[38rem] rounded-[1.8rem] p-0 transition duration-500 ${
-                  phase === "card" ? "pointer-events-auto translate-y-0 opacity-100" : "pointer-events-none translate-y-10 opacity-0"
-                }`}
+                className={`${styles.cardPanel} ${phase === "card" ? styles.cardPanelVisible : styles.cardPanelHidden}`}
               >
-                <div className={styles.cardArtwork} aria-hidden="true">
-                  <img
-                    src={CONTACT_CARD_ART.shell}
-                    alt=""
-                    className={styles.cardShellArt}
-                  />
-                  <div className={styles.cardBloom} />
-                </div>
-
                 <div className={styles.cardContent}>
-                  <div className={styles.cardHeaderRow}>
-                    <div>
-                      <p className={styles.cardOverline}>Pluto recovery capsule</p>
-                      <p className={styles.cardSubline}>contact transmission stabilized</p>
-                    </div>
-                    <div className={styles.cardBadgeWrap} aria-hidden="true">
-                      <div className={styles.cardBadgeHalo} />
-                      <img
-                        src={CONTACT_CARD_ART.signal}
-                        alt=""
-                        className={styles.cardBadgeArt}
-                      />
-                    </div>
-                  </div>
-
                   <div className={styles.cardIdentityRow}>
                     <div className={styles.cardIdentity}>
-                      <h2 className={styles.cardTitle}>Chloe Kang</h2>
-                      <p className={styles.cardDescriptor}>collabs, campaigns, direction, and technical builds</p>
+                      <h2 className={styles.cardTitle}>CHLOE KANG</h2>
                       <p className={styles.cardEmail}>{CONTACT_DETAILS.email}</p>
                     </div>
 
                     {stats ? (
                       <div className={styles.cardStats}>
                         <div className={styles.cardStatChip}>
-                          <span>dodges</span>
+                          <span>threads</span>
                           <strong>{stats.dodges}</strong>
                         </div>
                         <div className={styles.cardStatChip}>
-                          <span>near misses</span>
+                          <span>close calls</span>
                           <strong>{stats.nearMisses}</strong>
                         </div>
                         <div className={styles.cardStatChip}>
@@ -1208,7 +1243,7 @@ export default function ContactMissionGame() {
                       onMouseEnter={playHoverChime}
                       className={styles.cardPrimaryAction}
                     >
-                      write a note
+                      send signal
                     </a>
                     <button
                       type="button"
@@ -1216,7 +1251,7 @@ export default function ContactMissionGame() {
                       onMouseEnter={playHoverChime}
                       className={styles.cardSecondaryAction}
                     >
-                      {copyState === "copied" ? "email copied" : copyState === "failed" ? "copy failed" : "copy email"}
+                      {copyState === "copied" ? "address copied" : copyState === "failed" ? "copy failed" : "copy address"}
                     </button>
                   </div>
 
@@ -1238,31 +1273,11 @@ export default function ContactMissionGame() {
                   <div className={styles.cardFooterRow}>
                     <button
                       type="button"
-                      onClick={() => {
-                        startAudio();
-                        router.push("/");
-                      }}
-                      onMouseEnter={playHoverChime}
-                      className={styles.cardFooterButton}
-                    >
-                      back to portals
-                    </button>
-                    <a
-                      href={CONTACT_DETAILS.candy}
-                      target="_blank"
-                      rel="noreferrer"
-                      onMouseEnter={playHoverChime}
-                      className={styles.cardFooterButton}
-                    >
-                      candy castle
-                    </a>
-                    <button
-                      type="button"
                       onClick={restartGame}
                       onMouseEnter={playHoverChime}
                       className={styles.cardFooterButton}
                     >
-                      play again
+                      rerun mission
                     </button>
                   </div>
                 </div>

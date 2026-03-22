@@ -1,12 +1,22 @@
 .shell {
+  --bg-top: #09111f;
+  --bg-mid: #040811;
+  --bg-bottom: #02040b;
+  --pixel-cream: #fff0d8;
+  --pixel-soft: rgba(255, 234, 205, 0.72);
+  --pixel-dim: rgba(255, 232, 205, 0.48);
+  --pixel-line: rgba(255, 239, 219, 0.18);
+  --panel-bg: rgba(6, 11, 20, 0.94);
+  --panel-deep: rgba(10, 16, 29, 0.98);
   position: relative;
   min-height: 100svh;
   overflow: hidden;
   background:
-    radial-gradient(circle at 50% 12%, rgba(255, 201, 148, 0.18), rgba(255, 201, 148, 0) 28%),
-    radial-gradient(circle at 18% 22%, rgba(119, 162, 255, 0.16), rgba(119, 162, 255, 0) 30%),
-    radial-gradient(circle at 80% 72%, rgba(159, 112, 255, 0.12), rgba(159, 112, 255, 0) 34%),
-    linear-gradient(180deg, #060912 0%, #03050b 46%, #010205 100%);
+    radial-gradient(circle at 50% 10%, rgba(255, 196, 125, 0.18), rgba(255, 196, 125, 0) 22%),
+    radial-gradient(circle at 20% 20%, rgba(99, 141, 255, 0.16), rgba(99, 141, 255, 0) 32%),
+    radial-gradient(circle at 78% 78%, rgba(165, 124, 255, 0.12), rgba(165, 124, 255, 0) 30%),
+    linear-gradient(180deg, var(--bg-top) 0%, var(--bg-mid) 52%, var(--bg-bottom) 100%);
+  color: var(--pixel-cream);
 }
 
 .shell::before,
@@ -19,44 +29,94 @@
 
 .shell::before {
   background:
-    radial-gradient(circle at 50% -4%, rgba(255, 247, 228, 0.12), rgba(255, 247, 228, 0) 30%),
-    radial-gradient(circle at 50% 100%, rgba(255, 180, 130, 0.1), rgba(255, 180, 130, 0) 28%);
-  opacity: 0.85;
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 100%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.022) 0 1px, transparent 1px 100%);
+  background-size: 48px 48px;
+  opacity: 0.16;
 }
 
 .shell::after {
   background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 100%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 100%);
-  background-size: 72px 72px;
-  opacity: 0.2;
+    radial-gradient(circle at 50% 0%, rgba(255, 250, 237, 0.12), rgba(255, 250, 237, 0) 28%),
+    radial-gradient(circle at 50% 100%, rgba(255, 168, 120, 0.08), rgba(255, 168, 120, 0) 26%);
+}
+
+.topBar {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-inline: 1rem;
+}
+
+.topButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.9rem;
+  padding: 0.8rem 1rem;
+  border: 2px solid rgba(255, 235, 209, 0.18);
+  background:
+    linear-gradient(180deg, rgba(255, 245, 232, 0.08), rgba(255, 245, 232, 0.03)),
+    rgba(6, 10, 18, 0.82);
+  color: var(--pixel-soft);
+  font-size: 0.62rem;
+  line-height: 1.4;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 244, 228, 0.06),
+    0 12px 36px rgba(0, 0, 0, 0.34);
+  clip-path: polygon(0.55rem 0, calc(100% - 0.55rem) 0, 100% 0.55rem, 100% calc(100% - 0.55rem), calc(100% - 0.55rem) 100%, 0.55rem 100%, 0 calc(100% - 0.55rem), 0 0.55rem);
+  transition: transform 140ms ease, border-color 140ms ease, color 140ms ease, background 140ms ease;
+}
+
+.topButton:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 235, 209, 0.28);
+  color: #fffaf1;
+}
+
+.stageWrap {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  min-height: 100svh;
+  align-items: center;
+  justify-content: center;
+  padding: 5.6rem 1rem 1.4rem;
 }
 
 .viewport {
   position: relative;
-  width: min(92vw, calc(92svh * 16 / 9));
+  width: min(94vw, calc(92svh * 16 / 9));
   aspect-ratio: 16 / 9;
-  border-radius: 32px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 0.9rem;
+  border: 2px solid rgba(255, 235, 209, 0.12);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015)),
-    rgba(7, 9, 16, 0.88);
+    linear-gradient(180deg, rgba(255, 248, 238, 0.08), rgba(255, 248, 238, 0.03)),
+    rgba(6, 9, 17, 0.9);
   box-shadow:
-    0 48px 160px rgba(0, 0, 0, 0.56),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 0 0 1px rgba(255, 255, 255, 0.04);
-  backdrop-filter: blur(18px);
+    0 42px 120px rgba(0, 0, 0, 0.52),
+    inset 0 0 0 1px rgba(255, 249, 241, 0.04);
+  clip-path: polygon(1.1rem 0, calc(100% - 1.1rem) 0, 100% 1.1rem, 100% calc(100% - 1.1rem), calc(100% - 1.1rem) 100%, 1.1rem 100%, 0 calc(100% - 1.1rem), 0 1.1rem);
 }
 
 .screen {
   position: absolute;
-  inset: 12px;
+  inset: 0.9rem;
   overflow: hidden;
-  border-radius: 24px;
-  background: #04070f;
+  background:
+    radial-gradient(circle at 50% 8%, rgba(255, 230, 195, 0.09), rgba(255, 230, 195, 0) 24%),
+    linear-gradient(180deg, rgba(10, 15, 27, 0.98), rgba(2, 4, 8, 1));
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
-    inset 0 -28px 64px rgba(0, 0, 0, 0.44);
+    inset 0 0 0 2px rgba(255, 242, 225, 0.08),
+    inset 0 -28px 72px rgba(0, 0, 0, 0.46);
+  clip-path: polygon(0.9rem 0, calc(100% - 0.9rem) 0, 100% 0.9rem, 100% calc(100% - 0.9rem), calc(100% - 0.9rem) 100%, 0.9rem 100%, 0 calc(100% - 0.9rem), 0 0.9rem);
 }
 
 .screen::before,
@@ -71,19 +131,19 @@
   background:
     repeating-linear-gradient(
       180deg,
-      rgba(255, 255, 255, 0.04) 0,
-      rgba(255, 255, 255, 0.04) 1px,
+      rgba(255, 255, 255, 0.045) 0,
+      rgba(255, 255, 255, 0.045) 1px,
       rgba(0, 0, 0, 0) 2px,
       rgba(0, 0, 0, 0) 4px
     );
   mix-blend-mode: screen;
-  opacity: 0.22;
+  opacity: 0.18;
 }
 
 .screen::after {
   background:
-    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0) 52%, rgba(0, 0, 0, 0.22) 100%),
-    linear-gradient(180deg, rgba(255, 250, 240, 0.02), rgba(255, 250, 240, 0) 30%, rgba(0, 0, 0, 0.18) 100%);
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0) 54%, rgba(0, 0, 0, 0.26) 100%),
+    linear-gradient(180deg, rgba(255, 248, 238, 0.035), rgba(255, 248, 238, 0) 24%, rgba(0, 0, 0, 0.24) 100%);
 }
 
 .canvas {
@@ -93,63 +153,206 @@
   image-rendering: pixelated;
 }
 
-.cardPanel {
-  position: relative;
-  overflow: hidden;
+.bottomStrip {
+  pointer-events: none;
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  padding: 1rem;
+}
+
+.bottomRow {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1rem;
+  border: 2px solid rgba(255, 240, 220, 0.1);
+  background: rgba(5, 8, 15, 0.58);
+  clip-path: polygon(0.7rem 0, calc(100% - 0.7rem) 0, 100% 0.7rem, 100% calc(100% - 0.7rem), calc(100% - 0.7rem) 100%, 0.7rem 100%, 0 calc(100% - 0.7rem), 0 0.7rem);
+}
+
+.bottomSpacer {
+  min-width: 8rem;
+  min-height: 1px;
+}
+
+.controlsCopy {
+  text-align: right;
+  font-size: 0.54rem;
+  line-height: 1.9;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 225, 193, 0.76);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+}
+
+.bootOverlay,
+.launchOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bootOverlay {
+  padding: 1rem;
+}
+
+.bootPanel {
+  pointer-events: auto;
+  width: min(100%, 42rem);
+  padding: 1.4rem 1.4rem 1.25rem;
+  border: 2px solid rgba(255, 236, 206, 0.18);
   background:
-    radial-gradient(circle at 50% 0%, rgba(255, 223, 192, 0.12), rgba(255, 223, 192, 0) 44%),
-    linear-gradient(180deg, rgba(17, 20, 30, 0.86) 0%, rgba(9, 10, 18, 0.92) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+    linear-gradient(180deg, rgba(10, 16, 29, 0.96), rgba(5, 8, 16, 0.96)),
+    rgba(8, 12, 22, 0.94);
   box-shadow:
-    0 22px 80px rgba(0, 0, 0, 0.44),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(18px);
+    0 24px 72px rgba(0, 0, 0, 0.42),
+    inset 0 0 0 1px rgba(255, 246, 233, 0.05);
+  clip-path: polygon(1rem 0, calc(100% - 1rem) 0, 100% 1rem, 100% calc(100% - 1rem), calc(100% - 1rem) 100%, 1rem 100%, 0 calc(100% - 1rem), 0 1rem);
 }
 
-.cardArtwork,
-.cardContent {
-  position: relative;
+.bootOverline,
+.launchChip,
+.cardOverline,
+.cardSubline,
+.cardStatChip span,
+.cardPrimaryAction,
+.cardSecondaryAction,
+.cardMiniLink,
+.cardFooterButton {
+  font-size: 0.56rem;
+  line-height: 1.8;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
 }
 
-.cardArtwork {
+.bootOverline {
+  margin: 0;
+  color: rgba(255, 223, 186, 0.66);
+}
+
+.bootTitle {
+  margin: 0;
+  max-width: none;
+  font-size: clamp(1.02rem, 1.8vw, 1.38rem);
+  line-height: 1.72;
+  letter-spacing: 0.05em;
+  color: #fff8ef;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+}
+
+.bootTitle span {
+  display: block;
+  white-space: nowrap;
+}
+
+.bootBody {
+  max-width: 25rem;
+  margin: 0.9rem 0 0;
+  font-size: 0.92rem;
+  line-height: 2.05;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255, 236, 209, 0.82);
+}
+
+.bootActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.bootButton,
+.cardPrimaryAction,
+.cardSecondaryAction,
+.cardMiniLink,
+.cardFooterButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(255, 235, 209, 0.16);
+  background:
+    linear-gradient(180deg, rgba(255, 245, 232, 0.1), rgba(255, 245, 232, 0.03)),
+    rgba(8, 12, 22, 0.88);
+  color: var(--pixel-cream);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+  box-shadow: inset 0 0 0 1px rgba(255, 248, 238, 0.05);
+  clip-path: polygon(0.55rem 0, calc(100% - 0.55rem) 0, 100% 0.55rem, 100% calc(100% - 0.55rem), calc(100% - 0.55rem) 100%, 0.55rem 100%, 0 calc(100% - 0.55rem), 0 0.55rem);
+  transition: transform 140ms ease, border-color 140ms ease, background 140ms ease, color 140ms ease;
+}
+
+.bootButton:hover,
+.cardPrimaryAction:hover,
+.cardSecondaryAction:hover,
+.cardMiniLink:hover,
+.cardFooterButton:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 236, 206, 0.28);
+  background:
+    linear-gradient(180deg, rgba(255, 245, 232, 0.14), rgba(255, 245, 232, 0.06)),
+    rgba(8, 12, 22, 0.96);
+  color: #fffdf8;
+}
+
+.bootButton {
+  min-height: 3rem;
+  padding: 0.85rem 1.1rem;
+}
+
+.launchChip {
+  pointer-events: none;
+  padding: 0.7rem 1rem;
+  border: 2px solid rgba(255, 236, 206, 0.14);
+  background: rgba(5, 8, 15, 0.72);
+  color: rgba(255, 227, 196, 0.8);
+  clip-path: polygon(0.6rem 0, calc(100% - 0.6rem) 0, 100% 0.6rem, 100% calc(100% - 0.6rem), calc(100% - 0.6rem) 100%, 0.6rem 100%, 0 calc(100% - 0.6rem), 0 0.6rem);
+}
+
+.cardDock {
   pointer-events: none;
   position: absolute;
   inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
 }
 
-.cardShellArt {
-  position: absolute;
-  right: 1.4rem;
-  bottom: 0.8rem;
-  width: min(42%, 13.5rem);
-  transform: rotate(-9deg);
-  image-rendering: pixelated;
-  opacity: 0.08;
-  mix-blend-mode: screen;
-  filter: saturate(0.72) brightness(1.05) blur(0.6px);
+.cardPanel {
+  position: relative;
+  width: min(100%, 36rem);
+  border: 2px solid rgba(116, 86, 51, 0.14);
+  background:
+    linear-gradient(180deg, rgba(252, 249, 242, 0.99), rgba(244, 238, 225, 0.99)),
+    rgba(250, 246, 238, 0.99);
+  box-shadow:
+    0 28px 90px rgba(0, 0, 0, 0.52),
+    inset 0 0 0 1px rgba(255, 252, 245, 0.55);
+  clip-path: polygon(1rem 0, calc(100% - 1rem) 0, 100% 1rem, 100% calc(100% - 1rem), calc(100% - 1rem) 100%, 1rem 100%, 0 calc(100% - 1rem), 0 1rem);
+  transition: opacity 280ms ease, transform 280ms ease;
 }
 
-.cardBloom {
-  position: absolute;
-  right: 2rem;
-  bottom: -1.5rem;
-  width: 14rem;
-  height: 10rem;
-  background: radial-gradient(circle at 50% 50%, rgba(255, 229, 204, 0.12), rgba(255, 229, 204, 0) 72%);
-  opacity: 0.8;
+.cardPanelHidden {
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(1rem) scale(0.97);
+}
+
+.cardPanelVisible {
+  pointer-events: auto;
+  opacity: 1;
+  transform: translateY(0) scale(1);
 }
 
 .cardContent {
-  padding: 1.5rem;
-}
-
-.cardContent::before {
-  content: "";
-  position: absolute;
-  inset: 1rem;
-  border: 1px solid rgba(255, 244, 232, 0.08);
-  border-radius: 1.3rem;
-  pointer-events: none;
+  position: relative;
+  padding: 1.2rem 1.2rem 1.1rem;
+  background: transparent;
 }
 
 .cardHeaderRow,
@@ -158,190 +361,162 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 0.9rem;
 }
 
 .cardHeaderRow {
-  margin-bottom: 1rem;
-}
-
-.cardOverline {
-  margin: 0;
-  font-size: 0.68rem;
-  line-height: 1;
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
-  color: rgba(255, 225, 200, 0.64);
-}
-
-.cardSubline {
-  margin: 0.45rem 0 0;
-  font-size: 0.7rem;
-  line-height: 1.3;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: rgba(255, 246, 236, 0.38);
-}
-
-.cardBadgeWrap {
-  position: relative;
-  flex: 0 0 auto;
-  width: 4.5rem;
-  height: 4.5rem;
-}
-
-.cardBadgeHalo {
-  position: absolute;
-  inset: 0.35rem;
-  border-radius: 999px;
-  background: radial-gradient(circle, rgba(255, 223, 196, 0.32), rgba(255, 223, 196, 0) 72%);
-  filter: blur(8px);
-}
-
-.cardBadgeArt {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  image-rendering: pixelated;
+  margin-bottom: 0.95rem;
 }
 
 .cardIdentityRow {
-  gap: 1.5rem;
+  gap: 1.1rem;
 }
 
 .cardIdentity {
-  max-width: 22rem;
+  max-width: 24rem;
+  padding: 0.9rem 1rem;
+  border: 2px solid rgba(70, 56, 39, 0.12);
+  background: rgba(250, 246, 238, 0.96);
+  box-shadow:
+    0 8px 22px rgba(0, 0, 0, 0.16),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.45);
+  clip-path: polygon(0.55rem 0, calc(100% - 0.55rem) 0, 100% 0.55rem, 100% calc(100% - 0.55rem), calc(100% - 0.55rem) 100%, 0.55rem 100%, 0 calc(100% - 0.55rem), 0 0.55rem);
 }
 
 .cardTitle {
   margin: 0;
-  font-size: clamp(2rem, 4vw, 3.75rem);
-  line-height: 0.9;
-  letter-spacing: -0.07em;
-  color: #fff4e8;
-}
-
-.cardDescriptor {
-  margin: 0.85rem 0 0;
-  font-size: 0.8rem;
-  line-height: 1.5;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: rgba(255, 232, 212, 0.5);
+  font-size: clamp(1.2rem, 2.8vw, 2rem);
+  line-height: 1.45;
+  letter-spacing: 0.08em;
+  color: #131a2b;
+  text-shadow: none;
 }
 
 .cardEmail {
-  margin: 0.95rem 0 0;
-  font-size: 1rem;
-  line-height: 1.4;
-  color: rgba(255, 240, 224, 0.88);
+  margin: 0.75rem 0 0;
+  font-size: 0.74rem;
+  line-height: 1.8;
+  letter-spacing: 0.08em;
+  color: rgba(14, 19, 31, 0.92);
+  word-break: break-word;
 }
 
 .cardStats {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.65rem;
-  min-width: min(100%, 15rem);
+  gap: 0.5rem;
+  min-width: min(100%, 14rem);
+  align-self: stretch;
 }
 
 .cardStatChip {
   display: grid;
-  gap: 0.28rem;
-  padding: 0.75rem 0.85rem;
-  border-radius: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  gap: 0.18rem;
+  padding: 0.72rem 0.8rem;
+  border: 2px solid rgba(255, 238, 216, 0.12);
+  background: rgba(34, 37, 45, 0.84);
+  clip-path: polygon(0.55rem 0, calc(100% - 0.55rem) 0, 100% 0.55rem, 100% calc(100% - 0.55rem), calc(100% - 0.55rem) 100%, 0.55rem 100%, 0 calc(100% - 0.55rem), 0 0.55rem);
 }
 
 .cardStatChip span {
-  font-size: 0.56rem;
-  line-height: 1.2;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: rgba(255, 240, 224, 0.44);
+  color: rgba(255, 232, 207, 0.72);
 }
 
 .cardStatChip strong {
-  font-size: 0.82rem;
-  line-height: 1.1;
-  letter-spacing: 0.04em;
-  color: rgba(255, 246, 237, 0.9);
+  font-size: 0.78rem;
+  line-height: 1.6;
+  letter-spacing: 0.07em;
+  color: rgba(255, 249, 241, 0.94);
 }
 
 .cardActionGrid {
   display: grid;
-  gap: 0.75rem;
-  margin-top: 1.25rem;
-}
-
-.cardPrimaryAction,
-.cardSecondaryAction,
-.cardMiniLink,
-.cardFooterButton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.06);
-  color: #fff3e4;
-  text-transform: uppercase;
-  letter-spacing: 0.22em;
-  transition: background 180ms ease, border-color 180ms ease, color 180ms ease, transform 180ms ease;
+  gap: 0.6rem;
+  margin-top: 1rem;
 }
 
 .cardPrimaryAction,
 .cardSecondaryAction {
   min-height: 3rem;
-  padding: 0.85rem 1rem;
-  border-radius: 1rem;
-  font-size: 0.78rem;
-}
-
-.cardPrimaryAction {
-  background: linear-gradient(180deg, rgba(255, 220, 191, 0.16), rgba(255, 220, 191, 0.08));
-  border-color: rgba(255, 216, 187, 0.26);
+  padding: 0.8rem 1rem;
+  color: #fff7eb;
 }
 
 .cardSecondaryAction {
   justify-content: flex-start;
 }
 
-.cardPrimaryAction:hover,
-.cardSecondaryAction:hover,
-.cardMiniLink:hover,
-.cardFooterButton:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 240, 220, 0.22);
-  color: #ffffff;
-  transform: translateY(-1px);
+.cardLinkRow,
+.cardFooterRow {
+  display: grid;
+  gap: 0.5rem;
 }
 
 .cardLinkRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.55rem;
-  margin-top: 0.9rem;
+  margin-top: 0.85rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .cardMiniLink,
 .cardFooterButton {
-  border-radius: 999px;
-  padding: 0.65rem 0.9rem;
-  font-size: 0.64rem;
+  min-height: 2.55rem;
+  padding: 0.62rem 0.86rem;
+  color: #fff7eb;
+  width: 100%;
+  justify-self: stretch;
+  text-align: center;
 }
 
 .cardFooterRow {
-  flex-wrap: wrap;
-  justify-content: flex-start;
-  gap: 0.7rem;
-  margin-top: 1.15rem;
+  margin-top: 0.85rem;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: start;
+}
+
+.cardFooterButton {
+  min-width: 11.5rem;
+}
+
+.bottomUtilityLink {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.9rem;
+  padding: 0.8rem 1rem;
+  border: 2px solid rgba(255, 235, 209, 0.18);
+  background:
+    linear-gradient(180deg, rgba(255, 245, 232, 0.08), rgba(255, 245, 232, 0.03)),
+    rgba(6, 10, 18, 0.82);
+  color: var(--pixel-soft);
+  font-size: 0.62rem;
+  line-height: 1.4;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 244, 228, 0.06),
+    0 12px 36px rgba(0, 0, 0, 0.34);
+  clip-path: polygon(0.55rem 0, calc(100% - 0.55rem) 0, 100% 0.55rem, 100% calc(100% - 0.55rem), calc(100% - 0.55rem) 100%, 0.55rem 100%, 0 calc(100% - 0.55rem), 0 0.55rem);
+  transition: transform 140ms ease, border-color 140ms ease, color 140ms ease, background 140ms ease;
+}
+
+.bottomUtilityLink:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 235, 209, 0.28);
+  color: #fffaf1;
 }
 
 @media (min-width: 640px) {
+  .topBar {
+    padding-inline: 1.8rem;
+  }
+
+  .stageWrap {
+    padding-inline: 1.5rem;
+  }
+
   .cardContent {
-    padding: 1.65rem 1.75rem;
+    padding: 1.2rem 1.25rem 1.1rem;
   }
 
   .cardActionGrid {
@@ -350,27 +525,24 @@
 }
 
 @media (max-width: 767px) {
-  .cardHeaderRow,
-  .cardIdentityRow {
-    flex-direction: column;
+  .topBar {
+    flex-wrap: wrap;
   }
 
-  .cardBadgeWrap {
-    width: 3.7rem;
-    height: 3.7rem;
+  .bottomRow,
+  .cardIdentityRow {
+    flex-direction: column;
   }
 
   .cardStats {
     width: 100%;
   }
-}
 
-.pillButton {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.03)),
-    rgba(8, 10, 18, 0.74);
-  border: 1px solid rgba(255, 255, 255, 0.13);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 10px 26px rgba(0, 0, 0, 0.22);
+  .controlsCopy {
+    text-align: left;
+  }
+
+  .cardLinkRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }

@@ -1,106 +1,97 @@
 # Contact Game PixelLab Prompt Pack
 
-Use these exact prompts and filenames for the desktop contact game sprite pack.
+Use these prompts in PixelLab for the desktop `/contact` planet-dodge game.
 
 ## PixelLab settings
 
 - tool: `Create M-XL image`
-- direction: `None (recommended for non-characters)`
+- direction: `None`
+- transparent background: `on`
 - width: `128`
 - height: `128`
-- transparent background: `on`
 - export format: `PNG`
 
-## Global art direction
+## Global style rules
 
-- premium pixel art, not arcade toy-like
-- cinematic 2D space portrait game
-- dusky indigo space background
-- warm planet highlights
-- soft bloom feeling
-- crisp silhouette readability
-- slightly painterly pixel clusters
-- no neon gamer HUD
-- no chibi proportions
-- no cartoon comedy faces
+- opaque cinematic pixel art
+- dense solid shading
+- clean silhouette
+- low-noise palette
+- `16-color look`
+- `no grain`
+- `no speckle field`
+- centered single subject
+- no stars
+- no scene
 
-## Canvas rules
-
-- transparent background
-- centered subject
-- square canvas
-- keep 10 to 14 percent breathing room around the silhouette
-- export lossless with no antialias blur
-- keep the sprite readable at small sizes
-
-## Rocket
+## Ship
 
 Filename: `public/contact/planet-dodge/ship.png`
 
-White ritual rocket, premium chapel-white hull, tiny pixel ship for a cinematic contact mini game, warm cockpit glow, brushed metal details, restrained exhaust ports, centered on transparent background, premium pixel art, moody, quiet, elegant, not arcade, not toy-like
+`Chapel-white pixel-art rocket sprite, premium ritual spacecraft, aged ivory hull, bronze trim, warm cockpit window, clean silhouette, 16-color look, no grain, no speckle field, transparent background, centered single ship, no stars, no scene`
 
 ## Mercury
 
 Filename: `public/contact/planet-dodge/mercury.png`
 
-Mercury as a small warm stone planet, cratered, dusty bronze and clay palette, soft top-left rim light, premium cinematic pixel art, transparent background, centered subject
+`Opaque cinematic pixel-art Mercury planet sprite, dusty bronze rocky world, crater pockets, dense solid shading, clean silhouette, low-noise palette, 16-color look, no grain, no speckle field, transparent background, centered single planet, no stars, no scene`
 
 ## Venus
 
 Filename: `public/contact/planet-dodge/venus.png`
 
-Venus as a glowing amber cloud planet, warm gold haze, soft cream highlights, premium cinematic pixel art, transparent background, centered subject
+`Opaque cinematic pixel-art Venus planet sprite, amber and cream cloud bands, soft atmospheric swirls, dense solid shading, clean silhouette, low-noise palette, 16-color look, no grain, no speckle field, transparent background, centered single planet, no stars, no scene`
 
 ## Earth
 
 Filename: `public/contact/planet-dodge/earth.png`
 
-Earth as a compact blue planet with green land hints and pale cloud bands, premium cinematic pixel art, transparent background, centered subject
+`Opaque cinematic pixel-art Earth planet sprite, blue oceans, green continents, pale cloud streaks, dense solid shading, clean silhouette, low-noise palette, 16-color look, no grain, no speckle field, transparent background, centered single planet, no stars, no scene`
 
 ## Mars
 
 Filename: `public/contact/planet-dodge/mars.png`
 
-Mars as a rust-red crater planet, warm terracotta palette, premium cinematic pixel art, transparent background, centered subject
+`Opaque cinematic pixel-art Mars planet sprite, rust red rocky world, canyon streaks and crater scars, dense solid shading, clean silhouette, low-noise palette, 16-color look, no grain, no speckle field, transparent background, centered single planet, no stars, no scene`
 
 ## Jupiter
 
 Filename: `public/contact/planet-dodge/jupiter.png`
 
-Jupiter as a large striped gas giant, cream, caramel, and muted red storm bands, premium cinematic pixel art, transparent background, centered subject
+`Opaque cinematic pixel-art Jupiter planet sprite, cream caramel atmospheric bands, muted red storm patch, dense solid shading, clean silhouette, low-noise palette, 16-color look, no grain, no speckle field, transparent background, centered single planet, no stars, no scene`
 
 ## Saturn
 
 Filename: `public/contact/planet-dodge/saturn.png`
 
-Saturn as a pale honey planet with elegant ring silhouette, soft cream highlights, premium cinematic pixel art, transparent background, centered subject
+`Opaque cinematic pixel-art Saturn planet sprite, pale honey atmosphere with a crisp cream ring silhouette, dense solid shading, clean silhouette, low-noise palette, 16-color look, no grain, no speckle field, transparent background, centered single planet, no stars, no scene`
 
 ## Uranus
 
 Filename: `public/contact/planet-dodge/uranus.png`
 
-Uranus as a cool cyan planet with subtle atmospheric bands, premium cinematic pixel art, transparent background, centered subject
+`Opaque cinematic pixel-art Uranus planet sprite, icy cyan atmosphere with subtle soft bands, dense solid shading, clean silhouette, low-noise palette, 16-color look, no grain, no speckle field, transparent background, centered single planet, no stars, no scene`
 
 ## Neptune
 
 Filename: `public/contact/planet-dodge/neptune.png`
 
-Neptune as a deep blue planet with icy glow edges, premium cinematic pixel art, transparent background, centered subject
+`Opaque cinematic pixel-art Neptune planet sprite, deep blue atmosphere with icy storm marks, dense solid shading, clean silhouette, low-noise palette, 16-color look, no grain, no speckle field, transparent background, centered single planet, no stars, no scene`
 
 ## Pluto
 
 Filename: `public/contact/planet-dodge/pluto.png`
 
-Pluto as a pale dusty dwarf planet, moonlike but romantic, faint pink-violet undertones, subtle crater detail, premium cinematic pixel art, transparent background, centered subject
+`Opaque cinematic pixel-art Pluto planet sprite, pale stone dwarf planet with soft rose heart patch, visible crater clusters, dense solid shading, clean silhouette, low-noise palette, 16-color look, no grain, no speckle field, transparent background, centered single planet, no stars, no scene`
 
 ## Contact Card Shell
 
 Filename: `public/contact/planet-dodge/contact-card-shell.png`
 
-Clean premium pixel-art contact card frame, elegant wide rectangular ivory recovery card, crisp bronze beveled border, subtle peach signal glow in the corners, mostly blank warm cream center panel, extremely low texture noise, minimal dithering, clean flat pixel clusters, transparent background, centered subject, no text, no scene, not arcade HUD
+`Clean premium pixel-art contact console frame, wide dark navy salvage card with ivory beveled frame, bronze corner braces, crisp pixel panel details, large clean center window left mostly empty, low-noise palette, 16-color look, no grain, no speckle field, transparent background, centered single frame, no text, no scene`
 
 ## Contact Signal Badge
 
 Filename: `public/contact/planet-dodge/contact-card-signal.png`
 
-Clean premium pixel-art signal badge, glowing ivory and peach circular mission seal with crater motif, crisp metallic rim, low noise, minimal dithering, transparent background, centered subject, elegant cinematic icon
+`Premium pixel-art signal relay badge, ivory and amber circular icon with crater motif and tiny orbit ring, clean silhouette, low-noise palette, 16-color look, no grain, no speckle field, transparent background, centered single badge, no scene`
