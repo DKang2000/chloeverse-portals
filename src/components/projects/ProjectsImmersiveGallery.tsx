@@ -170,6 +170,7 @@ void main() {
 `;
 
 const FRAME_DRAW_SURFACE_ASPECT = 4.2 / 6;
+const DETAIL_MEDIA_WIDTH = "min(34rem, 38vw, calc((100svh - 10.5rem) * 0.5625))";
 
 const FOOTPRINT_VERTEX_SHADER = `
 varying vec2 vUv;
@@ -1930,10 +1931,16 @@ export function ProjectsImmersiveGallery() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.4)_0%,rgba(255,255,255,0.05)_48%,rgba(255,255,255,0)_80%)]" />
 
         <div className="absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2">
-          <div className="bg-[#717171] shadow-[0_28px_60px_rgba(0,0,0,0.14)]" style={{ padding: "18px" }}>
-            <div className="border-black bg-white" style={{ borderWidth: "5px", padding: "21px" }}>
-              <div className="border border-black/35 bg-[#efede8]" style={{ padding: "21px" }}>
-                <div className="relative aspect-[9/16] overflow-hidden bg-black" style={{ width: "min(34rem, 38vw)" }}>
+          <div
+            className="bg-[#717171] shadow-[0_28px_60px_rgba(0,0,0,0.14)]"
+            style={{ padding: "clamp(12px, 1.4vw, 18px)" }}
+          >
+            <div
+              className="border-black bg-white"
+              style={{ borderWidth: "clamp(4px, 0.36vw, 5px)", padding: "clamp(14px, 1.55vw, 21px)" }}
+            >
+              <div className="border border-black/35 bg-[#efede8]" style={{ padding: "clamp(14px, 1.55vw, 21px)" }}>
+                <div className="relative aspect-[9/16] overflow-hidden bg-black" style={{ width: DETAIL_MEDIA_WIDTH }}>
                   <video
                     ref={videoRef}
                     src={activeReel.videoSrc}
