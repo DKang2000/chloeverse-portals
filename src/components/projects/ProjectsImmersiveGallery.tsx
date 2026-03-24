@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Html, useGLTF, useTexture } from "@react-three/drei";
+import { useGLTF, useTexture } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Josefin_Sans } from "next/font/google";
 import { type CSSProperties, type MutableRefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -905,7 +905,6 @@ function RoomFrame({
   texture,
   onSelect,
   onInspect,
-  labelOpen,
 }: {
   slot: RoomSlot;
   index: number;
@@ -913,7 +912,6 @@ function RoomFrame({
   texture: THREE.Texture;
   onSelect: (index: number) => void;
   onInspect: (index: number) => void;
-  labelOpen: boolean;
 }) {
   const groupRef = useRef<THREE.Group | null>(null);
   const frameGltf = useGLTF("/projects/reference/models/cadre.glb");
@@ -1007,32 +1005,6 @@ function RoomFrame({
       }}
     >
       <primitive object={frame} />
-
-      {labelOpen ? (
-        <Html
-          transform
-          center
-          position={[0, 1, slot.rotation[1] > 0 ? 0.5 : -0.5]}
-          distanceFactor={4.2}
-          zIndexRange={[20, 0]}
-          occlude={false}
-        >
-          <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              onInspect(index);
-            }}
-            aria-label="Open reel"
-            className="flex items-center justify-center bg-transparent p-0 text-black"
-          >
-            <span
-              className="block h-[11px] w-[11px] bg-[url('/projects/reference/images/enter.svg')] bg-contain bg-center bg-no-repeat opacity-80"
-              aria-hidden="true"
-            />
-          </button>
-        </Html>
-      ) : null}
     </group>
   );
 }
@@ -1299,7 +1271,6 @@ function HomeGalleryContents({
           texture={textures[index]}
           onSelect={onSelect}
           onInspect={onInspect}
-          labelOpen={focusedHomeEntry?.index === index && !focusedHomeEntry.plaqueSelected}
         />
       ))}
 
@@ -1692,6 +1663,10 @@ export function ProjectsImmersiveGallery() {
         }
         if (detailIndex !== null) {
           closeDetail();
+          return;
+        }
+        if (!focusedHomeEntry) {
+          setMenuOpen(true);
         }
         return;
       }
@@ -1724,7 +1699,7 @@ export function ProjectsImmersiveGallery() {
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [closeDetail, detailIndex, homeSelectionIndex, menuOpen, openDetail, plaqueSelected, stepIndex]);
+  }, [closeDetail, detailIndex, focusedHomeEntry, homeSelectionIndex, menuOpen, openDetail, plaqueSelected, stepIndex]);
 
   return (
     <main
