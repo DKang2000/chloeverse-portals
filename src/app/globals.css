@@ -527,6 +527,39 @@ body {
   background-size: 3px 3px, 100% 2px;
 }
 
+.chv-home-astro-field {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+.chv-home-astro-field canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.chv-home-astro-pocket {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      68% 36% at 50% 58%,
+      rgba(1, 2, 5, 0.92) 0%,
+      rgba(1, 2, 5, 0.7) 28%,
+      rgba(1, 2, 5, 0.28) 56%,
+      rgba(1, 2, 5, 0) 82%
+    );
+}
+
+.chv-home-astro-veil {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(118% 82% at 50% 12%, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0) 40%),
+    radial-gradient(124% 88% at 50% 86%, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.18) 72%, rgba(0, 0, 0, 0.4) 100%);
+}
+
 .chv-glass-sheen {
   isolation: isolate;
 }
