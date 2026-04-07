@@ -94,6 +94,18 @@ const ROOM_SLOTS: RoomSlot[] = [
     artSize: [1, 1.42] as [number, number],
   })),
 ];
+const WALKTHROUGH_ROOM_SLOT_INDICES = [0, 1, 2, 3, 4, 9, 8, 7, 6, 5] as const;
+const ROOM_SLOT_TO_WALKTHROUGH_INDEX = ROOM_SLOTS.map((_, slotIndex) =>
+  WALKTHROUGH_ROOM_SLOT_INDICES.indexOf(slotIndex as (typeof WALKTHROUGH_ROOM_SLOT_INDICES)[number]),
+);
+const ROOM_SLOT_REELS: DesktopProjectReel[] = ROOM_SLOTS.map((_, slotIndex) => {
+  const walkthroughIndex = ROOM_SLOT_TO_WALKTHROUGH_INDEX[slotIndex];
+  return DESKTOP_PROJECT_REELS[walkthroughIndex] ?? DESKTOP_PROJECT_REELS[0];
+});
+const MENU_REELS = DESKTOP_PROJECT_REELS.map((reel, walkthroughIndex) => ({
+  ...reel,
+  slotIndex: WALKTHROUGH_ROOM_SLOT_INDICES[walkthroughIndex] ?? 0,
+}));
 const HOME_FRAME_COUNT = ROOM_SLOTS.length;
 const PLAQUE_TITLE = "Projects";
 const PLAQUE_BODY = "A smattering of works that show who I am!";
@@ -218,7 +230,11 @@ const HOME_WALK_BOUNDS = {
 const HOME_CONTROL_KEYS = ["keyw", "keya", "keys", "keyd", "arrowleft", "arrowright", "arrowup", "arrowdown"] as const;
 
 function clampIndex(index: number) {
-  return Math.max(0, Math.min(DESKTOP_PROJECT_REELS.length - 1, index));
+  return Math.max(0, Math.min(ROOM_SLOT_REELS.length - 1, index));
+}
+
+function clampWalkthroughIndex(index: number) {
+  return Math.max(0, Math.min(WALKTHROUGH_ROOM_SLOT_INDICES.length - 1, index));
 }
 
 function clampHomeIndex(index: number) {
@@ -1242,7 +1258,7 @@ function HomeGalleryContents({
   onSelectionChange: (index: number, plaqueSelected: boolean) => void;
   onFocusChange: (focusEntry: HomeFocusEntry | null) => void;
 }) {
-  const textures = useTexture(DESKTOP_PROJECT_REELS.map((reel) => reel.coverImage));
+  const textures = useTexture(ROOM_SLOT_REELS.map((reel) => reel.coverImage));
   const avatarPositionRef = useRef(new THREE.Vector3());
 
   return (
@@ -1262,7 +1278,7 @@ function HomeGalleryContents({
         />
       ))}
 
-      {DESKTOP_PROJECT_REELS.slice(0, HOME_FRAME_COUNT).map((reel, index) => (
+      {ROOM_SLOT_REELS.slice(0, HOME_FRAME_COUNT).map((reel, index) => (
         <RoomFrame
           key={reel.id}
           slot={ROOM_SLOTS[index]}
@@ -1384,7 +1400,7 @@ function OverlayAvatarModel({ variant = "menu" }: { variant?: "menu" | "detail" 
   useFrame((state, delta) => {
     mixer.update(delta);
     avatar.position.set(isDetail ? 0.02 : 0, baseY + Math.sin(state.clock.elapsedTime * 1.2) * 0.01, isDetail ? 0.1 : 0);
-    avatar.rotation.y = isDetail ? -0.12 : 0;
+    avatar.rotation.set(avatar.rotation.x, isDetail ? -0.12 : 0, avatar.rotation.z);
   });
 
   return <primitive object={avatar} scale={isDetail ? 0.132 : 0.08} />;
@@ -1435,16 +1451,17 @@ export function ProjectsImmersiveGallery() {
 
   const homeSelectionIndex = homeIndex;
   const activeIndex = detailIndex ?? homeSelectionIndex;
-  const activeReel = DESKTOP_PROJECT_REELS[activeIndex] ?? DESKTOP_PROJECT_REELS[0];
+  const activeReel = ROOM_SLOT_REELS[activeIndex] ?? ROOM_SLOT_REELS[0];
   const previewIndex = hoveredMenuIndex ?? homeSelectionIndex;
-  const previewReel = DESKTOP_PROJECT_REELS[previewIndex] ?? DESKTOP_PROJECT_REELS[0];
+  const previewReel = ROOM_SLOT_REELS[previewIndex] ?? ROOM_SLOT_REELS[0];
+  const activeWalkthroughIndex = ROOM_SLOT_TO_WALKTHROUGH_INDEX[activeIndex] ?? 0;
   const detailMediaLabel = !videoStarted ? "Watch reel" : videoPaused ? "Play reel" : "Pause reel";
   const showHomeControls = detailIndex === null && !menuOpen && !focusedHomeEntry;
 
   const filteredReels = useMemo(() => {
     const normalized = query.trim().toLowerCase();
-    if (!normalized) return DESKTOP_PROJECT_REELS;
-    return DESKTOP_PROJECT_REELS.filter((reel) =>
+    if (!normalized) return MENU_REELS;
+    return MENU_REELS.filter((reel) =>
       `${reel.title} ${reel.label} ${reel.descriptor} ${reel.id}`.toLowerCase().includes(normalized),
     );
   }, [query]);
@@ -1507,7 +1524,8 @@ export function ProjectsImmersiveGallery() {
       if (now < lastNavAtRef.current) return;
 
       if (detailIndex !== null) {
-        const nextIndex = clampIndex(detailIndex + delta);
+        const nextWalkthroughIndex = clampWalkthroughIndex(activeWalkthroughIndex + delta);
+        const nextIndex = WALKTHROUGH_ROOM_SLOT_INDICES[nextWalkthroughIndex] ?? detailIndex;
         if (nextIndex === detailIndex) return;
         lastNavAtRef.current = now + DETAIL_NAV_LOCK_MS;
         setHomeIndex(clampHomeIndex(nextIndex));
@@ -1523,7 +1541,7 @@ export function ProjectsImmersiveGallery() {
       if (nextIndex === homeIndex && !plaqueSelected) return;
       navigateToIndex(nextIndex);
     },
-    [detailIndex, homeIndex, navigateToIndex, plaqueSelected, resetDetailPlayback],
+    [activeWalkthroughIndex, detailIndex, homeIndex, navigateToIndex, plaqueSelected, resetDetailPlayback],
   );
 
   const openDetail = useCallback((index: number) => {
@@ -1811,7 +1829,7 @@ export function ProjectsImmersiveGallery() {
             <ul className="overflow-y-auto pr-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" style={{ maxHeight: "682px", fontSize: "17px", lineHeight: "1.02" }}>
               {filteredReels.length ? (
                 filteredReels.map((reel) => {
-                  const index = DESKTOP_PROJECT_REELS.findIndex((item) => item.id === reel.id);
+                  const index = reel.slotIndex;
                   const active = index === previewIndex;
 
                   return (
@@ -1989,9 +2007,9 @@ export function ProjectsImmersiveGallery() {
           <button
             type="button"
             onClick={() => stepIndex(-1)}
-            disabled={activeIndex <= 0}
+            disabled={activeWalkthroughIndex <= 0}
             className={`leading-none text-black transition ${
-              activeIndex <= 0 ? "cursor-not-allowed opacity-18" : "opacity-88 hover:opacity-100"
+              activeWalkthroughIndex <= 0 ? "cursor-not-allowed opacity-18" : "opacity-88 hover:opacity-100"
             }`}
             style={{
               width: "44px",
@@ -2014,9 +2032,9 @@ export function ProjectsImmersiveGallery() {
           <button
             type="button"
             onClick={() => stepIndex(1)}
-            disabled={activeIndex >= DESKTOP_PROJECT_REELS.length - 1}
+            disabled={activeWalkthroughIndex >= WALKTHROUGH_ROOM_SLOT_INDICES.length - 1}
             className={`leading-none text-black transition ${
-              activeIndex >= DESKTOP_PROJECT_REELS.length - 1 ? "cursor-not-allowed opacity-18" : "opacity-88 hover:opacity-100"
+              activeWalkthroughIndex >= WALKTHROUGH_ROOM_SLOT_INDICES.length - 1 ? "cursor-not-allowed opacity-18" : "opacity-88 hover:opacity-100"
             }`}
             style={{
               width: "44px",
