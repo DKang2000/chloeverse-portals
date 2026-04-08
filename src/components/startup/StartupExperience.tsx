@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as R
 type StartupExperienceProps = {
   titleFontClassName: string;
   monoFontClassName: string;
+  isMobileExperience?: boolean;
 };
 
 const WAITLIST_APPS_SCRIPT_URL =
@@ -353,7 +354,11 @@ function renderMonoDepthGlyphs(
   });
 }
 
-export function StartupExperience({ titleFontClassName, monoFontClassName }: StartupExperienceProps) {
+export function StartupExperience({
+  titleFontClassName,
+  monoFontClassName,
+  isMobileExperience = false,
+}: StartupExperienceProps) {
   const rootRef = useRef<HTMLElement | null>(null);
   const titleHitRef = useRef<HTMLDivElement | null>(null);
   const dateHitRef = useRef<HTMLDivElement | null>(null);
@@ -572,7 +577,7 @@ export function StartupExperience({ titleFontClassName, monoFontClassName }: Sta
       onPointerEnter={onRootPointerEnter}
       onPointerMove={onRootPointerMove}
       onPointerLeave={onRootPointerLeave}
-      className="startup-mono relative min-h-screen overflow-hidden bg-black text-white"
+      className={`startup-mono relative min-h-screen overflow-hidden bg-black text-white ${isMobileExperience ? "startup-mono--mobile" : ""}`}
     >
       <div aria-hidden className="absolute inset-0 z-0 bg-black" />
 
@@ -622,17 +627,27 @@ export function StartupExperience({ titleFontClassName, monoFontClassName }: Sta
                   } as CssVars
                 }
               >
-                <div className="inline-flex flex-nowrap overflow-visible text-[clamp(4.6rem,15vw,12rem)]">
+                <div
+                  className={`inline-flex flex-nowrap overflow-visible ${
+                    isMobileExperience
+                      ? "text-[clamp(3.9rem,16vw,8rem)]"
+                      : "text-[clamp(4.6rem,15vw,12rem)]"
+                  }`}
+                >
                   {renderMonoDepthGlyphs("4.20.26", "title", titleGlyphRefs, 401)}
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="relative mt-5 inline-flex select-none">
+          <div className={`relative inline-flex select-none ${isMobileExperience ? "mt-7" : "mt-5"}`}>
             <div ref={dateHitRef} className="chv-depth-stage chv-depth-stage--tagline">
               <div
-                className={`${titleFontClassName} chv-depth-plane overflow-visible leading-none tracking-[0.12em] startup-mono__date text-[clamp(1.8rem,4.1vw,3.1rem)]`}
+                className={`${titleFontClassName} chv-depth-plane overflow-visible leading-none tracking-[0.12em] startup-mono__date ${
+                  isMobileExperience
+                    ? "text-[clamp(1.95rem,7vw,3.1rem)]"
+                    : "text-[clamp(1.8rem,4.1vw,3.1rem)]"
+                }`}
                 style={
                   {
                     "--block-tilt-x": "0deg",
@@ -1106,6 +1121,24 @@ export function StartupExperience({ titleFontClassName, monoFontClassName }: Sta
           .startup-mono__modal {
             padding: 24px 18px 18px;
           }
+        }
+
+        .startup-mono--mobile .startup-mono__hero {
+          width: min(100%, 23rem);
+          padding-inline: 0.9rem;
+        }
+
+        .startup-mono--mobile .startup-mono__title {
+          transform: scaleX(1.012);
+        }
+
+        .startup-mono--mobile .startup-mono__title :global(.chv-glyph-stack--title) {
+          margin-inline: 0.01em;
+        }
+
+        .startup-mono--mobile .startup-mono__date {
+          letter-spacing: 0.14em;
+          opacity: 0.92;
         }
       `}</style>
     </main>

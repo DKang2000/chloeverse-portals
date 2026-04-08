@@ -6,5 +6,5 @@ type MobileStartupExperienceProps = {
 };
 
 export function MobileStartupExperience(props: MobileStartupExperienceProps) {
-  return <StartupExperience {...props} />;
+  return <StartupExperience {...props} isMobileExperience />;
 }
