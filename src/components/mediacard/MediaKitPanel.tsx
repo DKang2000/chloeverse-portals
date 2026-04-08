@@ -114,8 +114,7 @@ function CollabsPanel() {
       pngSrc: "/mediacard/logos/armani.svg",
       svgSrc: "/mediacard/logos/armani.svg",
       accent: "245 232 220",
-      logoHeight: "28px",
-      logoFilter: "invert(1) brightness(1.08)",
+      logoHeight: "54px",
     },
     {
       name: "BTS",
