@@ -275,10 +275,6 @@ function createFaceLabelTexture(label: string) {
   return texture;
 }
 
-function brandLogoPath(brand: string) {
-  return `/mediacard/logos/${brand.toLowerCase().replace(/\s+/g, "")}.png`;
-}
-
 export function MobileMediaCardExperience() {
   const reducedMotion = useReducedMotion();
   const [activeFaceId, setActiveFaceId] = useState<FaceId | null>(null);
@@ -1051,20 +1047,20 @@ function CollabsCard() {
     <div className="grid gap-3">
       {MEDIACARD_COLLABS.map((brand) => (
         <div
-          key={brand}
+          key={brand.name}
           className="flex items-center justify-between gap-4 rounded-[1.35rem] border border-black/8 bg-[rgba(255,255,255,0.68)] px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]"
         >
           <div>
             <p className="chv-mobile-mono text-[0.48rem] uppercase tracking-[0.28em] text-black/32">selected collaboration</p>
-            <p className="mt-2 chv-mobile-display text-[1.42rem] leading-[0.92] tracking-[-0.05em] text-black/78">{brand}</p>
+            <p className="mt-2 chv-mobile-display text-[1.42rem] leading-[0.92] tracking-[-0.05em] text-black/78">{brand.name}</p>
           </div>
           <Image
-            src={brandLogoPath(brand)}
-            alt={brand}
+            src={brand.logoSrc}
+            alt={brand.name}
             width={100}
             height={38}
             sizes="100px"
-            className="h-8 w-auto object-contain opacity-[0.88]"
+            className={`${brand.logoHeightClassName ?? "h-8"} w-auto object-contain opacity-[0.88]`}
           />
         </div>
       ))}

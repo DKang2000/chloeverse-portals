@@ -395,7 +395,20 @@ export const MEDIACARD_SERVICES = {
   ],
 } as const;
 
-export const MEDIACARD_COLLABS = ["Adobe", "Adidas", "Armani", "BTS", "Estee Lauder", "OpenAI"] as const;
+export type MobileMediaCardCollab = {
+  name: string;
+  logoSrc: string;
+  logoHeightClassName?: string;
+};
+
+export const MEDIACARD_COLLABS: readonly MobileMediaCardCollab[] = [
+  { name: "Adobe", logoSrc: "/mediacard/logos/adobe.png" },
+  { name: "Adidas", logoSrc: "/mediacard/logos/adidas.png" },
+  { name: "OpenAI", logoSrc: "/mediacard/logos/openai.png" },
+  { name: "BTS", logoSrc: "/mediacard/logos/bts.png", logoHeightClassName: "h-9" },
+  { name: "Estee Lauder", logoSrc: "/mediacard/logos/esteelauder.png" },
+  { name: "Armani", logoSrc: "/mediacard/logos/armani.svg", logoHeightClassName: "h-9" },
+] as const;
 
 export function getCollabBrandLabel(item: ReelItem): string {
   return item.title;
