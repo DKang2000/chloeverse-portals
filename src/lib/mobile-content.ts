@@ -127,19 +127,6 @@ export const PROJECT_REELS: MobileProjectReel[] = [
     },
   },
   {
-    id: "r12",
-    instagramUrl: "https://www.instagram.com/p/DVcRnM5kurR/",
-    coverImage: "/projects/reels/r12/cover.jpg",
-    videoSrc: "/projects/reels/r12/video.mp4",
-    posterAlt: "Instagram reel cover for Chloe Kang reel DVcRnM5kurR.",
-    durationLabel: "1:26",
-    metrics: {
-      likes: "watch",
-      comments: "swipe",
-      shares: "source",
-    },
-  },
-  {
     id: "r6",
     instagramUrl: "https://www.instagram.com/reel/DOH8x_gk2Ew/",
     coverImage: "/projects/reels/r6/cover.jpg",
