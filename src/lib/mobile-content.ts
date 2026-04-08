@@ -395,7 +395,7 @@ export const MEDIACARD_SERVICES = {
   ],
 } as const;
 
-export const MEDIACARD_COLLABS = ["Adobe", "Adidas", "Estee Lauder", "OpenAI"] as const;
+export const MEDIACARD_COLLABS = ["Adobe", "Adidas", "Armani", "BTS", "Estee Lauder", "OpenAI"] as const;
 
 export function getCollabBrandLabel(item: ReelItem): string {
   return item.title;
