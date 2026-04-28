@@ -12,7 +12,7 @@ type StartupExperienceProps = {
 const WAITLIST_APPS_SCRIPT_URL =
   "https://script.google.com/macros/s/AKfycbxOP0JpamQ_26ZKOL1wnE939tImNZm1iewK85ZyKbgWW_RmP27LELvjQVtPxnsUKET3HQ/exec";
 
-const STARTUP_LAUNCH_DATE = "4.27.26";
+const STARTUP_LAUNCH_DATE = "5.01.26";
 const STARTUP_STATUS_LABEL = "COMING SOON";
 
 type CssVars = CSSProperties & Record<`--${string}`, string>;
