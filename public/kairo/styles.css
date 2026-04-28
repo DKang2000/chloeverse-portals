@@ -208,6 +208,10 @@ input {
   white-space: nowrap;
 }
 
+.store-copy-mobile {
+  display: none;
+}
+
 .store-button-secondary {
   background: #111715;
   color: var(--ink);
@@ -1337,11 +1341,12 @@ h3 {
     text-align: center;
   }
 
-  .store-button span {
+  .store-button .store-copy-full {
     display: none;
   }
 
-  .store-button strong {
+  .store-button .store-copy-mobile {
+    display: inline;
     font-size: 15px;
   }
 
