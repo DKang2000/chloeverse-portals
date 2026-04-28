@@ -1042,6 +1042,7 @@ function ContactScene({
 
       <StarField phase={phase} />
       <AtmosphericDust phase={phase} />
+      <SpaceGlowField phase={phase} />
       <CorridorGrid phase={phase} />
       <SetDressingAsteroids phase={phase} />
       <StationMesh station={game.station} />
@@ -1075,14 +1076,30 @@ function StarField({ phase }: { phase: ContactGamePhase }) {
   const pointsRef = useRef<THREE.Points | null>(null);
   const dotTexture = useRoundPointTexture();
   const geometry = useMemo(() => {
-    const positions = new Float32Array(520 * 3);
-    for (let index = 0; index < 520; index += 1) {
-      positions[index * 3] = (seededRandom(index * 3 + 1) - 0.5) * 34;
-      positions[index * 3 + 1] = (seededRandom(index * 3 + 2) - 0.48) * 18;
-      positions[index * 3 + 2] = -2 - seededRandom(index * 3 + 3) * 38;
+    const count = 1200;
+    const positions = new Float32Array(count * 3);
+    const colors = new Float32Array(count * 3);
+    const warm = new THREE.Color("#fff3d8");
+    const cool = new THREE.Color("#b9f2ff");
+    const lilac = new THREE.Color("#d8d1ff");
+
+    for (let index = 0; index < count; index += 1) {
+      const depth = seededRandom(index * 3 + 3);
+      const spread = 1 + depth * 0.52;
+      positions[index * 3] = (seededRandom(index * 3 + 1) - 0.5) * 42 * spread;
+      positions[index * 3 + 1] = (seededRandom(index * 3 + 2) - 0.46) * 21;
+      positions[index * 3 + 2] = -1.2 - depth * 48;
+
+      const color = cool.clone().lerp(warm, seededRandom(index * 7 + 4) * 0.62);
+      color.lerp(lilac, seededRandom(index * 11 + 5) * 0.22);
+      const brightness = 0.72 + seededRandom(index * 13 + 6) * 0.44;
+      colors[index * 3] = color.r * brightness;
+      colors[index * 3 + 1] = color.g * brightness;
+      colors[index * 3 + 2] = color.b * brightness;
     }
     const nextGeometry = new THREE.BufferGeometry();
     nextGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    nextGeometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
     return nextGeometry;
   }, []);
 
@@ -1099,7 +1116,16 @@ function StarField({ phase }: { phase: ContactGamePhase }) {
 
   return (
     <points ref={pointsRef} geometry={geometry}>
-      <pointsMaterial map={dotTexture} color="#fff8ef" size={0.052} sizeAttenuation transparent opacity={0.8} depthWrite={false} />
+      <pointsMaterial
+        map={dotTexture}
+        size={0.062}
+        vertexColors
+        sizeAttenuation
+        transparent
+        opacity={0.92}
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+      />
     </points>
   );
 }
@@ -1108,15 +1134,20 @@ function AtmosphericDust({ phase }: { phase: ContactGamePhase }) {
   const pointsRef = useRef<THREE.Points | null>(null);
   const dotTexture = useRoundPointTexture();
   const geometry = useMemo(() => {
-    const positions = new Float32Array(280 * 3);
-    const colors = new Float32Array(280 * 3);
+    const count = 640;
+    const positions = new Float32Array(count * 3);
+    const colors = new Float32Array(count * 3);
     const warm = new THREE.Color("#ffd7a6");
     const cool = new THREE.Color("#86d8ff");
-    for (let index = 0; index < 280; index += 1) {
-      positions[index * 3] = (seededRandom(index * 5 + 1) - 0.5) * 18;
-      positions[index * 3 + 1] = (seededRandom(index * 7 + 2) - 0.44) * 8;
-      positions[index * 3 + 2] = -1.5 - seededRandom(index * 11 + 3) * 27;
+    const violet = new THREE.Color("#b6a7ff");
+    for (let index = 0; index < count; index += 1) {
+      const depth = seededRandom(index * 11 + 3);
+      const laneBias = Math.sin(index * 6.283) * 0.22;
+      positions[index * 3] = (seededRandom(index * 5 + 1) - 0.5 + laneBias) * 22;
+      positions[index * 3 + 1] = (seededRandom(index * 7 + 2) - 0.42) * 10.5;
+      positions[index * 3 + 2] = -1.4 - depth * 34;
       const color = warm.clone().lerp(cool, seededRandom(index * 13 + 4));
+      color.lerp(violet, seededRandom(index * 17 + 5) * 0.28);
       colors[index * 3] = color.r;
       colors[index * 3 + 1] = color.g;
       colors[index * 3 + 2] = color.b;
@@ -1140,7 +1171,82 @@ function AtmosphericDust({ phase }: { phase: ContactGamePhase }) {
 
   return (
     <points ref={pointsRef} geometry={geometry}>
-      <pointsMaterial map={dotTexture} size={0.082} vertexColors sizeAttenuation transparent opacity={0.34} depthWrite={false} />
+      <pointsMaterial
+        map={dotTexture}
+        size={0.12}
+        vertexColors
+        sizeAttenuation
+        transparent
+        opacity={0.38}
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+      />
+    </points>
+  );
+}
+
+function SpaceGlowField({ phase }: { phase: ContactGamePhase }) {
+  const pointsRef = useRef<THREE.Points | null>(null);
+  const dotTexture = useRoundPointTexture();
+  const geometry = useMemo(() => {
+    const count = 520;
+    const positions = new Float32Array(count * 3);
+    const colors = new Float32Array(count * 3);
+    const cyan = new THREE.Color("#66ddff");
+    const blue = new THREE.Color("#286bb8");
+    const violet = new THREE.Color("#8c7cff");
+    const amber = new THREE.Color("#ffb875");
+
+    for (let index = 0; index < count; index += 1) {
+      const ring = seededRandom(index * 5 + 1);
+      const angle = seededRandom(index * 7 + 2) * Math.PI * 2;
+      const radius = 1.2 + ring * ring * 12.8;
+      const depth = seededRandom(index * 11 + 3);
+      const centerPull = 1 - depth * 0.18;
+
+      positions[index * 3] = Math.cos(angle) * radius * centerPull + (seededRandom(index * 13 + 4) - 0.5) * 1.4;
+      positions[index * 3 + 1] = Math.sin(angle) * radius * 0.36 - 0.2 + (seededRandom(index * 17 + 5) - 0.5) * 1.1;
+      positions[index * 3 + 2] = -5.5 - depth * 31;
+
+      const color = blue.clone().lerp(cyan, 0.42 + seededRandom(index * 19 + 6) * 0.42);
+      color.lerp(violet, seededRandom(index * 23 + 7) * 0.32);
+      color.lerp(amber, seededRandom(index * 29 + 8) * 0.12);
+      const brightness = 0.36 + (1 - ring) * 0.42;
+      colors[index * 3] = color.r * brightness;
+      colors[index * 3 + 1] = color.g * brightness;
+      colors[index * 3 + 2] = color.b * brightness;
+    }
+
+    const nextGeometry = new THREE.BufferGeometry();
+    nextGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    nextGeometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    return nextGeometry;
+  }, []);
+
+  useFrame(({ clock }, delta) => {
+    if (!pointsRef.current) return;
+    pointsRef.current.rotation.z = Math.sin(clock.elapsedTime * 0.04) * 0.018;
+    const attribute = pointsRef.current.geometry.getAttribute("position");
+    const speed = phase === "flight" ? 0.72 : phase === "dock" ? 0.36 : 0.08;
+    for (let index = 0; index < attribute.count; index += 1) {
+      const z = attribute.getZ(index) + delta * speed;
+      attribute.setZ(index, z > 4 ? -36 : z);
+    }
+    attribute.needsUpdate = true;
+  });
+
+  return (
+    <points ref={pointsRef} geometry={geometry} renderOrder={-2}>
+      <pointsMaterial
+        map={dotTexture}
+        size={0.34}
+        vertexColors
+        sizeAttenuation
+        transparent
+        opacity={0.28}
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+      />
     </points>
   );
 }
@@ -1155,8 +1261,8 @@ function CorridorGrid({ phase }: { phase: ContactGamePhase }) {
 
   const railGeometry = useMemo(() => {
     const vertices: number[] = [];
-    const depths = Array.from({ length: 18 }, (_, index) => -index * 1.6);
-    const laneXs = [-PLAY_X, -PLAY_X * 0.45, 0, PLAY_X * 0.45, PLAY_X];
+    const depths = Array.from({ length: 24 }, (_, index) => -index * 1.45);
+    const laneXs = [-PLAY_X, -PLAY_X * 0.64, -PLAY_X * 0.28, 0, PLAY_X * 0.28, PLAY_X * 0.64, PLAY_X];
 
     for (const x of laneXs) {
       vertices.push(x, PLAY_Y_MIN - 0.52, 1.8, x * 1.9, PLAY_Y_MIN - 0.5, -28);
@@ -1165,6 +1271,14 @@ function CorridorGrid({ phase }: { phase: ContactGamePhase }) {
     for (const z of depths) {
       const spread = 1 + Math.abs(z) * 0.045;
       vertices.push(-PLAY_X * spread, PLAY_Y_MIN - 0.52, z, PLAY_X * spread, PLAY_Y_MIN - 0.52, z);
+      if (z < -4) {
+        vertices.push(-PLAY_X * spread, PLAY_Y_MAX + 0.72, z, PLAY_X * spread, PLAY_Y_MAX + 0.72, z);
+      }
+    }
+
+    for (const side of [-1, 1]) {
+      vertices.push(side * PLAY_X, PLAY_Y_MIN - 0.52, 1.4, side * PLAY_X * 1.95, PLAY_Y_MAX + 0.72, -28);
+      vertices.push(side * PLAY_X * 0.52, PLAY_Y_MIN - 0.52, 1.2, side * PLAY_X * 1.18, PLAY_Y_MAX + 0.72, -28);
     }
 
     const geometry = new THREE.BufferGeometry();
