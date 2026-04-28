@@ -1033,6 +1033,19 @@ h3 {
   font-size: 13px;
 }
 
+.waitlist-status {
+  min-height: 18px;
+  color: rgba(246, 251, 248, 0.68);
+}
+
+.waitlist-status.is-error {
+  color: #ffd7c7;
+}
+
+.waitlist-status.is-success {
+  color: var(--accent);
+}
+
 [data-reveal] {
   opacity: 0;
   transform: translateY(34px);

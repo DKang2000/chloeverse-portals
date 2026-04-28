@@ -2,6 +2,10 @@ const revealItems = document.querySelectorAll("[data-reveal]");
 const screens = document.querySelectorAll(".screen-image");
 const scrollMeter = document.querySelector(".scroll-meter span");
 const magneticItems = document.querySelectorAll(".magnetic");
+const waitlistScriptUrl =
+  "https://script.google.com/macros/s/AKfycbxOP0JpamQ_26ZKOL1wnE939tImNZm1iewK85ZyKbgWW_RmP27LELvjQVtPxnsUKET3HQ/exec";
+
+const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
 const revealObserver = new IntersectionObserver(
   (entries) => {
@@ -51,9 +55,56 @@ magneticItems.forEach((item) => {
   });
 });
 
-document.querySelector(".waitlist-form")?.addEventListener("submit", (event) => {
+document.querySelector(".waitlist-form")?.addEventListener("submit", async (event) => {
   event.preventDefault();
-  const button = event.currentTarget.querySelector("button span:first-child");
-  if (!button) return;
-  button.textContent = "Requested";
+  const form = event.currentTarget;
+  const input = form.querySelector("input[type='email']");
+  const button = form.querySelector("button");
+  const buttonLabel = button?.querySelector("span:first-child");
+  const status = form.querySelector(".waitlist-status");
+  const email = input?.value.trim() ?? "";
+
+  const setStatus = (message, state) => {
+    if (!status) return;
+    status.textContent = message;
+    status.classList.toggle("is-error", state === "error");
+    status.classList.toggle("is-success", state === "success");
+  };
+
+  if (!isValidEmail(email)) {
+    setStatus("Enter a valid email address.", "error");
+    input?.focus();
+    return;
+  }
+
+  if (!button || !buttonLabel || !input) return;
+
+  button.disabled = true;
+  input.disabled = true;
+  buttonLabel.textContent = "Joining";
+  setStatus("Saving your request...", null);
+
+  try {
+    await fetch(waitlistScriptUrl, {
+      method: "POST",
+      mode: "no-cors",
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8",
+      },
+      body: JSON.stringify({
+        email,
+        source: "kairo",
+        submittedAt: new Date().toISOString(),
+      }),
+    });
+
+    form.reset();
+    buttonLabel.textContent = "Requested";
+    setStatus("You're on the early access list.", "success");
+  } catch {
+    button.disabled = false;
+    input.disabled = false;
+    buttonLabel.textContent = "Join";
+    setStatus("Request failed. Please try again.", "error");
+  }
 });
