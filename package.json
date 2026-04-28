@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
-    "generate:contact-assets": "node scripts/generate-contact-game-assets.mjs"
+    "generate:contact-assets": "node scripts/generate-contact-game-assets.mjs",
+    "prepare:contact-voxel-assets": "python3 scripts/prepare-contact-voxel-assets.py"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.6",

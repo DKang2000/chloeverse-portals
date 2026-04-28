@@ -11,6 +11,7 @@ type StartupExperienceProps = {
 
 const WAITLIST_APPS_SCRIPT_URL =
   "https://script.google.com/macros/s/AKfycbxOP0JpamQ_26ZKOL1wnE939tImNZm1iewK85ZyKbgWW_RmP27LELvjQVtPxnsUKET3HQ/exec";
+const KAIRO_SITE_URL = process.env.NEXT_PUBLIC_KAIRO_SITE_URL ?? "http://127.0.0.1:4173/?v=before-after-bigger-1";
 
 const STARTUP_LAUNCH_DATE = "5.01.26";
 const STARTUP_STATUS_LABEL = "COMING SOON";
@@ -535,9 +536,7 @@ export function StartupExperience({
   };
 
   const openWaitlist = () => {
-    setWaitlistError(null);
-    setWaitlistSuccess(false);
-    setWaitlistOpen(true);
+    window.location.assign(KAIRO_SITE_URL);
   };
 
   const submitWaitlist = async () => {
@@ -677,7 +676,7 @@ export function StartupExperience({
                 : "opacity 900ms cubic-bezier(0.16, 1, 0.3, 1) 120ms, transform 1000ms cubic-bezier(0.16, 1, 0.3, 1) 120ms",
             }}
           >
-            waitlist
+            Kairo
           </button>
         </div>
       </section>

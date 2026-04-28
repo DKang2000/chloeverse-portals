@@ -1,11 +1,11 @@
 import { MobileContactExperience } from "@/components/mobile/contact/MobileContactExperience";
-import ContactMissionGame from "@/components/contact/ContactMissionGame";
+import ContactMissionGame3D from "@/components/contact/ContactMissionGame3D";
 import { ExperienceModeSwitch } from "@/lib/experience-mode/ExperienceModeSwitch";
 
 function ContactDesktopPage() {
   return (
     <main className="min-h-screen w-full bg-black">
-      <ContactMissionGame />
+      <ContactMissionGame3D />
     </main>
   );
 }
