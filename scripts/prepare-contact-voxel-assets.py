@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageDraw
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -115,6 +115,13 @@ SHEETS = [
     ),
 ]
 
+BODY_ONLY_VARIANTS = {
+    # The generated ringed-planet cells have ring pixels clipped by the sheet
+    # crop. Keep only the planet body and render complete rings in Three.js.
+    "saturn": (0.19, 0.05, 0.78, 0.97),
+    "uranus": (0.21, 0.04, 0.80, 0.98),
+}
+
 
 def remove_key(image: Image.Image) -> Image.Image:
     rgba = image.convert("RGBA")
@@ -169,6 +176,27 @@ def export_sheet(sheet_name: str, columns: int, rows: int, names: list[str]) -> 
         cleaned.save(SPRITE_DIR / f"{name}.png")
 
 
+def export_body_only_variants() -> None:
+    for name, ellipse in BODY_ONLY_VARIANTS.items():
+        source = Image.open(SPRITE_DIR / f"{name}.png").convert("RGBA")
+        width, height = source.size
+        mask = Image.new("L", source.size, 0)
+        draw = ImageDraw.Draw(mask)
+        draw.ellipse(
+            (
+                int(width * ellipse[0]),
+                int(height * ellipse[1]),
+                int(width * ellipse[2]),
+                int(height * ellipse[3]),
+            ),
+            fill=255,
+        )
+
+        alpha = source.getchannel("A")
+        source.putalpha(Image.composite(alpha, Image.new("L", source.size, 0), mask))
+        trim_and_pad(source, pad=14).save(SPRITE_DIR / f"{name}-body.png")
+
+
 def write_manifest() -> None:
     names = sorted(path.name for path in SPRITE_DIR.glob("*.png"))
     lines = ["Generated contact voxel sprites:", ""]
@@ -184,6 +212,7 @@ def main() -> None:
     for sheet in SHEETS:
         export_sheet(*sheet)
 
+    export_body_only_variants()
     write_manifest()
     print(f"Prepared {len(list(SPRITE_DIR.glob('*.png')))} contact voxel sprites in {SPRITE_DIR.relative_to(ROOT)}")
 

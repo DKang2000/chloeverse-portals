@@ -49,12 +49,14 @@ Generated contact voxel sprites:
 - projectile-amber.png
 - projectile-cyan.png
 - projection-base.png
+- saturn-body.png
 - saturn.png
 - scanline-tile.png
 - shield-ring.png
 - station-platform.png
 - terminal-distant.png
 - terminal-pillars.png
+- uranus-body.png
 - uranus.png
 - venus.png
 - voxel-debris.png

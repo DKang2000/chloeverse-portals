@@ -95,6 +95,9 @@ type StationState = {
 
 type Projectile = {
   id: number;
+  prevX: number;
+  prevY: number;
+  prevZ: number;
   x: number;
   y: number;
   z: number;
@@ -110,6 +113,9 @@ type Projectile = {
 type Obstacle = {
   id: number;
   kind: ObstacleKind;
+  prevX: number;
+  prevY: number;
+  prevZ: number;
   x: number;
   y: number;
   z: number;
@@ -148,6 +154,20 @@ type InputState = {
   left: boolean;
   right: boolean;
   fire: boolean;
+};
+
+type Vec3 = {
+  x: number;
+  y: number;
+  z: number;
+};
+
+type CollisionHit = {
+  contact: Vec3;
+  normal: Vec3;
+  penetration: number;
+  impactSpeed: number;
+  time: number;
 };
 
 type GameState = {
@@ -226,6 +246,7 @@ const VOXEL_SPRITES = {
   playerTrail: `${VOXEL_ASSET_BASE}/engine-trail-amber.png`,
   friendlyShot: `${VOXEL_ASSET_BASE}/projectile-amber.png`,
   enemyShot: `${VOXEL_ASSET_BASE}/projectile-cyan.png`,
+  muzzleFlash: `${VOXEL_ASSET_BASE}/muzzle-flash.png`,
   impact: `${VOXEL_ASSET_BASE}/impact-small.png`,
   explosion: `${VOXEL_ASSET_BASE}/explosion-large.png`,
   shieldRing: `${VOXEL_ASSET_BASE}/shield-ring.png`,
@@ -239,12 +260,7 @@ const VOXEL_SPRITES = {
   asteroidShard: `${VOXEL_ASSET_BASE}/asteroid-shard.png`,
 } as const;
 
-const ALIEN_SPRITES = [
-  `${VOXEL_ASSET_BASE}/alien-heavy-rear.png`,
-  `${VOXEL_ASSET_BASE}/alien-top.png`,
-  `${VOXEL_ASSET_BASE}/alien-left.png`,
-  `${VOXEL_ASSET_BASE}/alien-right.png`,
-  `${VOXEL_ASSET_BASE}/alien-scout-top.png`,
+const FORWARD_ALIEN_SPRITES = [
   `${VOXEL_ASSET_BASE}/alien-heavy-front.png`,
 ] as const;
 
@@ -254,16 +270,28 @@ const PLANET_SPRITES: Record<PlanetKind, string> = {
   earth: `${VOXEL_ASSET_BASE}/earth.png`,
   mars: `${VOXEL_ASSET_BASE}/mars.png`,
   jupiter: `${VOXEL_ASSET_BASE}/jupiter.png`,
-  saturn: `${VOXEL_ASSET_BASE}/saturn.png`,
-  uranus: `${VOXEL_ASSET_BASE}/uranus.png`,
+  saturn: `${VOXEL_ASSET_BASE}/saturn-body.png`,
+  uranus: `${VOXEL_ASSET_BASE}/uranus-body.png`,
   neptune: `${VOXEL_ASSET_BASE}/neptune.png`,
   pluto: `${VOXEL_ASSET_BASE}/pluto.png`,
+};
+
+const PLANET_SPRITE_ASPECT: Record<PlanetKind, number> = {
+  mercury: 257 / 257,
+  venus: 282 / 282,
+  earth: 282 / 286,
+  mars: 285 / 284,
+  jupiter: 317 / 316,
+  saturn: 2.08,
+  uranus: 2.14,
+  neptune: 264 / 261,
+  pluto: 215 / 213,
 };
 
 const ALL_VOXEL_TEXTURES = Array.from(
   new Set([
     ...Object.values(VOXEL_SPRITES),
-    ...ALIEN_SPRITES,
+    ...FORWARD_ALIEN_SPRITES,
     ...Object.values(PLANET_SPRITES),
   ]),
 );
@@ -372,27 +400,274 @@ function getObstacleCollisionSize(obstacle: Obstacle) {
   };
 }
 
-function intersectsShipObstacle(ship: ShipState, obstacle: Obstacle) {
-  const obstacleSize = getObstacleCollisionSize(obstacle);
-  const dx = (obstacle.x - ship.x) / (SHIP_COLLISION_X + obstacleSize.x);
-  const dy = (obstacle.y - ship.y) / (SHIP_COLLISION_Y + obstacleSize.y);
-  const dz = (obstacle.z - ship.z) / (SHIP_COLLISION_Z + obstacleSize.z);
-  return dx * dx + dy * dy + dz * dz <= 1;
+function isRingedPlanet(kind: ObstacleKind): kind is "saturn" | "uranus" {
+  return kind === "saturn" || kind === "uranus";
 }
 
-function intersectsShipProjectile(ship: ShipState, projectile: Projectile) {
-  const dx = (projectile.x - ship.x) / (SHIP_COLLISION_X + projectile.radius);
-  const dy = (projectile.y - ship.y) / (SHIP_COLLISION_Y + projectile.radius);
-  const dz = (projectile.z - ship.z) / (SHIP_COLLISION_Z + projectile.radius);
-  return dx * dx + dy * dy + dz * dz <= 1;
+function getObstacleVisualHalfBounds(kind: ObstacleKind, radius: number) {
+  if (isRingedPlanet(kind)) {
+    return {
+      x: radius * 2.68,
+      y: radius * 1.36,
+    };
+  }
+
+  const height = radius * 2.42;
+  const aspect = kind === "alien" ? 1.42 : PLANET_SPRITE_ASPECT[kind];
+  return {
+    x: (height * aspect) / 2,
+    y: height / 2,
+  };
 }
 
-function intersectsProjectileObstacle(projectile: Projectile, obstacle: Obstacle) {
+function getObstaclePlayBounds(kind: ObstacleKind, radius: number) {
+  const half = getObstacleVisualHalfBounds(kind, radius);
+  const margin = kind === "alien" ? 0.12 : isRingedPlanet(kind) ? 0.72 : 0.28;
+  return {
+    minX: -PLAY_X + half.x + margin,
+    maxX: PLAY_X - half.x - margin,
+    minY: PLAY_Y_MIN + half.y + margin,
+    maxY: PLAY_Y_MAX - half.y - margin,
+  };
+}
+
+function clampObstacleToPlayBounds(obstacle: Obstacle) {
+  const bounds = getObstaclePlayBounds(obstacle.kind, obstacle.radius);
+  const minX = Math.min(bounds.minX, bounds.maxX);
+  const maxX = Math.max(bounds.minX, bounds.maxX);
+  const minY = Math.min(bounds.minY, bounds.maxY);
+  const maxY = Math.max(bounds.minY, bounds.maxY);
+  const nextX = clamp(obstacle.x, minX, maxX);
+  const nextY = clamp(obstacle.y, minY, maxY);
+  if (nextX !== obstacle.x) {
+    obstacle.x = nextX;
+    obstacle.vx *= -0.34;
+  }
+  if (nextY !== obstacle.y) {
+    obstacle.y = nextY;
+    obstacle.vy *= -0.34;
+  }
+}
+
+function randomObstaclePosition(kind: ObstacleKind, radius: number, minY: number, maxY: number) {
+  const bounds = getObstaclePlayBounds(kind, radius);
+  const minX = Math.min(bounds.minX, bounds.maxX);
+  const maxX = Math.max(bounds.minX, bounds.maxX);
+  const safeMinY = Math.max(minY, Math.min(bounds.minY, bounds.maxY));
+  const safeMaxY = Math.min(maxY, Math.max(bounds.minY, bounds.maxY));
+  const yMin = Math.min(safeMinY, safeMaxY);
+  const yMax = Math.max(safeMinY, safeMaxY);
+  return {
+    x: minX + Math.random() * Math.max(0.01, maxX - minX),
+    y: yMin + Math.random() * Math.max(0.01, yMax - yMin),
+  };
+}
+
+function normalizeVec3(vector: Vec3, fallback: Vec3 = { x: 0, y: 1, z: 0 }) {
+  const length = Math.hypot(vector.x, vector.y, vector.z);
+  if (length < 0.0001) return fallback;
+  return {
+    x: vector.x / length,
+    y: vector.y / length,
+    z: vector.z / length,
+  };
+}
+
+function closestSegmentTimeToOrigin(start: Vec3, end: Vec3) {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const dz = end.z - start.z;
+  const lengthSq = dx * dx + dy * dy + dz * dz;
+  if (lengthSq < 0.000001) return 1;
+  return clamp(-(start.x * dx + start.y * dy + start.z * dz) / lengthSq, 0, 1);
+}
+
+function segmentUnitSphereTime(start: Vec3, end: Vec3) {
+  const sx = start.x;
+  const sy = start.y;
+  const sz = start.z;
+  const dx = end.x - sx;
+  const dy = end.y - sy;
+  const dz = end.z - sz;
+  const a = dx * dx + dy * dy + dz * dz;
+  const c = sx * sx + sy * sy + sz * sz - 1;
+  if (c <= 0) return 0;
+  if (a < 0.000001) return null;
+  const b = 2 * (sx * dx + sy * dy + sz * dz);
+  const discriminant = b * b - 4 * a * c;
+  if (discriminant < 0) return null;
+  const t = (-b - Math.sqrt(discriminant)) / (2 * a);
+  if (t < 0 || t > 1) return null;
+  return t;
+}
+
+function makeShipObstacleCollision(previousShip: Vec3, ship: ShipState, obstacle: Obstacle): CollisionHit | null {
   const obstacleSize = getObstacleCollisionSize(obstacle);
-  const dx = (projectile.x - obstacle.x) / (obstacleSize.x + projectile.radius);
-  const dy = (projectile.y - obstacle.y) / (obstacleSize.y + projectile.radius);
-  const dz = (projectile.z - obstacle.z) / (obstacleSize.z + projectile.radius * 1.6);
-  return dx * dx + dy * dy + dz * dz <= 1;
+  const axes = {
+    x: SHIP_COLLISION_X + obstacleSize.x,
+    y: SHIP_COLLISION_Y + obstacleSize.y,
+    z: SHIP_COLLISION_Z + obstacleSize.z,
+  };
+  const start = {
+    x: (obstacle.prevX - previousShip.x) / axes.x,
+    y: (obstacle.prevY - previousShip.y) / axes.y,
+    z: (obstacle.prevZ - previousShip.z) / axes.z,
+  };
+  const end = {
+    x: (obstacle.x - ship.x) / axes.x,
+    y: (obstacle.y - ship.y) / axes.y,
+    z: (obstacle.z - ship.z) / axes.z,
+  };
+  const distanceSq = end.x * end.x + end.y * end.y + end.z * end.z;
+  const hitTime = distanceSq <= 1 ? 1 : segmentUnitSphereTime(start, end);
+  if (hitTime === null) return null;
+
+  const closestTime = distanceSq <= 1 ? 1 : closestSegmentTimeToOrigin(start, end);
+  const impactShip = {
+    x: lerp(previousShip.x, ship.x, closestTime),
+    y: lerp(previousShip.y, ship.y, closestTime),
+    z: lerp(previousShip.z, ship.z, closestTime),
+  };
+  const impactObstacle = {
+    x: lerp(obstacle.prevX, obstacle.x, closestTime),
+    y: lerp(obstacle.prevY, obstacle.y, closestTime),
+    z: lerp(obstacle.prevZ, obstacle.z, closestTime),
+  };
+  const normal = normalizeVec3(
+    {
+      x: impactShip.x - impactObstacle.x,
+      y: impactShip.y - impactObstacle.y,
+      z: impactShip.z - impactObstacle.z,
+    },
+    { x: ship.x >= obstacle.x ? 1 : -1, y: 0, z: -0.22 },
+  );
+  const currentDistance = Math.sqrt(Math.max(0.000001, distanceSq));
+  const penetration = Math.max(0, 1 - currentDistance) * Math.min(axes.x, axes.y, axes.z);
+  const relativeVelocity = {
+    x: ship.vx - obstacle.vx,
+    y: ship.vy - obstacle.vy,
+    z: -obstacle.vz,
+  };
+  const impactSpeed = Math.abs(relativeVelocity.x * normal.x + relativeVelocity.y * normal.y + relativeVelocity.z * normal.z);
+
+  return {
+    contact: {
+      x: (impactShip.x + impactObstacle.x) * 0.5,
+      y: (impactShip.y + impactObstacle.y) * 0.5,
+      z: (impactShip.z + impactObstacle.z) * 0.5,
+    },
+    normal,
+    penetration,
+    impactSpeed,
+    time: hitTime,
+  };
+}
+
+function makeShipProjectileCollision(previousShip: Vec3, ship: ShipState, projectile: Projectile): CollisionHit | null {
+  const axes = {
+    x: SHIP_COLLISION_X + projectile.radius,
+    y: SHIP_COLLISION_Y + projectile.radius,
+    z: SHIP_COLLISION_Z + projectile.radius,
+  };
+  const start = {
+    x: (projectile.prevX - previousShip.x) / axes.x,
+    y: (projectile.prevY - previousShip.y) / axes.y,
+    z: (projectile.prevZ - previousShip.z) / axes.z,
+  };
+  const end = {
+    x: (projectile.x - ship.x) / axes.x,
+    y: (projectile.y - ship.y) / axes.y,
+    z: (projectile.z - ship.z) / axes.z,
+  };
+  const hitTime = segmentUnitSphereTime(start, end);
+  const endDistanceSq = end.x * end.x + end.y * end.y + end.z * end.z;
+  if (hitTime === null && endDistanceSq > 1) return null;
+  const time = hitTime ?? 1;
+  const impactProjectile = {
+    x: lerp(projectile.prevX, projectile.x, time),
+    y: lerp(projectile.prevY, projectile.y, time),
+    z: lerp(projectile.prevZ, projectile.z, time),
+  };
+  const impactShip = {
+    x: lerp(previousShip.x, ship.x, time),
+    y: lerp(previousShip.y, ship.y, time),
+    z: lerp(previousShip.z, ship.z, time),
+  };
+  const normal = normalizeVec3({
+    x: impactShip.x - impactProjectile.x,
+    y: impactShip.y - impactProjectile.y,
+    z: impactShip.z - impactProjectile.z,
+  });
+
+  return {
+    contact: impactProjectile,
+    normal,
+    penetration: Math.max(0, 1 - Math.sqrt(endDistanceSq)) * Math.min(axes.x, axes.y, axes.z),
+    impactSpeed: Math.hypot(projectile.vx - ship.vx, projectile.vy - ship.vy, projectile.vz),
+    time,
+  };
+}
+
+function makeProjectileObstacleCollision(projectile: Projectile, obstacle: Obstacle): CollisionHit | null {
+  const obstacleSize = getObstacleCollisionSize(obstacle);
+  const axes = {
+    x: obstacleSize.x + projectile.radius,
+    y: obstacleSize.y + projectile.radius,
+    z: obstacleSize.z + projectile.radius * 1.6,
+  };
+  const start = {
+    x: (projectile.prevX - obstacle.prevX) / axes.x,
+    y: (projectile.prevY - obstacle.prevY) / axes.y,
+    z: (projectile.prevZ - obstacle.prevZ) / axes.z,
+  };
+  const end = {
+    x: (projectile.x - obstacle.x) / axes.x,
+    y: (projectile.y - obstacle.y) / axes.y,
+    z: (projectile.z - obstacle.z) / axes.z,
+  };
+  const hitTime = segmentUnitSphereTime(start, end);
+  const endDistanceSq = end.x * end.x + end.y * end.y + end.z * end.z;
+  if (hitTime === null && endDistanceSq > 1) return null;
+  const time = hitTime ?? 1;
+  const impactProjectile = {
+    x: lerp(projectile.prevX, projectile.x, time),
+    y: lerp(projectile.prevY, projectile.y, time),
+    z: lerp(projectile.prevZ, projectile.z, time),
+  };
+  const impactObstacle = {
+    x: lerp(obstacle.prevX, obstacle.x, time),
+    y: lerp(obstacle.prevY, obstacle.y, time),
+    z: lerp(obstacle.prevZ, obstacle.z, time),
+  };
+  const normal = normalizeVec3({
+    x: impactProjectile.x - impactObstacle.x,
+    y: impactProjectile.y - impactObstacle.y,
+    z: impactProjectile.z - impactObstacle.z,
+  });
+
+  return {
+    contact: impactProjectile,
+    normal,
+    penetration: Math.max(0, 1 - Math.sqrt(endDistanceSq)) * Math.min(axes.x, axes.y, axes.z),
+    impactSpeed: Math.hypot(projectile.vx - obstacle.vx, projectile.vy - obstacle.vy, projectile.vz - obstacle.vz),
+    time,
+  };
+}
+
+function applyShipObstaclePhysics(game: GameState, obstacle: Obstacle, hit: CollisionHit) {
+  const mass = obstacle.kind === "alien" ? 0.74 : 1.35 + obstacle.radius * 1.1;
+  const restitution = obstacle.kind === "alien" ? 0.62 : 0.46;
+  const impulse = Math.max(1.4, hit.impactSpeed * restitution);
+  const separation = hit.penetration + 0.08;
+
+  game.ship.x = clamp(game.ship.x + hit.normal.x * separation, -PLAY_X, PLAY_X);
+  game.ship.y = clamp(game.ship.y + hit.normal.y * separation, PLAY_Y_MIN, PLAY_Y_MAX);
+  game.ship.vx = clamp(game.ship.vx + hit.normal.x * impulse * 1.15, -8.6, 8.6);
+  game.ship.vy = clamp(game.ship.vy + hit.normal.y * impulse * 0.96, -7.4, 7.4);
+  obstacle.vx -= (hit.normal.x * impulse) / mass;
+  obstacle.vy -= (hit.normal.y * impulse) / mass;
+  obstacle.vz = Math.max(1.4, obstacle.vz - Math.abs(hit.normal.z) * impulse * 0.32);
+  obstacle.spinVelocity += clamp((-hit.normal.x * game.ship.vy + hit.normal.y * game.ship.vx) * 0.24, -2.2, 2.2);
 }
 
 function createInitialState(phase: ContactGamePhase = "boot"): GameState {
@@ -504,11 +779,17 @@ function spawnExhaust(game: GameState, intensity = 1) {
 
 function spawnProjectile(game: GameState) {
   const ship = game.ship;
+  const x = ship.x + Math.sin(ship.tilt) * 0.08;
+  const y = ship.y + 0.18;
+  const z = ship.z - 0.58;
   game.projectiles.push({
     id: game.projectileId,
-    x: ship.x + Math.sin(ship.tilt) * 0.08,
-    y: ship.y + 0.18,
-    z: ship.z - 0.58,
+    prevX: x,
+    prevY: y,
+    prevZ: z,
+    x,
+    y,
+    z,
     vx: Math.sin(ship.tilt) * 0.45,
     vy: ship.vy * 0.08,
     vz: -12.4,
@@ -529,12 +810,18 @@ function spawnAlienProjectile(game: GameState, obstacle: Obstacle) {
   const length = Math.hypot(dx, dy, dz) || 1;
   const intensity = clamp(game.flightElapsed / MISSION_DURATION, 0, 1);
   const speed = 4.8 + intensity * 1.3;
+  const x = obstacle.x;
+  const y = obstacle.y - obstacle.radius * 0.2;
+  const z = obstacle.z + obstacle.radius * 0.3;
 
   game.projectiles.push({
     id: game.projectileId,
-    x: obstacle.x,
-    y: obstacle.y - obstacle.radius * 0.2,
-    z: obstacle.z + obstacle.radius * 0.3,
+    prevX: x,
+    prevY: y,
+    prevZ: z,
+    x,
+    y,
+    z,
     vx: (dx / length) * speed,
     vy: (dy / length) * speed,
     vz: (dz / length) * speed,
@@ -573,25 +860,43 @@ function spawnObstacle(game: GameState) {
   const usedKinds: ObstacleKind[] = [];
 
   for (let index = 0; index < count; index += 1) {
-    let x = -PLAY_X + Math.random() * PLAY_X * 2;
+    const kind = chooseObstacleKind(game, usedKinds, intensity);
+    usedKinds.push(kind);
+    const radius =
+      kind === "alien"
+        ? 0.38 + intensity * 0.13 + Math.random() * 0.08
+        : 0.38 +
+          intensity * 0.28 +
+          Math.random() * 0.22 +
+          (kind === "jupiter" ? 0.28 : 0) +
+          (kind === "saturn" ? 0.22 : 0);
+    const yRange =
+      kind === "alien"
+        ? { min: PLAY_Y_MIN + 0.35, max: PLAY_Y_MAX - 0.15 }
+        : { min: PLAY_Y_MIN + 0.25, max: PLAY_Y_MAX - 0.1 };
+    let position = randomObstaclePosition(kind, radius, yRange.min, yRange.max);
+    let x = position.x;
     let attempts = 0;
     while (positions.some((existing) => Math.abs(existing - x) < 1.72) && attempts < 8) {
-      x = -PLAY_X + Math.random() * PLAY_X * 2;
+      position = randomObstaclePosition(kind, radius, yRange.min, yRange.max);
+      x = position.x;
       attempts += 1;
     }
     positions.push(x);
 
-    const kind = chooseObstacleKind(game, usedKinds, intensity);
-    usedKinds.push(kind);
-
     if (kind === "alien") {
+      const y = position.y;
+      const z = -17.5 - Math.random() * 4;
       game.obstacles.push({
         id: game.obstacleId,
         kind,
+        prevX: x,
+        prevY: y,
+        prevZ: z,
         x,
-        y: PLAY_Y_MIN + 0.35 + Math.random() * (PLAY_Y_MAX - PLAY_Y_MIN - 0.5),
-        z: -17.5 - Math.random() * 4,
-        radius: 0.38 + intensity * 0.13 + Math.random() * 0.08,
+        y,
+        z,
+        radius,
         vx: (-0.82 + Math.random() * 1.64) * (0.55 + intensity * 0.4),
         vy: (-0.22 + Math.random() * 0.44) * (0.35 + intensity * 0.4),
         vz: 5.7 + intensity * 3.7 + Math.random() * 0.8,
@@ -607,18 +912,17 @@ function spawnObstacle(game: GameState) {
       });
       game.alienSpawnCount += 1;
     } else {
-      const radius =
-        0.38 +
-        intensity * 0.28 +
-        Math.random() * 0.22 +
-        (kind === "jupiter" ? 0.28 : 0) +
-        (kind === "saturn" ? 0.22 : 0);
+      const y = position.y;
+      const z = -18 - Math.random() * 4.6;
       game.obstacles.push({
         id: game.obstacleId,
         kind,
+        prevX: x,
+        prevY: y,
+        prevZ: z,
         x,
-        y: PLAY_Y_MIN + 0.25 + Math.random() * (PLAY_Y_MAX - PLAY_Y_MIN - 0.35),
-        z: -18 - Math.random() * 4.6,
+        y,
+        z,
         radius,
         vx: (-0.4 + Math.random() * 0.8) * (0.35 + intensity * 0.65),
         vy: (-0.14 + Math.random() * 0.28) * (0.3 + intensity * 0.6),
@@ -644,13 +948,15 @@ function spawnObstacle(game: GameState) {
 
 function makeGameTextSnapshot(game: GameState, hud: HudState, stats: RunStats | null) {
   return JSON.stringify({
-    coordinateSystem: "3D corridor, x left/right, y up/down, z depth; ship stays near z=2.35 and hazards approach from negative z",
+    coordinateSystem: "Deep-space 3D play volume, x left/right, y up/down, z depth; ship stays near z=2.35 and hazards approach from negative z",
     phase: game.phase,
     hud,
     ship: {
       x: Number(game.ship.x.toFixed(2)),
       y: Number(game.ship.y.toFixed(2)),
       z: Number(game.ship.z.toFixed(2)),
+      vx: Number(game.ship.vx.toFixed(2)),
+      vy: Number(game.ship.vy.toFixed(2)),
       cooldown: Number(game.shootCooldown.toFixed(2)),
     },
     obstacles: game.obstacles.slice(0, 8).map((obstacle) => ({
@@ -741,6 +1047,7 @@ function ContactScene({
 
       if (game.phase === "flight") {
         game.flightElapsed += dt;
+        const previousShip = { x: game.ship.x, y: game.ship.y, z: game.ship.z };
         const inputX = (inputRef.current.right ? 1 : 0) - (inputRef.current.left ? 1 : 0);
         const inputY = (inputRef.current.up ? 1 : 0) - (inputRef.current.down ? 1 : 0);
         const intensity = clamp(game.flightElapsed / MISSION_DURATION, 0, 1);
@@ -770,6 +1077,9 @@ function ContactScene({
         }
 
         for (const projectile of game.projectiles) {
+          projectile.prevX = projectile.x;
+          projectile.prevY = projectile.y;
+          projectile.prevZ = projectile.z;
           projectile.life += dt;
           projectile.x += projectile.vx * dt;
           projectile.y += projectile.vy * dt;
@@ -788,9 +1098,13 @@ function ContactScene({
             obstacle.kind === "alien"
               ? Math.sin(game.flightElapsed * obstacle.wobbleSpeed + obstacle.wobble) * (0.28 + obstacle.radius * 0.24)
               : 0;
+          obstacle.prevX = obstacle.x;
+          obstacle.prevY = obstacle.y;
+          obstacle.prevZ = obstacle.z;
           obstacle.x += obstacle.vx * dt + wobbleOffset * dt;
           obstacle.y += obstacle.vy * dt;
           obstacle.z += obstacle.vz * dt;
+          clampObstacleToPlayBounds(obstacle);
           obstacle.spin += obstacle.spinVelocity * dt;
           obstacle.hitFlash = Math.max(0, obstacle.hitFlash - dt * 3.4);
           obstacle.shootCooldown = Math.max(0, obstacle.shootCooldown - dt);
@@ -809,21 +1123,35 @@ function ContactScene({
             entitiesChanged = true;
           }
 
-          if (!obstacle.passed && game.collisionCooldown <= 0 && intersectsShipObstacle(game.ship, obstacle)) {
-            game.integrity = clamp(game.integrity - DAMAGE_PER_HIT, 0, MAX_INTEGRITY);
+          const shipObstacleHit = !obstacle.passed ? makeShipObstacleCollision(previousShip, game.ship, obstacle) : null;
+          if (shipObstacleHit && game.collisionCooldown <= 0) {
+            const impactDamage = Math.round(clamp(DAMAGE_PER_HIT * (0.72 + shipObstacleHit.impactSpeed * 0.055), 14, 32));
+            game.integrity = clamp(game.integrity - impactDamage, 0, MAX_INTEGRITY);
             game.cameraShake = 1;
             game.flash = 0.72;
             game.ship.flash = 1;
-            game.collisionCooldown = 0.68;
+            game.collisionCooldown = 0.46;
             obstacle.hitFlash = 1;
-            game.ship.vx -= (obstacle.x - game.ship.x) * 0.9;
-            game.ship.vy -= (obstacle.y - game.ship.y) * 0.65;
-            spawnBurst(game, obstacle.x, obstacle.y, obstacle.z, obstacle.kind === "alien" ? "#afffe6" : "#ffd3bf", 14);
+            applyShipObstaclePhysics(game, obstacle, shipObstacleHit);
+            spawnBurst(
+              game,
+              shipObstacleHit.contact.x,
+              shipObstacleHit.contact.y,
+              shipObstacleHit.contact.z,
+              obstacle.kind === "alien" ? "#afffe6" : "#ffd3bf",
+              14 + Math.round(clamp(shipObstacleHit.impactSpeed, 0, 12)),
+            );
             playFocusWhoosh(1.1);
+            entitiesChanged = true;
+          } else if (shipObstacleHit && shipObstacleHit.penetration > 0.02) {
+            const separation = shipObstacleHit.penetration + 0.04;
+            game.ship.x = clamp(game.ship.x + shipObstacleHit.normal.x * separation, -PLAY_X, PLAY_X);
+            game.ship.y = clamp(game.ship.y + shipObstacleHit.normal.y * separation, PLAY_Y_MIN, PLAY_Y_MAX);
+            obstacle.hitFlash = Math.max(obstacle.hitFlash, 0.24);
             entitiesChanged = true;
           }
 
-          if (!obstacle.passed && obstacle.z > game.ship.z + obstacle.radius + 0.45) {
+          if (!obstacle.passed && obstacle.z > game.ship.z + obstacle.radius * 0.5) {
             obstacle.passed = true;
             game.dodgeCount += 1;
           }
@@ -833,14 +1161,18 @@ function ContactScene({
           if (projectile.life >= projectile.ttl) continue;
 
           if (!projectile.friendly) {
-            if (game.collisionCooldown <= 0 && intersectsShipProjectile(game.ship, projectile)) {
+            const shipProjectileHit = makeShipProjectileCollision(previousShip, game.ship, projectile);
+            if (game.collisionCooldown <= 0 && shipProjectileHit) {
               projectile.life = projectile.ttl;
-              game.integrity = clamp(game.integrity - DAMAGE_PER_ENEMY_SHOT, 0, MAX_INTEGRITY);
+              const impactDamage = Math.round(clamp(DAMAGE_PER_ENEMY_SHOT * (0.8 + shipProjectileHit.impactSpeed * 0.035), 8, 20));
+              game.integrity = clamp(game.integrity - impactDamage, 0, MAX_INTEGRITY);
               game.cameraShake = Math.max(game.cameraShake, 0.42);
               game.flash = Math.max(game.flash, 0.34);
               game.ship.flash = 1;
               game.collisionCooldown = 0.48;
-              spawnBurst(game, projectile.x, projectile.y, projectile.z, "#b9f2ff", 8);
+              game.ship.vx = clamp(game.ship.vx + shipProjectileHit.normal.x * 1.6, -8.6, 8.6);
+              game.ship.vy = clamp(game.ship.vy + shipProjectileHit.normal.y * 1.2, -7.4, 7.4);
+              spawnBurst(game, shipProjectileHit.contact.x, shipProjectileHit.contact.y, shipProjectileHit.contact.z, "#b9f2ff", 9);
               playFocusWhoosh(0.86);
               entitiesChanged = true;
             }
@@ -849,11 +1181,16 @@ function ContactScene({
 
           for (const obstacle of game.obstacles) {
             if (obstacle.destroyed) continue;
-            if (!intersectsProjectileObstacle(projectile, obstacle)) continue;
+            const projectileHit = makeProjectileObstacleCollision(projectile, obstacle);
+            if (!projectileHit) continue;
 
             projectile.life = projectile.ttl;
             obstacle.hitFlash = 1;
             obstacle.hp -= 1;
+            obstacle.vx += projectileHit.normal.x * 0.42;
+            obstacle.vy += projectileHit.normal.y * 0.32;
+            obstacle.vz += projectileHit.normal.z * 0.18;
+            obstacle.spinVelocity += clamp(projectileHit.normal.x * 0.8 - projectileHit.normal.y * 0.5, -1.4, 1.4);
 
             if (obstacle.hp <= 0) {
               obstacle.destroyed = true;
@@ -861,9 +1198,9 @@ function ContactScene({
               if (obstacle.kind === "alien") game.alienDestroyCount += 1;
               game.cameraShake = Math.max(game.cameraShake, 0.24);
               game.flash = Math.max(game.flash, 0.14);
-              spawnBurst(game, obstacle.x, obstacle.y, obstacle.z, obstacle.kind === "alien" ? "#a2ffe0" : "#ffd7b6", 16);
+              spawnBurst(game, projectileHit.contact.x, projectileHit.contact.y, projectileHit.contact.z, obstacle.kind === "alien" ? "#a2ffe0" : "#ffd7b6", 16);
             } else {
-              spawnBurst(game, obstacle.x, obstacle.y, obstacle.z, "#ffe2c1", 7);
+              spawnBurst(game, projectileHit.contact.x, projectileHit.contact.y, projectileHit.contact.z, "#ffe2c1", 7);
             }
             entitiesChanged = true;
             break;
@@ -881,7 +1218,7 @@ function ContactScene({
             projectile.y > -4 &&
             projectile.y < 4,
         );
-        game.obstacles = game.obstacles.filter((obstacle) => !obstacle.destroyed && obstacle.z < PLAYER_Z + obstacle.radius + 2.4);
+        game.obstacles = game.obstacles.filter((obstacle) => !obstacle.destroyed && obstacle.z < PLAYER_Z + obstacle.radius * 0.72 + 0.55);
         if (projectileCount !== game.projectiles.length || obstacleCount !== game.obstacles.length) entitiesChanged = true;
 
         if (game.flightElapsed >= MISSION_DURATION) {
@@ -1043,7 +1380,6 @@ function ContactScene({
       <StarField phase={phase} />
       <AtmosphericDust phase={phase} />
       <SpaceGlowField phase={phase} />
-      <CorridorGrid phase={phase} />
       <SetDressingAsteroids phase={phase} />
       <StationMesh station={game.station} />
       <ShipMesh ship={game.ship} visible={phase !== "card"} />
@@ -1060,6 +1396,7 @@ function ContactScene({
 
       {phase === "card" ? (
         <ContactCardTerminal
+          gameRef={gameRef}
           stats={stats}
           copyState={copyState}
           copyEmail={copyEmail}
@@ -1142,10 +1479,10 @@ function AtmosphericDust({ phase }: { phase: ContactGamePhase }) {
     const violet = new THREE.Color("#b6a7ff");
     for (let index = 0; index < count; index += 1) {
       const depth = seededRandom(index * 11 + 3);
-      const laneBias = Math.sin(index * 6.283) * 0.22;
-      positions[index * 3] = (seededRandom(index * 5 + 1) - 0.5 + laneBias) * 22;
-      positions[index * 3 + 1] = (seededRandom(index * 7 + 2) - 0.42) * 10.5;
-      positions[index * 3 + 2] = -1.4 - depth * 34;
+      const spread = 0.72 + depth * 0.62;
+      positions[index * 3] = (seededRandom(index * 5 + 1) - 0.5) * 34 * spread;
+      positions[index * 3 + 1] = (seededRandom(index * 7 + 2) - 0.48) * 17;
+      positions[index * 3 + 2] = -2.2 - depth * 38;
       const color = warm.clone().lerp(cool, seededRandom(index * 13 + 4));
       color.lerp(violet, seededRandom(index * 17 + 5) * 0.28);
       colors[index * 3] = color.r;
@@ -1189,29 +1526,52 @@ function SpaceGlowField({ phase }: { phase: ContactGamePhase }) {
   const pointsRef = useRef<THREE.Points | null>(null);
   const dotTexture = useRoundPointTexture();
   const geometry = useMemo(() => {
-    const count = 520;
+    const count = 760;
     const positions = new Float32Array(count * 3);
     const colors = new Float32Array(count * 3);
-    const cyan = new THREE.Color("#66ddff");
-    const blue = new THREE.Color("#286bb8");
-    const violet = new THREE.Color("#8c7cff");
-    const amber = new THREE.Color("#ffb875");
+    const clusters = [
+      {
+        center: new THREE.Vector3(-8.6, 3.8, -24),
+        spread: new THREE.Vector3(9.2, 3.2, 10.5),
+        inner: new THREE.Color("#6edcff"),
+        outer: new THREE.Color("#1f447f"),
+      },
+      {
+        center: new THREE.Vector3(8.4, -1.4, -31),
+        spread: new THREE.Vector3(8.6, 4.4, 12),
+        inner: new THREE.Color("#987dff"),
+        outer: new THREE.Color("#1a2b68"),
+      },
+      {
+        center: new THREE.Vector3(1.8, 5.4, -42),
+        spread: new THREE.Vector3(13.5, 3.8, 8.5),
+        inner: new THREE.Color("#ffba7d"),
+        outer: new THREE.Color("#26356d"),
+      },
+    ] as const;
 
     for (let index = 0; index < count; index += 1) {
-      const ring = seededRandom(index * 5 + 1);
+      const cluster = clusters[index % clusters.length];
       const angle = seededRandom(index * 7 + 2) * Math.PI * 2;
-      const radius = 1.2 + ring * ring * 12.8;
-      const depth = seededRandom(index * 11 + 3);
-      const centerPull = 1 - depth * 0.18;
+      const radius = Math.sqrt(seededRandom(index * 5 + 1));
+      const vertical = (seededRandom(index * 11 + 3) - 0.5) * 2;
+      const depth = (seededRandom(index * 13 + 4) - 0.5) * 2;
+      const turbulence = seededRandom(index * 17 + 5) * Math.PI * 2;
 
-      positions[index * 3] = Math.cos(angle) * radius * centerPull + (seededRandom(index * 13 + 4) - 0.5) * 1.4;
-      positions[index * 3 + 1] = Math.sin(angle) * radius * 0.36 - 0.2 + (seededRandom(index * 17 + 5) - 0.5) * 1.1;
-      positions[index * 3 + 2] = -5.5 - depth * 31;
+      positions[index * 3] =
+        cluster.center.x +
+        Math.cos(angle) * radius * cluster.spread.x +
+        Math.sin(turbulence) * 1.6;
+      positions[index * 3 + 1] =
+        cluster.center.y +
+        vertical * cluster.spread.y * (0.4 + radius * 0.6) +
+        Math.cos(turbulence * 0.7) * 0.7;
+      positions[index * 3 + 2] =
+        cluster.center.z +
+        depth * cluster.spread.z * (0.35 + radius * 0.65);
 
-      const color = blue.clone().lerp(cyan, 0.42 + seededRandom(index * 19 + 6) * 0.42);
-      color.lerp(violet, seededRandom(index * 23 + 7) * 0.32);
-      color.lerp(amber, seededRandom(index * 29 + 8) * 0.12);
-      const brightness = 0.36 + (1 - ring) * 0.42;
+      const color = cluster.outer.clone().lerp(cluster.inner, 0.24 + (1 - radius) * 0.58);
+      const brightness = 0.24 + (1 - radius) * 0.42;
       colors[index * 3] = color.r * brightness;
       colors[index * 3 + 1] = color.g * brightness;
       colors[index * 3 + 2] = color.b * brightness;
@@ -1239,59 +1599,15 @@ function SpaceGlowField({ phase }: { phase: ContactGamePhase }) {
     <points ref={pointsRef} geometry={geometry} renderOrder={-2}>
       <pointsMaterial
         map={dotTexture}
-        size={0.34}
+        size={0.4}
         vertexColors
         sizeAttenuation
         transparent
-        opacity={0.28}
+        opacity={0.24}
         depthWrite={false}
         blending={THREE.AdditiveBlending}
       />
     </points>
-  );
-}
-
-function CorridorGrid({ phase }: { phase: ContactGamePhase }) {
-  const groupRef = useRef<THREE.Group | null>(null);
-  useFrame((_, delta) => {
-    if (!groupRef.current) return;
-    groupRef.current.position.z += delta * (phase === "flight" ? 1.45 : 0.26);
-    if (groupRef.current.position.z > 1.6) groupRef.current.position.z = 0;
-  });
-
-  const railGeometry = useMemo(() => {
-    const vertices: number[] = [];
-    const depths = Array.from({ length: 24 }, (_, index) => -index * 1.45);
-    const laneXs = [-PLAY_X, -PLAY_X * 0.64, -PLAY_X * 0.28, 0, PLAY_X * 0.28, PLAY_X * 0.64, PLAY_X];
-
-    for (const x of laneXs) {
-      vertices.push(x, PLAY_Y_MIN - 0.52, 1.8, x * 1.9, PLAY_Y_MIN - 0.5, -28);
-    }
-
-    for (const z of depths) {
-      const spread = 1 + Math.abs(z) * 0.045;
-      vertices.push(-PLAY_X * spread, PLAY_Y_MIN - 0.52, z, PLAY_X * spread, PLAY_Y_MIN - 0.52, z);
-      if (z < -4) {
-        vertices.push(-PLAY_X * spread, PLAY_Y_MAX + 0.72, z, PLAY_X * spread, PLAY_Y_MAX + 0.72, z);
-      }
-    }
-
-    for (const side of [-1, 1]) {
-      vertices.push(side * PLAY_X, PLAY_Y_MIN - 0.52, 1.4, side * PLAY_X * 1.95, PLAY_Y_MAX + 0.72, -28);
-      vertices.push(side * PLAY_X * 0.52, PLAY_Y_MIN - 0.52, 1.2, side * PLAY_X * 1.18, PLAY_Y_MAX + 0.72, -28);
-    }
-
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
-    return geometry;
-  }, []);
-
-  return (
-    <group ref={groupRef}>
-      <lineSegments geometry={railGeometry}>
-        <lineBasicMaterial color="#bfefff" transparent opacity={phase === "dock" ? 0.12 : 0.075} depthWrite={false} blending={THREE.AdditiveBlending} />
-      </lineSegments>
-    </group>
   );
 }
 
@@ -1393,10 +1709,11 @@ function ShipMesh({ ship, visible }: { ship: ShipState; visible: boolean }) {
       <group position={[0, -0.54, 0.12]}>
         <VoxelPlane src={VOXEL_SPRITES.playerEngine} height={0.52} opacity={0.82} additive renderOrder={9} />
       </group>
-      <mesh position={[0, 0.46, 0.02]}>
-        <planeGeometry args={[0.42, 0.18]} />
-        <meshBasicMaterial color="#b9f6ff" transparent opacity={0.36 + ship.gunFlash * 0.4} depthWrite={false} toneMapped={false} blending={THREE.AdditiveBlending} />
-      </mesh>
+      {ship.gunFlash > 0.01 ? (
+        <group position={[0, 0.48, 0.16]} rotation={[0, 0, Math.PI / 2]}>
+          <VoxelPlane src={VOXEL_SPRITES.muzzleFlash} height={0.34} opacity={0.42 + ship.gunFlash * 0.5} additive alphaTest={0.08} renderOrder={10} />
+        </group>
+      ) : null}
     </group>
   );
 }
@@ -1444,13 +1761,10 @@ function ObstacleMesh({ obstacle }: { obstacle: Obstacle }) {
   });
 
   if (obstacle.kind === "alien") {
-    const sprite = ALIEN_SPRITES[obstacle.id % ALIEN_SPRITES.length] ?? ALIEN_SPRITES[0];
+    const sprite = FORWARD_ALIEN_SPRITES[obstacle.id % FORWARD_ALIEN_SPRITES.length] ?? FORWARD_ALIEN_SPRITES[0];
     return (
       <group ref={groupRef}>
         <VoxelPlane src={sprite} height={obstacle.radius * 2.42} renderOrder={7} />
-        <group position={[0, -obstacle.radius * 0.66, 0.08]}>
-          <VoxelPlane src={VOXEL_SPRITES.enemyEngine} height={obstacle.radius * 0.76} opacity={0.7} additive renderOrder={8} />
-        </group>
         {obstacle.hitFlash > 0.02 ? (
           <group position={[0, 0, 0.11]}>
             <VoxelPlane src={VOXEL_SPRITES.shieldRing} height={obstacle.radius * 2.25} opacity={0.4} additive renderOrder={9} />
@@ -1465,14 +1779,26 @@ function ObstacleMesh({ obstacle }: { obstacle: Obstacle }) {
 
   return (
     <group ref={groupRef}>
-      <mesh>
-        <circleGeometry args={[obstacle.radius * 1.22, 24]} />
-        <meshBasicMaterial color={palette.glow} transparent opacity={0.12 + obstacle.hitFlash * 0.2} depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
-      </mesh>
+      {isRingedPlanet(obstacle.kind) ? <PlanetRingMesh kind={obstacle.kind} radius={obstacle.radius} layer="back" /> : null}
       <VoxelPlane src={PLANET_SPRITES[obstacle.kind]} height={obstacle.radius * 2.42} renderOrder={6} />
+      {isRingedPlanet(obstacle.kind) ? <PlanetRingMesh kind={obstacle.kind} radius={obstacle.radius} layer="front" /> : null}
       {obstacle.hitFlash > 0.02 ? <VoxelPlane src={VOXEL_SPRITES.impact} height={obstacle.radius * 1.16} opacity={0.62} additive renderOrder={9} /> : null}
       <pointLight color={palette.glow} intensity={2 + obstacle.hitFlash * 6.5} distance={obstacle.radius * 5.2} />
     </group>
+  );
+}
+
+function PlanetRingMesh({ kind, radius, layer }: { kind: "saturn" | "uranus"; radius: number; layer: "back" | "front" }) {
+  const color = kind === "saturn" ? "#e2b36f" : "#bdeee9";
+  const opacity = layer === "back" ? 0.32 : 0.42;
+  const z = layer === "back" ? -0.045 : 0.08;
+  const scaleY = kind === "saturn" ? 0.34 : 0.3;
+
+  return (
+    <mesh position={[0, 0, z]} rotation={[0, 0, kind === "saturn" ? -0.24 : -0.32]} scale={[1.58, scaleY, 1]} renderOrder={layer === "back" ? 5 : 7}>
+      <ringGeometry args={[radius * 1.43, radius * 1.62, 72]} />
+      <meshBasicMaterial color={color} transparent opacity={opacity} depthWrite={false} toneMapped={false} side={THREE.DoubleSide} />
+    </mesh>
   );
 }
 
@@ -1525,12 +1851,14 @@ function ParticleMesh({ particle }: { particle: Particle }) {
 }
 
 function ContactCardTerminal({
+  gameRef,
   stats,
   copyState,
   copyEmail,
   restartGame,
   playHoverChime,
 }: {
+  gameRef: MutableRefObject<GameState>;
   stats: RunStats | null;
   copyState: "idle" | "copied" | "failed";
   copyEmail: () => void;
@@ -1538,16 +1866,43 @@ function ContactCardTerminal({
   playHoverChime: () => void;
 }) {
   const groupRef = useRef<THREE.Group | null>(null);
+  const cardDomRef = useRef<HTMLDivElement | null>(null);
   const { camera } = useThree();
 
   useFrame(({ clock }) => {
     if (!groupRef.current) return;
+    const game = gameRef.current;
+    const emergenceRaw = clamp(game.phaseElapsed / 1.9, 0, 1);
+    const emergence = easeOutCubic(clamp((emergenceRaw - 0.1) / 0.9, 0, 1));
+    const source = {
+      x: game.station.x,
+      y: game.station.y + game.station.scale * 0.58,
+      z: game.station.z + game.station.scale * 0.1,
+    };
+    const target = {
+      x: 0,
+      y: 0.18 + Math.sin(clock.elapsedTime * 1.24) * 0.026,
+      z: -2.12,
+    };
+
     groupRef.current.quaternion.copy(camera.quaternion);
-    groupRef.current.position.y = 0.18 + Math.sin(clock.elapsedTime * 1.24) * 0.026;
+    groupRef.current.position.set(
+      lerp(source.x, target.x, emergence),
+      lerp(source.y, target.y, emergence),
+      lerp(source.z, target.z, emergence),
+    );
+    const scale = lerp(0.055, 1, emergence);
+    const settlePulse = emergence >= 1 ? Math.sin(clock.elapsedTime * 2.1) * 0.012 : 0;
+    groupRef.current.scale.setScalar(scale + settlePulse);
+
+    if (cardDomRef.current) {
+      cardDomRef.current.style.opacity = String(clamp((emergence - 0.34) / 0.42, 0, 1));
+      cardDomRef.current.style.pointerEvents = emergence > 0.92 ? "auto" : "none";
+    }
   });
 
   return (
-    <group ref={groupRef} position={[0, 0.18, -2.42]}>
+    <group ref={groupRef}>
       <group position={[0, 0, -0.18]}>
         <VoxelPlane src={VOXEL_SPRITES.cardFrame} height={4.08} opacity={0.5} additive renderOrder={10} />
       </group>
@@ -1582,7 +1937,7 @@ function ContactCardTerminal({
         <VoxelPlane src={VOXEL_SPRITES.sparkle} height={0.58} opacity={0.42} additive renderOrder={11} />
       </group>
       <Html transform position={[0, 0, 0.05]} distanceFactor={4.7} zIndexRange={[30, 0]}>
-        <div className={styles.cardStage}>
+        <div ref={cardDomRef} className={styles.cardStage}>
           <div className={styles.cardPanel}>
             <div className={styles.cardContent}>
               <div className={styles.cardIdentityRow}>
