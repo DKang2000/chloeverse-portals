@@ -2221,8 +2221,8 @@ export default function ContactMissionGame3D() {
         <div className={styles.bootOverlay}>
           <div className={styles.bootPanel}>
             <h1 className={styles.bootTitle}>
-              <span>pilot the relay corridor to pluto.</span>
-              <span>dock cleanly to unlock chloe&apos;s contact card.</span>
+              <span>survive until the docking station</span>
+              <span>to unlock chloe&apos;s contact info!</span>
             </h1>
             <p className={styles.bootBody}>WASD or arrow keys move. Space shoots. F opens fullscreen.</p>
             <div className={styles.bootActions}>
