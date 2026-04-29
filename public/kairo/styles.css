@@ -1266,18 +1266,7 @@ h3 {
 
 @media (max-width: 640px) {
   .chloeverse-return {
-    top: 68px;
-    left: 14px;
-    min-height: 34px;
-    padding: 0 11px;
-    font-size: 10px;
-    letter-spacing: 0.12em;
-  }
-
-  .chloeverse-return::before {
-    width: 5px;
-    height: 5px;
-    margin-right: 8px;
+    display: none;
   }
 
   .site-header {
