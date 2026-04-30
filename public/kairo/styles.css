@@ -1084,6 +1084,29 @@ h3 {
   white-space: nowrap;
 }
 
+.site-footer {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  width: min(1240px, calc(100vw - 40px));
+  margin: -70px auto 34px;
+  color: rgba(246, 251, 248, 0.38);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+
+.site-footer a {
+  color: rgba(246, 251, 248, 0.52);
+  transition: color 300ms var(--ease);
+}
+
+.site-footer a:hover,
+.site-footer a:focus-visible {
+  color: var(--ink);
+  outline: none;
+}
+
 .waitlist-form {
   display: grid;
   gap: 10px;
@@ -1739,6 +1762,11 @@ h3 {
     max-width: 34ch;
     font-size: 12px;
     line-height: 1.45;
+  }
+
+  .site-footer {
+    margin: -48px auto 28px;
+    font-size: 10px;
   }
 }
 
