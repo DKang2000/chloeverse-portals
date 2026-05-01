@@ -978,12 +978,11 @@ h3 {
     rgba(248, 243, 234, 0.92);
   box-shadow: 0 28px 90px rgba(0, 0, 0, 0.28);
   animation: crystalOrbit 8s var(--ease) infinite alternate;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .review-orbit img {
-  width: 196px;
-  max-width: none;
+  width: 132px;
   filter: drop-shadow(0 24px 26px rgba(0, 0, 0, 0.22));
 }
 
